@@ -1,0 +1,41 @@
+{
+  "name": "mozilla-msisdn-gateway",
+  "description": "The Mozilla MSISDN Gateway",
+  "version": "0.1.0-dev",
+  "author": "Mozilla (https://mozilla.org/)",
+  "homepage": "https://github.com/mozilla-services/msisdn-gateway/",
+  "bugs": "https://github.com/mozilla-services/msisdn-gateway/issues",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:mozilla-services/msisdn-gateway.git"
+  },
+  "engines": {
+    "node": "0.10.x",
+    "npm": "1.3.x"
+  },
+  "dependencies": {
+    "connect-validation": "0.1.0",
+    "convict": "0.4.2",
+    "cors": "2.2",
+    "express": "3.x",
+    "strftime": "0.8.0",
+    "raven": "0.6.2",
+    "request": "2.34.0",
+    "hiredis": "0.1.16",
+    "redis": "0.10.1"
+  },
+  "devDependencies": {
+    "chai": "1.5.x",
+    "istanbul": "*",
+    "jshint": "2.x",
+    "mocha": "1.8.x",
+    "sinon": "1.9.x",
+    "supertest": "0.10.x"
+  },
+  "scripts": {
+    "test": "make test",
+    "start": "make runserver"
+  },
+  "license": "MPL-2.0",
+  "keywords": []
+}
