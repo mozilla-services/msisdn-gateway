@@ -24,13 +24,17 @@ function validateKeys(keys) {
   };
 }
 
+/**
+ * Build a validator that makes sure of the size and hex format of a key.
+ *
+ * @param {Integer}   size  Number of bytes of the key.
+ * @return {Function} Validator
+ **/
 function hexKeyOfSize(size) {
   return function check(val) {
-    if (val === "")
-      return;
-    if (!new RegExp('^[a-f0-9]{' + size * 2 + '}$').test(val)) {
-      throw new Error("Should be an " + size +
-                      " bytes key encoded as hexadecimal");
+    if (!new RegExp(format('^[a-fA-FA0-9]{%d}$', size * 2)).test(val)) {
+      throw new Error(format("Should be an %d bytes key encoded as " + 
+                             "hexadecimal", size));
     }
   };
 }

@@ -18,4 +18,18 @@ describe("config", function() {
       config.validateKeys(['foo'])({foo: 'oh yeah'});
     });
   });
+
+  describe("#hexKeyOfSize", function() {
+    it("should check if all chars are hexadecimals", function() {
+      expect(function() {
+        config.hexKeyOfSize(4)("ggggaaaa");
+      }).to.throw(/Should be an 4 bytes key encoded as hexadecimal/);
+    });
+
+    it("should check the size of the given key", function() {
+      expect(function() {
+        config.hexKeyOfSize(4)("aaaafff");
+      }).to.throw(/Should be an 4 bytes key encoded as hexadecimal/);
+    });
+  });
 });
