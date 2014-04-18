@@ -9,21 +9,9 @@ var supertest = require("supertest");
 var sinon = require("sinon");
 
 var app = require("../msisdn-gateway").app;
-var request = require('../msisdn-gateway').request;
 var conf = require("../msisdn-gateway").conf;
 var storage = require("../msisdn-gateway").storage;
-
-function getMiddlewares(method, url) {
-  return app.routes[method].filter(function(e){
-    return e.path === url;
-  }).shift().callbacks;
-}
-
-function intersection(array1, array2) {
-  return array1.filter(function(n) {
-    return array2.indexOf(n) !== -1;
-  });
-}
+var smsGateway = require("../msisdn-gateway/sms-gateway");
 
 function expectFormatedError(body, location, name, description) {
   if (typeof description === "undefined") {
@@ -42,7 +30,8 @@ describe("HTTP API exposed by the server", function() {
   var sandbox, genuineOrigins;
 
   var routes = {
-    '/': ['get']
+    '/': ['get'],
+    '/register': ['post'],
   };
 
   beforeEach(function() {
@@ -173,5 +162,52 @@ describe("HTTP API exposed by the server", function() {
             done();
           });
       });
+  });
+
+  describe("POST /register", function() {
+    var sandbox, jsonReq;
+
+    beforeEach(function() {
+      sandbox = sinon.sandbox.create();
+
+      jsonReq = supertest(app)
+        .post('/register')
+        .type('json')
+        .expect('Content-Type', /json/);
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it("should require the MSISDN params", function(done) {
+      jsonReq.send({}).expect(400).end(function(err, res) {
+        if (err) throw err;
+        expectFormatedError(res.body, "body", "msisdn");
+        done();
+      });
+    });
+
+    it("should require a valid MSISDN number", function(done) {
+      jsonReq.send({msisdn: "0123456789"}).expect(400).end(function(err, res) {
+        if (err) throw err;
+        expectFormatedError(res.body, "body", "msisdn",
+                            "Invalid MSISDN number.");
+        done();
+      });
+    });
+
+    it("should send an SMS with the code.", function(done) {
+      sandbox.stub(smsGateway, "sendSMS",
+        function(msisdn, message, cb) {
+          cb(null);
+        });
+      jsonReq.send({msisdn: "+33123456789"}).expect(200).end(
+        function(err, res) {
+          sinon.assert.calledOnce(smsGateway.sendSMS);
+          expect(res.body.msisdnSessionToken).to.length(64);
+          done();
+        });
+    });
   });
 });

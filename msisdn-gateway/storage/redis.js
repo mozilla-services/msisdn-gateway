@@ -5,6 +5,8 @@
 "use strict";
 var redis = require("redis");
 
+var ONE_DAY_SEC = 24 * 3600;  // A day in seconds
+
 function RedisStorage(options, settings) {
   this._settings = settings;
   this._client = redis.createClient(
@@ -18,6 +20,32 @@ function RedisStorage(options, settings) {
 }
 
 RedisStorage.prototype = {
+  setCode: function(msisdnMac, code, callback) {
+    var key = 'msisdn_code_' + msisdnMac;
+    this._client.setex(key, ONE_DAY_SEC, code, callback);
+  },
+
+  verifyCode: function(msisdnMac, code, callback) {
+    var key = 'msisdn_code_' + msisdnMac;
+    this._client.get(key, function(err, result) {
+      if (err) {
+        callback(err);
+        return;
+      }
+
+      if (result === null) {
+        callback(null, null);
+        return;
+      }
+
+      if (result === code) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    });
+  },
+
   drop: function(callback) {
     this._client.flushdb(callback);
   },

@@ -6,6 +6,7 @@
 
 var convict = require('convict');
 var format = require('util').format;
+var crypto = require('crypto');
 
 /**
  * Validates the keys are present in the configuration object.
@@ -20,6 +21,21 @@ function validateKeys(keys) {
       if (!val.hasOwnProperty(key))
         throw new Error(format("Should have a %s property", key));
     });
+  };
+}
+
+/**
+ * Build a validator that makes sure of the size and hex format of a key.
+ *
+ * @param {Integer}   size  Number of bytes of the key.
+ * @return {Function} Validator
+ **/
+function hexKeyOfSize(size) {
+  return function check(val) {
+    if (!new RegExp(format('^[a-fA-FA0-9]{%d}$', size * 2)).test(val)) {
+      throw new Error(format("Should be an %d bytes key encoded as " + 
+                             "hexadecimal", size));
+    }
   };
 }
 
@@ -76,6 +92,22 @@ var conf = convict({
     doc: "Date format of the logging line in development.",
     format: String,
     default: "%y/%b/%d %H:%M:%S"
+  },
+  msisdnMacSecret: {
+    doc: "The secret for hmac-ing msisdn (16 bytes key encoded as hex)",
+    format: hexKeyOfSize(16),
+    default: "",
+    env: "MSISDN_MAC_SECRET"
+  },
+  msisdnMacAlgorithm: {
+    doc: "The algorithm that should be used to mac msisdn",
+    format: function(val) {
+      if (crypto.getHashes().indexOf(val) === -1) {
+        throw new Error("Given hmac algorithm is not supported");
+      }
+    },
+    default: "sha256",
+    env: "MSISDN_MAC_ALGORITHM"
   }
 });
 
@@ -96,5 +128,6 @@ if (conf.get('allowedOrigins') === "") {
 }
 module.exports = {
   conf: conf,
+  hexKeyOfSize: hexKeyOfSize,
   validateKeys: validateKeys
 };
