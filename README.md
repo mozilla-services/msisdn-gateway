@@ -1,8 +1,20 @@
 MSISDN Gateway
 ==============
 
+
 This is a PoC of an MSISDN Gateway server that takes a phone number an
 register it using an SMS validation.
+
+It implements the proposal here : https://github.com/mozilla/fxa-auth-server/wiki/API-extensions-for-supporting-MSISDN-verification-in-FxA-auth-server
+
+The API are discussed on the loop-dev mailing list at https://mail.mozilla.org/listinfo/loop-dev
+
+
+Registration process flow
+-------------------------
+
+XXX
+
 
 How to install?
 ---------------
