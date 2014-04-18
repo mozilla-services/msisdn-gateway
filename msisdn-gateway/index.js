@@ -7,12 +7,15 @@
 var express = require('express');
 var conf = require('./config').conf;
 var pjson = require('../package.json');
-var request = require('request');
 var raven = require('raven');
 var cors = require('cors');
 var errors = require('connect-validation');
 var logging = require('./logging');
 var headers = require('./headers');
+var phone = require('phone');
+var hmac = require("./hmac");
+var digitsCode = require('./utils').digitsCode;
+var smsGateway = require('./sms-gateway');
 
 var ravenClient = new raven.Client(conf.get('sentryDSN'));
 
@@ -113,6 +116,36 @@ app.get("/", function(req, res) {
   res.json(200, credentials);
 });
 
+
+/**
+ * Ask for a new number registration
+ **/
+app.post("/register", requireParams("msisdn"), function(req, res) {
+  var msisdn = phone(req.body.msisdn);
+
+  if (msisdn === null) {
+    res.sendError("body", "msisdn", "Invalid MSISDN number.");
+    return;
+  }
+
+  var msisdnMac = hmac(msisdn, conf.get('msisdnMacSecret'));
+  var code = digitsCode(6);
+  storage.setCode(msisdnMac, code, function(err) {
+    if (err) {
+      logError(err);
+      res.json(503, "Service Unavailable");
+      return;
+    }
+    /* Send SMS */
+    smsGateway.sendSMS(msisdn,
+      "To validate your number please enter the following code: " + code,
+      function(err) {
+        res.json({"msisdnSessionToken": msisdnMac});
+      });
+  });
+});
+
+
 app.listen(conf.get('port'), conf.get('host'), function(){
   console.log('Server listening on http://' +
               conf.get('host') + ':' + conf.get('port'));
@@ -122,6 +155,5 @@ module.exports = {
   app: app,
   conf: conf,
   storage: storage,
-  requireParams: requireParams,
-  request: request
+  requireParams: requireParams
 };

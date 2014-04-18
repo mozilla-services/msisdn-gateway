@@ -7,5 +7,6 @@
       "db": 5
     }
   },
-  "allowedOrigins": ["http://localhost:3000"]
+  "allowedOrigins": ["http://localhost:3000"],
+  "msisdnMacSecret": "58a9aab45fe4b00fe11dea566e9c238c"
 }
