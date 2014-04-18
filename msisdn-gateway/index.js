@@ -10,7 +10,7 @@ var pjson = require('../package.json');
 var raven = require('raven');
 var cors = require('cors');
 var errors = require('connect-validation');
-var logging = require('./logging');
+var logging = require('express-logging');
 var headers = require('./headers');
 var phone = require('phone');
 var hmac = require("./hmac");
@@ -30,7 +30,7 @@ function logError(err) {
 var app = express();
 
 if (conf.get("env") === "development") {
-  app.use(logging);
+  app.use(logging(conf.get("consoleDateFormat")));
 }
 app.use(headers);
 app.disable('x-powered-by');
