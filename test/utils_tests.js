@@ -11,12 +11,12 @@ describe("Utils", function() {
     it("should return a code of X digits", function() {
       var code, s = 10;
       while(s > 0) {
-        s--;
         code = digitsCode(s);
         expect(code).to.have.length(s);
         if (isNaN(parseInt(code, 10))) {
           throw new Error(code + " should be made of digits.");
         }
+        s--;
       }
     });
   });
