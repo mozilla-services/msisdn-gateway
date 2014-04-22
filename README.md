@@ -13,8 +13,11 @@ The API are discussed on the loop-dev mailing list at https://mail.mozilla.org/l
 Registration process flow
 -------------------------
 
-XXX
-
+  1. The client make a ``/register`` request and receive a sessionToken.
+  2. The server send a SMS to the MSISDN.
+  3. The client ask for ``/verify_code`` with the sessionToken and the code and get a BrowserID certificate.
+  4. If needed the client can also ask for a new code with ``/resend_code`` and its sessionToken.
+  5. Finally the client can destroy its registration using ``/unregister`` and its sessionToken.
 
 How to install?
 ---------------
