@@ -93,8 +93,14 @@ var conf = convict({
     format: String,
     default: "%y/%b/%d %H:%M:%S"
   },
+  msisdnIdSecret: {
+    doc: "The secret for hmac-ing msisdnId (16 bytes key encoded as hex)",
+    format: hexKeyOfSize(16),
+    default: "",
+    env: "MSISDN_ID_SECRET"
+  },
   msisdnMacSecret: {
-    doc: "The secret for hmac-ing msisdn (16 bytes key encoded as hex)",
+    doc: "The secret for hmac-ing msisdnMac (16 bytes key encoded as hex)",
     format: hexKeyOfSize(16),
     default: "",
     env: "MSISDN_MAC_SECRET"

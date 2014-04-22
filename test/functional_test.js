@@ -32,6 +32,9 @@ describe("HTTP API exposed by the server", function() {
   var routes = {
     '/': ['get'],
     '/register': ['post'],
+    '/verify_code': ['post'],
+    '/resend_code': ['post'],
+    '/unregister': ['post'],
   };
 
   beforeEach(function() {
@@ -165,19 +168,13 @@ describe("HTTP API exposed by the server", function() {
   });
 
   describe("POST /register", function() {
-    var sandbox, jsonReq;
+    var jsonReq;
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
-
       jsonReq = supertest(app)
         .post('/register')
         .type('json')
         .expect('Content-Type', /json/);
-    });
-
-    afterEach(function() {
-      sandbox.restore();
     });
 
     it("should require the MSISDN params", function(done) {
@@ -205,9 +202,151 @@ describe("HTTP API exposed by the server", function() {
       jsonReq.send({msisdn: "+33123456789"}).expect(200).end(
         function(err, res) {
           sinon.assert.calledOnce(smsGateway.sendSMS);
-          expect(res.body.msisdnSessionToken).to.length(64);
+          expect(res.body.id).to.length(64);
+          expect(res.body.key).to.length(64);
+          expect(res.body.algorithm).to.equal("sha256");
           done();
         });
+    });
+  });
+
+  describe("POST /verify_code", function() {
+    var jsonReq;
+
+    beforeEach(function() {
+      jsonReq = supertest(app)
+        .post('/verify_code')
+        .type('json')
+        .expect('Content-Type', /json/);
+    });
+
+    it("should require the MSISDN params", function(done) {
+      jsonReq.send({code: "124563"}).expect(400).end(function(err, res) {
+        if (err) throw err;
+        expectFormatedError(res.body, "body", "msisdn");
+        done();
+      });
+    });
+
+    it("should require a valid MSISDN number", function(done) {
+      jsonReq.send({msisdn: "0123456789", code: "123456"}).expect(400).end(
+        function(err, res) {
+          if (err) throw err;
+          expectFormatedError(res.body, "body", "msisdn",
+                              "Invalid MSISDN number.");
+          done();
+        });
+    });
+
+    it("should require the code params", function(done) {
+      jsonReq.send({msisdn: "+33123456789"}).expect(400).end(
+        function(err, res) {
+          if (err) throw err;
+          expectFormatedError(res.body, "body", "code");
+          done();
+        });
+    });
+
+    it("should validate if the code is valid.", function(done) {
+      sandbox.stub(storage, "verifyCode",
+        function(msisdn, code, cb) {
+          cb(null, true);
+        });
+      jsonReq.send({msisdn: "+33123456789", code: "123456"}).expect(200).end(
+        function(err, res) {
+          expect(res.body.hasOwnProperty('cert')).to.equal(true);
+          done();
+        });
+    });
+
+    it("should validate if the code is invalid.", function(done) {
+      sandbox.stub(storage, "verifyCode",
+        function(msisdn, code, cb) {
+          cb(null, false);
+        });
+      jsonReq.send({msisdn: "+33123456789", code: "123456"})
+             .expect(403).end(done);
+    });
+
+    it("should validate if the MSISDN is not registered.", function(done) {
+      sandbox.stub(storage, "verifyCode",
+        function(msisdn, code, cb) {
+          cb(null, null);
+        });
+      jsonReq.send({msisdn: "+33123456789", code: "123456"})
+             .expect(404).end(done);
+    });
+  });
+
+  describe("POST /resend_code", function() {
+    var jsonReq;
+
+    beforeEach(function() {
+      jsonReq = supertest(app)
+        .post('/resend_code')
+        .type('json')
+        .expect('Content-Type', /json/);
+    });
+
+    it("should require the MSISDN params", function(done) {
+      jsonReq.send({}).expect(400).end(function(err, res) {
+        if (err) throw err;
+        expectFormatedError(res.body, "body", "msisdn");
+        done();
+      });
+    });
+
+    it("should require a valid MSISDN number", function(done) {
+      jsonReq.send({msisdn: "0123456789"}).expect(400).end(function(err, res) {
+        if (err) throw err;
+        expectFormatedError(res.body, "body", "msisdn",
+                            "Invalid MSISDN number.");
+        done();
+      });
+    });
+
+    it("should send an SMS with the code.", function(done) {
+      sandbox.stub(smsGateway, "sendSMS",
+        function(msisdn, message, cb) {
+          cb(null);
+        });
+      jsonReq.send({msisdn: "+33123456789"}).expect(200).end(done);
+    });
+  });
+
+  describe("POST /unregister", function() {
+    var jsonReq;
+
+    beforeEach(function() {
+      jsonReq = supertest(app)
+        .post('/unregister')
+        .type('json')
+        .expect('Content-Type', /json/);
+    });
+
+    it("should require the MSISDN params", function(done) {
+      jsonReq.send({}).expect(400).end(function(err, res) {
+        if (err) throw err;
+        expectFormatedError(res.body, "body", "msisdn");
+        done();
+      });
+    });
+
+    it("should require a valid MSISDN number", function(done) {
+      jsonReq.send({msisdn: "0123456789"}).expect(400).end(function(err, res) {
+        if (err) throw err;
+        expectFormatedError(res.body, "body", "msisdn",
+                            "Invalid MSISDN number.");
+        done();
+      });
+    });
+
+    it("should clean the session.", function(done) {
+      sandbox.stub(storage, "cleanSession",
+        function(msisdn, cb) {
+          cb(null);
+        });
+      jsonReq.send({msisdn: "+33123456789"}).expect(200).end(done);
     });
   });
 });

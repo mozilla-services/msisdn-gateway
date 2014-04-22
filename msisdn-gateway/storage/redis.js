@@ -7,6 +7,9 @@ var redis = require("redis");
 
 var ONE_DAY_SEC = 24 * 3600;  // A day in seconds
 
+var CODE_KEY_PREFIX = "msisdn_code_";
+var SESSION_KEY_PREFIX = "msisdn_session_";
+
 function RedisStorage(options, settings) {
   this._settings = settings;
   this._client = redis.createClient(
@@ -20,13 +23,13 @@ function RedisStorage(options, settings) {
 }
 
 RedisStorage.prototype = {
-  setCode: function(msisdnMac, code, callback) {
-    var key = 'msisdn_code_' + msisdnMac;
+  setCode: function(msisdnId, code, callback) {
+    var key = CODE_KEY_PREFIX + msisdnId;
     this._client.setex(key, ONE_DAY_SEC, code, callback);
   },
 
-  verifyCode: function(msisdnMac, code, callback) {
-    var key = 'msisdn_code_' + msisdnMac;
+  verifyCode: function(msisdnId, code, callback) {
+    var key = CODE_KEY_PREFIX + msisdnId;
     this._client.get(key, function(err, result) {
       if (err) {
         callback(err);
@@ -44,6 +47,38 @@ RedisStorage.prototype = {
       }
       callback(null, false);
     });
+  },
+
+  setSession: function(msisdnId, msisdnMac, callback) {
+    var key = SESSION_KEY_PREFIX + msisdnId
+    this._client.set(key, msisdnMac, callback);
+  },
+
+  verifySession: function(msisdnId, msisdnMac, callback) {
+    var key = SESSION_KEY_PREFIX + msisdnId
+    this._client.get(key, function(err, result) {
+      if (err) {
+        callback(err);
+        return;
+      }
+
+      if (result === null) {
+        callback(null, null);
+        return;
+      }
+
+      if (result === msisdnMac) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    });
+  },
+
+  cleanSession: function(msisdnId, callback) {
+    var codeKey = CODE_KEY_PREFIX + msisdnId;
+    var sessionKey = SESSION_KEY_PREFIX + msisdnId;
+    this._client.del(codeKey, sessionKey, callback);
   },
 
   drop: function(callback) {

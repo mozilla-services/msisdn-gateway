@@ -8,5 +8,6 @@
     }
   },
   "allowedOrigins": ["http://localhost:3000"],
+  "msisdnIdSecret": "859a5a4ae4fb0b0f1d1eae65e692c3c8",
   "msisdnMacSecret": "58a9aab45fe4b00fe11dea566e9c238c"
 }
