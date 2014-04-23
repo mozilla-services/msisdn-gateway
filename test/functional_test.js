@@ -202,9 +202,7 @@ describe("HTTP API exposed by the server", function() {
       jsonReq.send({msisdn: "+33123456789"}).expect(200).end(
         function(err, res) {
           sinon.assert.calledOnce(smsGateway.sendSMS);
-          expect(res.body.id).to.length(64);
-          expect(res.body.key).to.length(64);
-          expect(res.body.algorithm).to.equal("sha256");
+          expect(res.body.msisdnSessionToken).to.length(64);
           done();
         });
     });

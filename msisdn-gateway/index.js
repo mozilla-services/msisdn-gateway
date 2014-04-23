@@ -12,10 +12,10 @@ var cors = require("cors");
 var errors = require("connect-validation");
 var logging = require("express-logging");
 var headers = require("./headers");
-var hmac = require("./hmac");
 var digitsCode = require("./utils").digitsCode;
 var smsGateway = require("./sms-gateway");
 var validateMSISDN = require("./middleware").validateMSISDN;
+var Token = require("./token").Token;
 
 var ravenClient = new raven.Client(conf.get("sentryDSN"));
 
@@ -121,7 +121,6 @@ app.get("/", function(req, res) {
  **/
 app.post("/register", requireParams("msisdn"), validateMSISDN,
   function(req, res) {
-    var msisdnMac = hmac(req.msisdn, conf.get("msisdnMacSecret"));
     var code = digitsCode(6);
 
     storage.setCode(req.msisdnId, code, function(err) {
@@ -134,12 +133,18 @@ app.post("/register", requireParams("msisdn"), validateMSISDN,
       smsGateway.sendSMS(req.msisdn,
         "To validate your number please enter the following code: " + code,
         function(err) {
-          var hawkCredentials = {
-            id: req.msisdnId,
-            key: msisdnMac,
-            algorithm: conf.get('msisdnMacAlgorithm')
-          };
-          res.json(hawkCredentials);
+          var token = new Token();
+          token.getCredentials(function(tokenId, sessionToken) {
+            storage.setSession(tokenId, sessionToken, function(err) {
+              if (err) {
+                logError(err);
+                res.json(503, "Service Unavailable");
+                return;
+              }
+
+              res.json(200, {msisdnSessionToken: sessionToken});
+            });
+          });
         });
     });
   });
@@ -188,7 +193,7 @@ app.post("/resend_code", requireParams("msisdn"), validateMSISDN,
       smsGateway.sendSMS(req.msisdn,
         "To validate your number please enter the following code: " + code,
         function(err) {
-          res.json({});
+          res.json(200, {});
         });
     });
   });
