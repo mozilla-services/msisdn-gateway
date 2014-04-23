@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+//
+// generate a keypair quick
+//
+
+var jwcrypto = require("jwcrypto");
+
+require("jwcrypto/lib/algs/ds");
+require("jwcrypto/lib/algs/rs");
+
+jwcrypto.generateKeypair({
+    algorithm: "DS",
+    keysize: 256
+  }, function(err, keypair) {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    console.log("{");
+    console.log("    BIDPublicKey: ", keypair.publicKey.serialize(), ",");
+    console.log("    BIDSecretKey: ", keypair.secretKey.serialize());
+    console.log("}");
+});

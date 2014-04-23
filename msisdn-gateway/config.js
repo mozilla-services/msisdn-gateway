@@ -7,6 +7,7 @@
 var convict = require('convict');
 var format = require('util').format;
 var crypto = require('crypto');
+var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
 
 /**
  * Validates the keys are present in the configuration object.
@@ -114,6 +115,14 @@ var conf = convict({
     },
     default: "sha256",
     env: "MSISDN_MAC_ALGORITHM"
+  },
+  BIDPublicKey: {
+    doc: "The Browser ID Public Key",
+    format: validateJWCryptoKey
+  },
+  BIDSecretKey: {
+    doc: "The Browser ID Private Key",
+    format: validateJWCryptoKey
   }
 });
 

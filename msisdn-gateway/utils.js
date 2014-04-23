@@ -10,11 +10,45 @@ var crypto = require("crypto");
  * Build a digits code
  */
 function digitsCode(size) {
-  var nbBytes = Math.ceil(size/2);
+  var nbBytes = Math.ceil(size / 2);
   return parseInt(crypto.randomBytes(nbBytes).toString("hex"), 16)
     .toString().substr(0, size);
 }
 
+/**
+ * Validate JWCrypto Keys
+ */
+function validateJWCryptoKey(keyObj) {
+  if (keyObj === "") {
+    throw new Error("Please generate new JWCrypto keypair using: " +
+                    "node bin/generate-keypair");
+  }
+  if (keyObj.algorithm === 'RS') {
+    if (!keyObj.n) {
+      throw new Error("missing n parameter.");
+    }
+    if (!keyObj.e) {
+      throw new Error("missing e parameter.");
+    }
+  }
+  else { // DS
+    if (!keyObj.y) {
+      throw new Error("missing y parameter.");
+    }
+    if (!keyObj.p) {
+      throw new Error("missing p parameter.");
+    }
+    if (!keyObj.q) {
+      throw new Error("missing y parameter.");
+    }
+    if (!keyObj.g) {
+      throw new Error("missing g parameter.");
+    }
+  }
+  return keyObj;
+}
+
 module.exports = {
-  digitsCode: digitsCode
+  digitsCode: digitsCode,
+  validateJWCryptoKey: validateJWCryptoKey
 };

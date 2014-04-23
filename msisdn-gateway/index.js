@@ -16,11 +16,23 @@ var digitsCode = require("./utils").digitsCode;
 var smsGateway = require("./sms-gateway");
 var validateMSISDN = require("./middleware").validateMSISDN;
 var Token = require("./token").Token;
+var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
+
+var jwcrypto = require('jwcrypto');
+
+// Make sure to load supported algorithms
+require('jwcrypto/lib/algs/rs');
+require('jwcrypto/lib/algs/ds');
+
+var _publicKey = jwcrypto.loadPublicKeyFromObject(conf.get('BIDPublicKey'));
+var _privKey = jwcrypto.loadSecretKeyFromObject(conf.get('BIDSecretKey'));
 
 var ravenClient = new raven.Client(conf.get("sentryDSN"));
 
 var getStorage = require("./storage");
 var storage = getStorage(conf.get("storage"));
+
+var DIGIT_CODE_SIZE = 6;
 
 function logError(err) {
   console.log(err);
@@ -121,7 +133,7 @@ app.get("/", function(req, res) {
  **/
 app.post("/register", requireParams("msisdn"), validateMSISDN,
   function(req, res) {
-    var code = digitsCode(6);
+    var code = digitsCode(DIGIT_CODE_SIZE);
 
     storage.setCode(req.msisdnId, code, function(err) {
       if (err) {
@@ -130,6 +142,7 @@ app.post("/register", requireParams("msisdn"), validateMSISDN,
         return;
       }
       /* Send SMS */
+      // XXX export string in l10n external file.
       smsGateway.sendSMS(req.msisdn,
         "To validate your number please enter the following code: " + code,
         function(err) {
@@ -152,29 +165,80 @@ app.post("/register", requireParams("msisdn"), validateMSISDN,
 /**
  * Ask for a new number code verification
  **/
-app.post("/verify_code", requireParams("msisdn", "code"), validateMSISDN,
+app.post("/verify_code",
+  requireParams("msisdn", "code", "duration", "publicKey"), validateMSISDN,
   function(req, res) {
     var code = req.body.code;
-    storage.verifyCode(req.msisdnId, code, function(err, result) {
-      if (err) {
-        logError(err);
-        res.json(503, "Service Unavailable");
-        return;
-      }
+    var publicKey = req.body.publicKey;
+    var duration = req.body.duration;
 
-      if (result === null) {
-        res.json(404, "Registration not found.");
-        return;
-      }
+    // Validate code
+    if (code.length !== DIGIT_CODE_SIZE) {
+      res.addError("body", "code",
+                   "Code should be " + DIGIT_CODE_SIZE + " long.");
+    }
 
-      if (!result) {
-        res.json(403, "Code error.");
-        return;
-      }
+    // Validate publicKey
+    try {
+      validateJWCryptoKey(publicKey);
+    } catch (err) {
+      res.addError("body", "publicKey", err);
+    }
 
-      // XXX Need to generate a certificate
-      res.json(200, {cert: "Here is your certificate."});
-    });
+    // Validate duration
+    if (typeof duration !== "number" || duration < 1) {
+      res.addError("body", "duration",
+                   "Duration should be a number of seconds.");
+    }
+
+    // Return errors we find some during the validation procedure.
+    if (res.hasErrors()) {
+      res.sendError();
+      return;
+    }
+
+    storage.verifyCode(req.msisdnId, code,
+      function(err, result, verifierSetAt) {
+        if (err) {
+          logError(err);
+          res.json(503, "Service Unavailable");
+          return;
+        }
+
+        if (result === null) {
+          res.json(410, "Code has expired.");
+          return;
+        }
+
+        if (!result) {
+          res.json(403, "Code error.");
+          return;
+        }
+
+        // XXX Need to generate a certificate
+        var now = Date.now();
+
+        jwcrypto.cert.sign({
+          publicKey: jwcrypto.loadPublicKeyFromObject(publicKey),
+          principal: req.msisdnId + "@" + req.get("host")
+        }, {
+          issuer: req.get("host"),
+          // Set issuedAt to 10 seconds ago. Pads for verifier clock skew
+          issuedAt: new Date(now - (10 * 1000)),
+          expiresAt: new Date(now + duration)
+        }, {
+          "fxa-lastAuthAt": now,
+          "fxa-verifiedMSISDN": req.msisdn
+        }, _privKey,
+        function(err, cert) {
+          if (err) {
+            logError(err);
+            res.json(503, "Service Unavailable");
+            return;
+          }
+          res.json(200, {cert: cert, publicKey: _publicKey.serialize()});
+        });
+      });
   });
 
 /**
@@ -182,7 +246,7 @@ app.post("/verify_code", requireParams("msisdn", "code"), validateMSISDN,
  **/
 app.post("/resend_code", requireParams("msisdn"), validateMSISDN,
   function(req, res) {
-    var code = digitsCode(6);
+    var code = digitsCode(DIGIT_CODE_SIZE);
 
     storage.setCode(req.msisdnId, code, function(err) {
       if (err) {
@@ -204,6 +268,7 @@ app.post("/resend_code", requireParams("msisdn"), validateMSISDN,
  **/
 app.post("/unregister", requireParams("msisdn"), validateMSISDN,
   function(req, res) {
+    // XXX should use the tokenId instead of the msisdnId
     storage.cleanSession(req.msisdnId, function(err) {
       if (err) {
         logError(err);

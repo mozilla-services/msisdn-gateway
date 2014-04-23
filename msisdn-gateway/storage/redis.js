@@ -49,13 +49,16 @@ RedisStorage.prototype = {
     });
   },
 
-  setSession: function(msisdnId, msisdnMac, callback) {
-    var key = SESSION_KEY_PREFIX + msisdnId
-    this._client.set(key, msisdnMac, callback);
+  setSession: function(tokenId, sessionToken, callback) {
+    var key = SESSION_KEY_PREFIX + tokenId
+    this._client.set(key, {
+      sessionToken: sessionToken,
+      verifierSetAt: new Date().getTime()
+    }, callback);
   },
 
-  verifySession: function(msisdnId, msisdnMac, callback) {
-    var key = SESSION_KEY_PREFIX + msisdnId
+  verifySession: function(tokenId, sessionToken, callback) {
+    var key = SESSION_KEY_PREFIX + tokenId
     this._client.get(key, function(err, result) {
       if (err) {
         callback(err);
@@ -67,17 +70,16 @@ RedisStorage.prototype = {
         return;
       }
 
-      if (result === msisdnMac) {
-        callback(null, true);
+      if (result.sessionToken === sessionToken) {
+        callback(null, true, result.verifierSetAt);
         return;
       }
-      callback(null, false);
+      callback(null, false, null);
     });
   },
 
-  cleanSession: function(msisdnId, callback) {
-    var codeKey = CODE_KEY_PREFIX + msisdnId;
-    var sessionKey = SESSION_KEY_PREFIX + msisdnId;
+  cleanSession: function(tokenId, callback) {
+    var sessionKey = SESSION_KEY_PREFIX + tokenId;
     this._client.del(codeKey, sessionKey, callback);
   },
 

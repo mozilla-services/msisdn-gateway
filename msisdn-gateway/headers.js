@@ -5,7 +5,7 @@
 "use strict";
 var conf = require("./config").conf;
 
-module.exports = function headersMiddleware(req, res, next){
+module.exports = function headersMiddleware(req, res, next) {
   res.once('header', function() {
     if (res.statusCode === 200 || res.statusCode === 401) {
       res.setHeader('Timestamp', new Date().getTime());
