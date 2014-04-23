@@ -102,7 +102,7 @@ app.get("/__heartbeat__", function(req, res) {
  * Displays some version information at the root of the service.
  **/
 app.get("/", function(req, res) {
-  var credentials = {
+  var serverInfo = {
     name: pjson.name,
     description: pjson.description,
     version: pjson.version,
@@ -111,9 +111,9 @@ app.get("/", function(req, res) {
   };
 
   if (!conf.get("displayVersion")) {
-    delete credentials.version;
+    delete serverInfo.version;
   }
-  res.json(200, credentials);
+  res.json(200, serverInfo);
 });
 
 /**
@@ -172,6 +172,7 @@ app.post("/verify_code", requireParams("msisdn", "code"), validateMSISDN,
         return;
       }
 
+      // XXX Need to generate a certificate
       res.json(200, {cert: "Here is your certificate."});
     });
   });
