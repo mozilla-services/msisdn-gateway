@@ -4,24 +4,15 @@
 
 "use strict";
 
-/**
- * Returns a random integer between min and max
- */
-function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+var crypto = require("crypto");
 
 /**
  * Build a digits code
  */
 function digitsCode(size) {
-  var s = size;
-  var code = "";
-  while (s > 0) {
-    s--;
-    code += getRandomInt(0, 9);
-  }
-  return code;
+  var nbBytes = Math.ceil(size/2);
+  return parseInt(crypto.randomBytes(nbBytes).toString("hex"), 16)
+    .toString().substr(0, size);
 }
 
 module.exports = {
