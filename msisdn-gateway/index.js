@@ -12,10 +12,10 @@ var cors = require("cors");
 var errors = require("connect-validation");
 var logging = require("express-logging");
 var headers = require("./headers");
-var phone = require("phone");
 var hmac = require("./hmac");
 var digitsCode = require("./utils").digitsCode;
 var smsGateway = require("./sms-gateway");
+var validateMSISDN = require("./middleware").validateMSISDN;
 
 var ravenClient = new raven.Client(conf.get("sentryDSN"));
 
@@ -119,121 +119,94 @@ app.get("/", function(req, res) {
 /**
  * Ask for a new number registration
  **/
-app.post("/register", requireParams("msisdn"), function(req, res) {
-  var msisdn = phone(req.body.msisdn);
+app.post("/register", requireParams("msisdn"), validateMSISDN,
+  function(req, res) {
+    var msisdnMac = hmac(req.msisdn, conf.get("msisdnMacSecret"));
+    var code = digitsCode(6);
 
-  if (msisdn === null) {
-    res.sendError("body", "msisdn", "Invalid MSISDN number.");
-    return;
-  }
-  var msisdnId = hmac(msisdn, conf.get('msisdnIdSecret'));
-  var msisdnMac = hmac(msisdn, conf.get("msisdnMacSecret"));
-  var code = digitsCode(6);
-
-  storage.setCode(msisdnId, code, function(err) {
-    if (err) {
-      logError(err);
-      res.json(503, "Service Unavailable");
-      return;
-    }
-    /* Send SMS */
-    smsGateway.sendSMS(msisdn,
-      "To validate your number please enter the following code: " + code,
-      function(err) {
-        var hawkCredentials = {
-          id: msisdnId, key: msisdnMac,
-          algorithm: conf.get('msisdnMacAlgorithm')
-        };
-        res.json(hawkCredentials);
-      });
+    storage.setCode(req.msisdnId, code, function(err) {
+      if (err) {
+        logError(err);
+        res.json(503, "Service Unavailable");
+        return;
+      }
+      /* Send SMS */
+      smsGateway.sendSMS(req.msisdn,
+        "To validate your number please enter the following code: " + code,
+        function(err) {
+          var hawkCredentials = {
+            id: req.msisdnId,
+            key: msisdnMac,
+            algorithm: conf.get('msisdnMacAlgorithm')
+          };
+          res.json(hawkCredentials);
+        });
+    });
   });
-});
 
 /**
  * Ask for a new number code verification
  **/
-app.post("/verify_code", requireParams("msisdn", "code"), function(req, res) {
-  var msisdn = phone(req.body.msisdn);
+app.post("/verify_code", requireParams("msisdn", "code"), validateMSISDN,
+  function(req, res) {
+    var code = req.body.code;
+    storage.verifyCode(req.msisdnId, code, function(err, result) {
+      if (err) {
+        logError(err);
+        res.json(503, "Service Unavailable");
+        return;
+      }
 
-  if (msisdn === null) {
-    res.sendError("body", "msisdn", "Invalid MSISDN number.");
-    return;
-  }
+      if (result === null) {
+        res.json(404, "Registration not found.");
+        return;
+      }
 
-  var msisdnId = hmac(msisdn, conf.get("msisdnIdSecret"));
-  var code = req.body.code;
-  storage.verifyCode(msisdnId, code, function(err, result) {
-    if (err) {
-      logError(err);
-      res.json(503, "Service Unavailable");
-      return;
-    }
+      if (!result) {
+        res.json(403, "Code error.");
+        return;
+      }
 
-    if (result === null) {
-      res.json(404, "Registration not found.");
-      return;
-    }
-
-    if (!result) {
-      res.json(403, "Code error.");
-      return;
-    }
-
-    res.json(200, {cert: "Here is your certificate."});
+      res.json(200, {cert: "Here is your certificate."});
+    });
   });
-});
 
 /**
  * Ask for a new verification code
  **/
-app.post("/resend_code", requireParams("msisdn"), function(req, res) {
-  var msisdn = phone(req.body.msisdn);
+app.post("/resend_code", requireParams("msisdn"), validateMSISDN,
+  function(req, res) {
+    var code = digitsCode(6);
 
-  if (msisdn === null) {
-    res.sendError("body", "msisdn", "Invalid MSISDN number.");
-    return;
-  }
-
-  var msisdnId = hmac(msisdn, conf.get("msisdnIdSecret"));
-  var code = digitsCode(6);
-
-  storage.setCode(msisdnId, code, function(err) {
-    if (err) {
-      logError(err);
-      res.json(503, "Service Unavailable");
-      return;
-    }
-    /* Send SMS */
-    smsGateway.sendSMS(msisdn,
-      "To validate your number please enter the following code: " + code,
-      function(err) {
-        res.json({});
-      });
+    storage.setCode(req.msisdnId, code, function(err) {
+      if (err) {
+        logError(err);
+        res.json(503, "Service Unavailable");
+        return;
+      }
+      /* Send SMS */
+      smsGateway.sendSMS(req.msisdn,
+        "To validate your number please enter the following code: " + code,
+        function(err) {
+          res.json({});
+        });
+    });
   });
-});
 
 /**
  * Unregister the session
  **/
-app.post("/unregister", requireParams("msisdn"), function(req, res) {
-  var msisdn = phone(req.body.msisdn);
-
-  if (msisdn === null) {
-    res.sendError("body", "msisdn", "Invalid MSISDN number.");
-    return;
-  }
-
-  var msisdnId = hmac(msisdn, conf.get("msisdnIdSecret"));
-
-  storage.cleanSession(msisdnId, function(err) {
-    if (err) {
-      logError(err);
-      res.json(503, "Service Unavailable");
-      return;
-    }
-    res.json(200, {});
+app.post("/unregister", requireParams("msisdn"), validateMSISDN,
+  function(req, res) {
+    storage.cleanSession(req.msisdnId, function(err) {
+      if (err) {
+        logError(err);
+        res.json(503, "Service Unavailable");
+        return;
+      }
+      res.json(200, {});
+    });
   });
-});
 
 app.listen(conf.get("port"), conf.get("host"), function(){
   console.log("Server listening on http://" +
