@@ -14,10 +14,18 @@ var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
  *
  * @param {List} keys  A list of keys that must be present.
  **/
-function validateKeys(keys) {
+function validateKeys(keys, empty) {
+  if (empty === undefined) {
+    empty = false;
+  }
+
   return function(val) {
-    if (!val)
-      throw new Error("Should be defined");
+    if (!val) {
+      if (!empty) {
+        throw new Error("Should be defined");
+      }
+      return;
+    }
     keys.forEach(function(key) {
       if (!val.hasOwnProperty(key))
         throw new Error(format("Should have a %s property", key));
@@ -129,6 +137,11 @@ var conf = convict({
   BIDSecretKey: {
     doc: "The Browser ID Private Key",
     format: validateJWCryptoKey
+  },
+  leonixCredentials: {
+    format: validateKeys(["endpoint", "service", "login",
+                          "pwd", "source"], true),
+    default: ""
   }
 });
 
