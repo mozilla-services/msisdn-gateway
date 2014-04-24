@@ -57,6 +57,8 @@ How to run it?
 
 You can create your configuration file in `config/{NODE_ENV}.json`
 
+You need to generate the BID keys by running `./bin/generate-keypair` and add them to your configuration file.
+
 `development` is the environment by default.
 
     make runserver
