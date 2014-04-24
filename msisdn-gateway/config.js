@@ -142,6 +142,11 @@ var conf = convict({
     format: validateKeys(["endpoint", "service", "login",
                           "pwd", "source"], true),
     default: ""
+  },
+  nexmoCredentials: {
+    format: validateKeys(["endpoint", "api_key", "api_secret",
+                          "from"], true),
+    default: ""
   }
 });
 

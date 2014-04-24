@@ -4,20 +4,21 @@
 "use strict";
 
 var Leonix = require("./sms/leonix");
+var Nexmo = require("./sms/nexmo");
 
 var providers = {
   "+33": Leonix
 };
 
 function sendSMS(msisdn, message, callback) {
-  var areaCode = msisdn.substr(0, 3);
+  var areaCode = msisdn.substr(0, 3), provider;
   if (providers.hasOwnProperty(areaCode)) {
-    var provider = new providers[areaCode]();
-    provider.sendSms(msisdn, message, callback);
-    return;
+    provider = new providers[areaCode]();
+  } else {
+    provider = new Nexmo();
   }
   console.log(msisdn, message);
-  callback(null, {mtNumber: "123"});
+  provider.sendSms(msisdn, message, callback);
 }
 
 module.exports = {
