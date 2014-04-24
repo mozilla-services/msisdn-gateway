@@ -97,11 +97,7 @@ function hawkMiddleware(req, res, next) {
     client.getSession(id, callback);
   }, {},
     function(err, credentials, artifacts) {
-      req.hawk = {
-        err: err,
-        credentials: credentials,
-        artifacts: artifacts
-      };
+      req.hawk = artifacts;
 
       if (err) {
         if (err.isMissing) {
@@ -110,6 +106,11 @@ function hawkMiddleware(req, res, next) {
           return;
         }
         logError(err);
+      }
+
+      if (credentials === null) {
+        res.json(403, "Forbidden");
+        return;
       }
 
       /* Make sure we do it only once */
@@ -202,7 +203,7 @@ app.post("/register", requireParams("msisdn"), validateMSISDN,
  **/
 app.post("/unregister", requireParams("msisdn"), validateMSISDN,
   hawkMiddleware, function(req, res) {
-    storage.cleanSession(req.hawk.artifacts.id, function(err) {
+    storage.cleanSession(req.hawk.id, function(err) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");
@@ -216,7 +217,7 @@ app.post("/unregister", requireParams("msisdn"), validateMSISDN,
  * Ask for a new number registration
  **/
 app.post("/sms/verify", requireParams("msisdn"), validateMSISDN,
-  function(req, res) {
+  hawkMiddleware, function(req, res) {
     var code = digitsCode(DIGIT_CODE_SIZE);
 
     storage.setCode(req.msisdnId, code, function(err) {
@@ -241,7 +242,7 @@ app.post("/sms/verify", requireParams("msisdn"), validateMSISDN,
  **/
 app.post("/sms/verify_code",
   requireParams("msisdn", "code", "duration", "publicKey"), validateMSISDN,
-  function(req, res) {
+  hawkMiddleware, function(req, res) {
     var code = req.body.code;
     var publicKey = req.body.publicKey;
     var duration = req.body.duration;
@@ -319,7 +320,7 @@ app.post("/sms/verify_code",
  * Ask for a new verification code
  **/
 app.post("/sms/resend_code", requireParams("msisdn"), validateMSISDN,
-  function(req, res) {
+  hawkMiddleware, function(req, res) {
     var code = digitsCode(DIGIT_CODE_SIZE);
 
     storage.setCode(req.msisdnId, code, function(err) {
