@@ -49,15 +49,12 @@ RedisStorage.prototype = {
     });
   },
 
-  setSession: function(tokenId, sessionToken, callback) {
+  setSession: function(tokenId, authKey, callback) {
     var key = SESSION_KEY_PREFIX + tokenId
-    this._client.set(key, {
-      sessionToken: sessionToken,
-      verifierSetAt: new Date().getTime()
-    }, callback);
+    this._client.set(key, authKey, callback);
   },
 
-  verifySession: function(tokenId, sessionToken, callback) {
+  verifySession: function(tokenId, authKey, callback) {
     var key = SESSION_KEY_PREFIX + tokenId
     this._client.get(key, function(err, result) {
       if (err) {
@@ -70,17 +67,17 @@ RedisStorage.prototype = {
         return;
       }
 
-      if (result.sessionToken === sessionToken) {
-        callback(null, true, result.verifierSetAt);
+      if (result === authKey) {
+        callback(null, true);
         return;
       }
-      callback(null, false, null);
+      callback(null, false);
     });
   },
 
   cleanSession: function(tokenId, callback) {
     var sessionKey = SESSION_KEY_PREFIX + tokenId;
-    this._client.del(codeKey, sessionKey, callback);
+    this._client.del(sessionKey, callback);
   },
 
   drop: function(callback) {

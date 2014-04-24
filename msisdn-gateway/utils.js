@@ -11,8 +11,12 @@ var crypto = require("crypto");
  */
 function digitsCode(size) {
   var nbBytes = Math.ceil(size / 2);
-  return parseInt(crypto.randomBytes(nbBytes).toString("hex"), 16)
-    .toString().substr(0, size);
+  var code = parseInt(crypto.randomBytes(nbBytes)
+    .toString("hex"), 16).toString().substr(0, size);
+  // If the code starts with zeros, parseInt removed them so we have
+  // to put them back.
+  while (code.length < size) code = "0" + code;
+  return code;
 }
 
 /**
@@ -39,7 +43,7 @@ function validateJWCryptoKey(keyObj) {
       throw new Error("missing p parameter.");
     }
     if (!keyObj.q) {
-      throw new Error("missing y parameter.");
+      throw new Error("missing q parameter.");
     }
     if (!keyObj.g) {
       throw new Error("missing g parameter.");
@@ -49,6 +53,7 @@ function validateJWCryptoKey(keyObj) {
 }
 
 module.exports = {
+  crypto: crypto,
   digitsCode: digitsCode,
   validateJWCryptoKey: validateJWCryptoKey
 };

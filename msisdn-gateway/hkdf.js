@@ -8,10 +8,6 @@ var HKDF = require('hkdf');
 
 var NAMESPACE = 'identity.mozilla.com/picl/v1/';
 
-function KWE(name, msisdn) {
-  return new Buffer(NAMESPACE + name + ':' + msisdn);
-}
-
 function KW(name) {
   return new Buffer(NAMESPACE + name);
 }
@@ -22,6 +18,5 @@ function hkdf(km, info, salt, len, callback) {
 }
 
 hkdf.KW = KW;
-hkdf.KWE = KWE;
 
 module.exports = hkdf;

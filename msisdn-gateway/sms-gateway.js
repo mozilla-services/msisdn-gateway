@@ -6,7 +6,7 @@
 
 function sendSMS(msisdn, message, callback) {
   console.log(msisdn, message);
-  callback(null);
+  callback(null, {mtNumber: "123"});
 }
 
 module.exports = {

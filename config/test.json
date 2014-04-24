@@ -1,6 +1,7 @@
 {
   "host": "localhost",
   "port": 5000,
+  "apiPrefix": "/v1/msisdn",
   "storage": {
     "engine": "redis",
     "settings": {

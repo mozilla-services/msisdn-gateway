@@ -12,6 +12,13 @@ var msisdn = "0123456489";
 var msisdnMac = hmac(msisdn, conf.get("msisdnMacSecret"));
 var code = "123456";
 
+/* var sessionToken = "164bafe9a57c3c175110c4947dcec5d16006a07da56b15530a" +
+  "5f2c3087c09c42"; */
+var tokenId = "8848164fde6943377ed301bfa4f2e3792f737e5f535998d4ddcc218" +
+  "3c5be4523";
+var authKey = "37387f4e03e5767ba8266f004003423202778b55041ea70c0d00256" +
+  "e78a3bad8";
+
 describe("Storage", function() {
   function testStorage(name, createStorage) {
     var storage;
@@ -58,7 +65,7 @@ describe("Storage", function() {
             });
         });
 
-        it("should return null on invalid msisdn.", function(done) {
+        it("should return null on inexisting code.", function(done) {
           storage.setCode(msisdnMac, code,
             function(err) {
               if (err)  {
@@ -70,7 +77,74 @@ describe("Storage", function() {
               });
             });
         });
+      });
 
+      describe("#setSession", function() {
+        it("should store the session.", function(done) {
+          storage.setSession(tokenId, authKey,
+            function(err) {
+              if (err)  {
+                throw err;
+              }
+              storage.verifySession(tokenId, authKey, function(err, value){
+                expect(value).to.equal(true);
+                done();
+              });
+            });
+        });
+      });
+
+      describe("#verifySession", function() {
+        it("should return false on invalid session.", function(done) {
+          storage.setSession(tokenId, authKey,
+            function(err) {
+              if (err)  {
+                throw err;
+              }
+              storage.verifySession(tokenId, "wrong-authKey",
+                function(err, value){
+                  expect(value).to.equal(false);
+                  done();
+                });
+            });
+        });
+
+        it("should return null on invalid tokenId.", function(done) {
+          storage.setSession(tokenId, authKey,
+            function(err) {
+              if (err)  {
+                throw err;
+              }
+              storage.verifySession("wrong-tokenId", authKey,
+                function(err, value){
+                  expect(value).to.equal(null);
+                  done();
+                });
+            });
+        });
+      });
+
+      describe("#cleanSession", function() {
+        it("should remove everything related to the session", function(done) {
+          storage.setSession(tokenId, authKey,
+            function(err) {
+              if (err)  {
+                throw err;
+              }
+              storage.cleanSession(tokenId, function(err) {
+                if (err)  {
+                  throw err;
+                }
+                storage.verifySession(tokenId, authKey, function(err, value){
+                  if (err)  {
+                    throw err;
+                  }
+                  expect(value).to.equal(null);
+                  done();
+                });
+              });
+            });
+        });
       });
 
       describe("#ping", function() {

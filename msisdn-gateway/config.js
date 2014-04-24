@@ -59,6 +59,12 @@ var conf = convict({
     default: 5000,
     env: "PORT"
   },
+  apiPrefix: {
+    doc: "The API Prefix i.e: `/v1/msisdn` (no trailing slash)",
+    format: String,
+    default: "",
+    env: "API_PREFIX"
+  },
   displayVersion: {
     doc: "Display the server version on the homepage.",
     default: true,

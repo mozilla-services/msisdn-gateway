@@ -9,7 +9,6 @@ var supertest = require("supertest");
 var app = require("../msisdn-gateway").app;
 var requireParams = require("../msisdn-gateway").requireParams;
 
-
 describe("index.js", function() {
   var jsonReq;
 

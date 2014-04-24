@@ -133,6 +133,45 @@ app.get("/", function(req, res) {
  **/
 app.post("/register", requireParams("msisdn"), validateMSISDN,
   function(req, res) {
+    var token = new Token();
+    token.getCredentials(function(tokenId, authKey, sessionToken) {
+      storage.setSession(tokenId, authKey, function(err) {
+        if (err) {
+          logError(err);
+          res.json(503, "Service Unavailable");
+          return;
+        }
+
+        res.json(200, {
+          msisdnSessionToken: sessionToken,
+          verificationUrl: req.protocol + "://" + req.get("host") +
+            conf.get("apiPrefix") + "/sms/verify"
+        });
+      });
+    });
+  });
+
+/**
+ * Unregister the session
+ **/
+app.post("/unregister", requireParams("msisdn"), validateMSISDN,
+  function(req, res) {
+    // XXX should use the tokenId instead of the msisdnId
+    storage.cleanSession(req.msisdnId, function(err) {
+      if (err) {
+        logError(err);
+        res.json(503, "Service Unavailable");
+        return;
+      }
+      res.json(200, {});
+    });
+  });
+
+/**
+ * Ask for a new number registration
+ **/
+app.post("/sms/verify", requireParams("msisdn"), validateMSISDN,
+  function(req, res) {
     var code = digitsCode(DIGIT_CODE_SIZE);
 
     storage.setCode(req.msisdnId, code, function(err) {
@@ -145,27 +184,17 @@ app.post("/register", requireParams("msisdn"), validateMSISDN,
       // XXX export string in l10n external file.
       smsGateway.sendSMS(req.msisdn,
         "To validate your number please enter the following code: " + code,
-        function(err) {
-          var token = new Token();
-          token.getCredentials(function(tokenId, sessionToken) {
-            storage.setSession(tokenId, sessionToken, function(err) {
-              if (err) {
-                logError(err);
-                res.json(503, "Service Unavailable");
-                return;
-              }
-
-              res.json(200, {msisdnSessionToken: sessionToken});
-            });
-          });
+        function(err, data) {
+          res.json(200, data);
         });
     });
   });
 
+
 /**
  * Ask for a new number code verification
  **/
-app.post("/verify_code",
+app.post("/sms/verify_code",
   requireParams("msisdn", "code", "duration", "publicKey"), validateMSISDN,
   function(req, res) {
     var code = req.body.code;
@@ -244,7 +273,7 @@ app.post("/verify_code",
 /**
  * Ask for a new verification code
  **/
-app.post("/resend_code", requireParams("msisdn"), validateMSISDN,
+app.post("/sms/resend_code", requireParams("msisdn"), validateMSISDN,
   function(req, res) {
     var code = digitsCode(DIGIT_CODE_SIZE);
 
@@ -260,22 +289,6 @@ app.post("/resend_code", requireParams("msisdn"), validateMSISDN,
         function(err) {
           res.json(200, {});
         });
-    });
-  });
-
-/**
- * Unregister the session
- **/
-app.post("/unregister", requireParams("msisdn"), validateMSISDN,
-  function(req, res) {
-    // XXX should use the tokenId instead of the msisdnId
-    storage.cleanSession(req.msisdnId, function(err) {
-      if (err) {
-        logError(err);
-        res.json(503, "Service Unavailable");
-        return;
-      }
-      res.json(200, {});
     });
   });
 
