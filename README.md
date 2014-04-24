@@ -22,7 +22,7 @@ Registration process flow
 
   -- The server send a SMS with a code and return the number used to send it (for silent SMS catch)
 
-  3. The client ask for ``/verify_code`` with the sessionToken and the code and get a BrowserID certificate.
+  3. The client ask for ``/sms/verify_code`` with the sessionToken and the code and get a BrowserID certificate.
   4. If needed the client can also ask for a new code with ``/sms/resend_code`` and its sessionToken.
   5. Finally the client can destroy its registration using ``/unregister`` and its sessionToken.
 
