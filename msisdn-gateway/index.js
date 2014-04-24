@@ -17,6 +17,7 @@ var smsGateway = require("./sms-gateway");
 var validateMSISDN = require("./middleware").validateMSISDN;
 var Token = require("./token").Token;
 var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
+var Hawk = require('hawk');
 
 var jwcrypto = require('jwcrypto');
 
@@ -88,6 +89,51 @@ function requireParams() {
 }
 
 /**
+ * The HawkMiddleware make sure to sign each request.
+ */
+function hawkMiddleware(req, res, next) {
+  Hawk.server.authenticate(req, function(id, callback) {
+    var client = getStorage(conf.get("storage"));
+    client.getSession(id, callback);
+  }, {},
+    function(err, credentials, artifacts) {
+      req.hawk = {
+        err: err,
+        credentials: credentials,
+        artifacts: artifacts
+      };
+
+      if (err) {
+        if (err.isMissing) {
+          res.setHeader("WWW-Authenticate", "Hawk");
+          res.json(401, err.output.payload);
+          return;
+        }
+        logError(err);
+      }
+
+      /* Make sure we do it only once */
+      if (res._hawkEnabled) {
+        next();
+        return;
+      }
+
+      var writeHead = res.writeHead;
+      res._hawkEnabled = true;
+      res.writeHead = function hawkWriteHead() {
+        var header = Hawk.server.header(
+          credentials, artifacts, {
+            payload: res.body,
+            contentType: res.get('Content-Type')
+          });
+        res.setHeader("Server-Authorization", header);
+        writeHead.apply(res, arguments);
+      };
+      next();
+    });
+}
+
+/**
  * Enable CORS for all requests.
  **/
 app.all("*", corsEnabled);
@@ -155,9 +201,8 @@ app.post("/register", requireParams("msisdn"), validateMSISDN,
  * Unregister the session
  **/
 app.post("/unregister", requireParams("msisdn"), validateMSISDN,
-  function(req, res) {
-    // XXX should use the tokenId instead of the msisdnId
-    storage.cleanSession(req.msisdnId, function(err) {
+  hawkMiddleware, function(req, res) {
+    storage.cleanSession(req.hawk.artifacts.id, function(err) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");

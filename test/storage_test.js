@@ -86,37 +86,25 @@ describe("Storage", function() {
               if (err)  {
                 throw err;
               }
-              storage.verifySession(tokenId, authKey, function(err, value){
-                expect(value).to.equal(true);
+              storage.getSession(tokenId, function(err, value){
+                expect(value).to.eql({
+                  key: authKey,
+                  algorithm: "sha256"
+                });
                 done();
               });
             });
         });
       });
 
-      describe("#verifySession", function() {
-        it("should return false on invalid session.", function(done) {
-          storage.setSession(tokenId, authKey,
-            function(err) {
-              if (err)  {
-                throw err;
-              }
-              storage.verifySession(tokenId, "wrong-authKey",
-                function(err, value){
-                  expect(value).to.equal(false);
-                  done();
-                });
-            });
-        });
-
+      describe("#getSession", function() {
         it("should return null on invalid tokenId.", function(done) {
           storage.setSession(tokenId, authKey,
             function(err) {
               if (err)  {
                 throw err;
               }
-              storage.verifySession("wrong-tokenId", authKey,
-                function(err, value){
+              storage.getSession("wrong-tokenId", function(err, value){
                   expect(value).to.equal(null);
                   done();
                 });
@@ -135,7 +123,7 @@ describe("Storage", function() {
                 if (err)  {
                   throw err;
                 }
-                storage.verifySession(tokenId, authKey, function(err, value){
+                storage.getSession(tokenId, function(err, value){
                   if (err)  {
                     throw err;
                   }

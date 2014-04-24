@@ -19,7 +19,7 @@ describe("Token", function() {
       var sessionToken = crypto.randomBytes(32).toString("hex");
       var token = new Token(sessionToken);
       expect(token.hasOwnProperty("sessionToken")).to.equal(true);
-      expect(token.sessionToken).to.eql(sessionToken);      
+      expect(token.sessionToken).to.eql(sessionToken);
     });
   });
 

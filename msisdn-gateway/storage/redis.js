@@ -54,8 +54,8 @@ RedisStorage.prototype = {
     this._client.set(key, authKey, callback);
   },
 
-  verifySession: function(tokenId, authKey, callback) {
-    var key = SESSION_KEY_PREFIX + tokenId
+  getSession: function(tokenId, callback) {
+    var key = SESSION_KEY_PREFIX + tokenId;
     this._client.get(key, function(err, result) {
       if (err) {
         callback(err);
@@ -67,11 +67,10 @@ RedisStorage.prototype = {
         return;
       }
 
-      if (result === authKey) {
-        callback(null, true);
-        return;
-      }
-      callback(null, false);
+      callback(null, {
+        key: result,
+        algorithm: "sha256"
+      });
     });
   },
 

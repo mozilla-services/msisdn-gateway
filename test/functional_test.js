@@ -12,6 +12,8 @@ var app = require("../msisdn-gateway").app;
 var conf = require("../msisdn-gateway").conf;
 var storage = require("../msisdn-gateway").storage;
 var smsGateway = require("../msisdn-gateway/sms-gateway");
+var Token = require("../msisdn-gateway/token").Token;
+var Hawk = require("hawk");
 
 var testKeyPair = require("./testKeyPair.json");
 
@@ -238,11 +240,38 @@ describe("HTTP API exposed by the server", function() {
     });
 
     it("should clean the session.", function(done) {
-      sandbox.stub(storage, "cleanSession",
-        function(msisdn, cb) {
-          cb(null);
+      var token = new Token();
+      token.getCredentials(function(tokenId, authKey) {
+        var credentials = {
+          id: tokenId,
+          key: authKey,
+          algorithm: "sha256"
+        };
+        storage.setSession(tokenId, authKey, function(err) {
+          if (err) {
+            throw err;
+          }
+
+          var header = Hawk.client.header(
+            'http://' + jsonReq.host + '/unregister', 'POST', {
+              credentials: credentials,
+              ext: "msisdn-gateway"
+            });
+          jsonReq.set("Authorization", header.field)
+            .send({msisdn: "+33123456789"}).expect(200).end(function(err) {
+              if (err) {
+                throw err;
+              }
+              storage.getSession(tokenId, function(err, result) {
+                if (err) {
+                  throw err;
+                }
+                expect(result).to.equal(null);
+                done();
+              });
+            });
         });
-      jsonReq.send({msisdn: "+33123456789"}).expect(200).end(done);
+      });
     });
   });
 
