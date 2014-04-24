@@ -42,9 +42,7 @@ function hawkRequest(jsonReq, callback) {
       if (err) {
         throw err;
       }
-      
-      var header = Hawk.client.header(
-        'http://' + jsonReq.host + '/unregister', 'POST', {
+      var header = Hawk.client.header(jsonReq.url, 'POST', {
           credentials: credentials,
           ext: "msisdn-gateway"
         });
@@ -243,12 +241,12 @@ describe("HTTP API exposed by the server", function() {
     beforeEach(function() {
       jsonReq = supertest(app)
         .post('/unregister')
-        .type('json');
-        //.expect('Content-Type', /json/);
+        .type('json')
+        .expect('Content-Type', /json/);
     });
 
     it("should require the MSISDN params", function(done) {
-      jsonReq.send({}).expect(400).end(function(err, res) {
+      hawkRequest(jsonReq.send({}).expect(400), function(err, res) {
         if (err) throw err;
         expectFormatedError(res.body, "body", "msisdn");
         done();
@@ -256,12 +254,13 @@ describe("HTTP API exposed by the server", function() {
     });
 
     it("should require a valid MSISDN number", function(done) {
-      jsonReq.send({msisdn: "0123456789"}).expect(400).end(function(err, res) {
-        if (err) throw err;
-        expectFormatedError(res.body, "body", "msisdn",
-                            "Invalid MSISDN number.");
-        done();
-      });
+      hawkRequest(jsonReq.send({msisdn: "0123456789"}).expect(400),
+        function(err, res) {
+          if (err) throw err;
+          expectFormatedError(res.body, "body", "msisdn",
+                              "Invalid MSISDN number.");
+          done();
+        });
     });
 
     it("should clean the session.", function(done) {

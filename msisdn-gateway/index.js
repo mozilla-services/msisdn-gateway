@@ -100,12 +100,14 @@ function hawkMiddleware(req, res, next) {
       req.hawk = artifacts;
 
       if (err) {
-        if (err.isMissing) {
-          res.setHeader("WWW-Authenticate", "Hawk");
-          res.json(401, err.output.payload);
-          return;
+        if (!err.isMissing) {
+          logError(err, artifacts);
         }
-        logError(err);
+
+        res.setHeader("WWW-Authenticate",
+                      err.output.headers["WWW-Authenticate"]);
+        res.json(401, err.output.payload);
+        return;
       }
 
       if (credentials === null) {
@@ -201,8 +203,8 @@ app.post("/register", requireParams("msisdn"), validateMSISDN,
 /**
  * Unregister the session
  **/
-app.post("/unregister", requireParams("msisdn"), validateMSISDN,
-  hawkMiddleware, function(req, res) {
+app.post("/unregister", hawkMiddleware, requireParams("msisdn"),
+  validateMSISDN, function(req, res) {
     storage.cleanSession(req.hawk.id, function(err) {
       if (err) {
         logError(err);
@@ -216,8 +218,8 @@ app.post("/unregister", requireParams("msisdn"), validateMSISDN,
 /**
  * Ask for a new number registration
  **/
-app.post("/sms/verify", requireParams("msisdn"), validateMSISDN,
-  hawkMiddleware, function(req, res) {
+app.post("/sms/verify", hawkMiddleware, requireParams("msisdn"),
+  validateMSISDN, function(req, res) {
     var code = digitsCode(DIGIT_CODE_SIZE);
 
     storage.setCode(req.msisdnId, code, function(err) {
@@ -229,7 +231,8 @@ app.post("/sms/verify", requireParams("msisdn"), validateMSISDN,
       /* Send SMS */
       // XXX export string in l10n external file.
       smsGateway.sendSMS(req.msisdn,
-        "To validate your number please enter the following code: " + code,
+        "To validate your number please enter the following code: " + code +
+        " ",
         function(err, data) {
           res.json(200, data);
         });
@@ -240,9 +243,9 @@ app.post("/sms/verify", requireParams("msisdn"), validateMSISDN,
 /**
  * Ask for a new number code verification
  **/
-app.post("/sms/verify_code",
-  requireParams("msisdn", "code", "duration", "publicKey"), validateMSISDN,
-  hawkMiddleware, function(req, res) {
+app.post("/sms/verify_code", hawkMiddleware, requireParams(
+  "msisdn", "code", "duration", "publicKey"), validateMSISDN,
+  function(req, res) {
     var code = req.body.code;
     var publicKey = req.body.publicKey;
     var duration = req.body.duration;
@@ -319,8 +322,8 @@ app.post("/sms/verify_code",
 /**
  * Ask for a new verification code
  **/
-app.post("/sms/resend_code", requireParams("msisdn"), validateMSISDN,
-  hawkMiddleware, function(req, res) {
+app.post("/sms/resend_code", hawkMiddleware, requireParams("msisdn"),
+  validateMSISDN, function(req, res) {
     var code = digitsCode(DIGIT_CODE_SIZE);
 
     storage.setCode(req.msisdnId, code, function(err) {

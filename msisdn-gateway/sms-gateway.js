@@ -6,16 +6,20 @@
 var Leonix = require("./sms/leonix");
 var Nexmo = require("./sms/nexmo");
 
-var providers = {
-  "+33": Leonix
-};
+var providers = {default: new Nexmo()};
+
+try {
+  providers["+33"] = new Leonix();
+} catch (err) {
+  console.log("Leonix is not configured - " + err);
+}
 
 function sendSMS(msisdn, message, callback) {
   var areaCode = msisdn.substr(0, 3), provider;
   if (providers.hasOwnProperty(areaCode)) {
-    provider = new providers[areaCode]();
+    provider = providers[areaCode];
   } else {
-    provider = new Nexmo();
+    provider = providers.default;
   }
   console.log(msisdn, message);
   provider.sendSms(msisdn, message, callback);
