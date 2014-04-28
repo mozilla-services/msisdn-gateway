@@ -36,13 +36,14 @@ This flow requires support from the operator to assure that the phone number or 
   * [POST /v1/msisdn/unregister](#post-v1msisdnunregister) :lock:
   * [POST /v1/msisdn/network/verify](#post-v1msisdnnetworkverify) :lock:
   * [POST /v1/msisdn/telephony/verify](#post-v1msisdntelephonyverify) :lock:
-  * [POST /v1/msisdn/sms/verify](#post-v1msisdnsmsverify) :lock:
+  * [POST /v1/msisdn/sms_mt/verify](#post-v1msisdnsms_mtverify) :lock:
+  * [POST /v1/msisdn/sms_mo_mt/verify](#post-v1msisdnsms_mo_mtverify) :lock:
   * [POST /v1/msisdn/sms/verify_code](#post-v1msisdnverify_code) :lock:
   * [POST /v1/msisdn/sms/resend_code](#post-v1msisdnresend_code) :lock:
 
 ## POST /v1/msisdn/register
 
-Starts the registration of a MSISDN in E.164 format. The verification service checks the available verification mechanism according to the given network information (mcc, mnc and roaming) and replies back with a session token and a verification URL corresponding to the chosen verification mechanism.
+Starts a registration a MSISDN registration session. The verification service checks the available verification mechanism according to the given network information (mcc, mnc and roaming) and replies back with a session token and a verification URL corresponding to the chosen verification mechanism.
 
 ### Request
 
@@ -52,7 +53,6 @@ curl -v \
 -H "Content-Type: application/json" \
 "https://api.accounts.firefox.com/v1/msisdn/register" \
 -d '{
-  "msisdn": "+442071838750",
   "mcc": "214",
   "mnc": "07",
   "roaming": false
@@ -60,7 +60,6 @@ curl -v \
 ```
 
 ___Parameters___
-* `msisdn` - a MSISDN in E.164 format
 * `mcc` - [Mobile Country Code](http://es.wikipedia.org/wiki/MCC/MNC)
 * `mnc` - [Mobile Network Code](http://es.wikipedia.org/wiki/MCC/MNC)
 * `roaming` - boolean that indicates if the device is on roaming or not
@@ -72,7 +71,7 @@ Successful requests will produce a "200 OK" response with following format:
 ```json
 {
   "msisdnSessionToken": "27cd4f4a4aa03d7d186a2ec81cbf19d5c8a604713362df9ee15c4f4a4aa03d7d",
-  "verificationUrl": "https://api.accounts.firefox.com/v1/msisdn/sms/verify"
+  "verificationUrl": "https://api.accounts.firefox.com/v1/msisdn/sms_mt/verify"
 }
 ```
 
@@ -166,7 +165,7 @@ The signed certificate includes these additional claims:
 
 ## POST /v1/msisdn/telephony/verify
 
-## POST /v1/msisdn/sms/verify
+## POST /v1/msisdn/sms_mt/verify
 
 ### Request
 
@@ -176,7 +175,7 @@ The signed certificate includes these additional claims:
 curl -v \
 -X POST \
 -H "Content-Type: application/json" \
-"https://api.accounts.firefox.com/v1/msisdn/sms/verify" \
+"https://api.accounts.firefox.com/v1/msisdn/sms_mt/verify" \
 -H 'Authorization: Hawk id="d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d", ts="1373391043", nonce="ohQjqb", hash="vBODPWhDhiRWM4tmI9qp+np+3aoqEFzdGuGk0h7bh9w=", mac="LAnpP3P2PXelC6hUoUaHP72nCqY5Iibaa3eeiGBqIIU="' \
 -d '{
   "msisdn": "+442071838750"
@@ -184,7 +183,35 @@ curl -v \
 ```
 
 ___Parameters___
-* `msisdn` - a MSISDN in E.164 format. If the client provides this parameter the server will default to an SMS-MT flow. If the parameter is not provided, the server will check if an SMS-MO + SMS-MT is possible and will return an error otherwise.
+* `msisdn` - a MSISDN in E.164 format.
+
+### Response
+
+Successful requests will produce a "200 OK" response with following format:
+
+```json
+{
+  "mtNumber": "123"
+}
+```
+___Parameters___
+* `mtNumber` - Phone number or short code that the server will use to send the verification SMS. This is useful for the client to silence the reception of the SMS.
+
+## POST /v1/msisdn/sms_mo_mt/verify
+
+### Request
+
+:lock: HAWK-authenticated with a `msisdnSessionToken`.
+
+```sh
+curl -v \
+-X POST \
+-H "Content-Type: application/json" \
+"https://api.accounts.firefox.com/v1/msisdn/sms_mo_mt/verify" \
+-H 'Authorization: Hawk id="d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d", ts="1373391043", nonce="ohQjqb", hash="vBODPWhDhiRWM4tmI9qp+np+3aoqEFzdGuGk0h7bh9w=", mac="LAnpP3P2PXelC6hUoUaHP72nCqY5Iibaa3eeiGBqIIU="' \
+-d '{
+}'
+```
 
 ### Response
 
@@ -193,12 +220,14 @@ Successful requests will produce a "200 OK" response with following format:
 ```json
 {
   "mtNumber": "123",
-  "moNumber": "234"
+  "moNumber": "234",
+  "smsBody": "RandomUniqueID"
 }
 ```
 ___Parameters___
 * `mtNumber` - Phone number or short code that the server will use to send the verification SMS. This is useful for the client to silence the reception of the SMS.
-* `moNumber` - Phone number or short code that the device will use to send a first verification SMS in an MO+MT flow. If the authentication flow is an SMS MT only this parameter won't be contained in the response.
+* `moNumber` - Phone number or short code where the server expects to receive an SMS sent from the device.
+* `smsBody` - Random unique string that allows the server to match a /verify request with a received SMS.
 
 ## POST /v1/msisdn/sms/verify_code
 
