@@ -7,7 +7,7 @@ register it using an SMS validation.
 
 It implements the proposal here : ./API.md
 
-The API are discussed on the loop-dev mailing list at https://mail.mozilla.org/listinfo/loop-dev
+The API are discussed on the loop-dev mailing list at https://mail.mozilla.org/listinfo/loop-services-dev
 
 
 Registration process flow
