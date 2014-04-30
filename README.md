@@ -9,6 +9,8 @@ register it using an SMS validation.
 
 [Mailing list](https://mail.mozilla.org/listinfo/loop-services-dev)
 
+[Dummy client](https://github.com/ferjm/msisdn-verifier-client)
+
 
 Registration process flow
 -------------------------
