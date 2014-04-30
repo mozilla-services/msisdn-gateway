@@ -31,6 +31,16 @@ This flow requires support from the operator to assure that the phone number or 
 
 ### Telephony call based authentication
 
+# Flows
+
+## SMS MT
+
+<img src="http://www.gliffy.com/go/publish/image/5685727/L.png" />
+
+## SMS MO + MT
+
+<img src="http://www.gliffy.com/go/publish/image/5685725/L.png" />
+
 # API Endpoints
   * [POST /v1/msisdn/register](#post-v1msisdnregister)
   * [POST /v1/msisdn/unregister](#post-v1msisdnunregister) :lock:
@@ -53,6 +63,7 @@ curl -v \
 -H "Content-Type: application/json" \
 "https://api.accounts.firefox.com/v1/msisdn/register" \
 -d '{
+  "msisdn": "+442071838750"
   "mcc": "214",
   "mnc": "07",
   "roaming": false
@@ -60,6 +71,7 @@ curl -v \
 ```
 
 ___Parameters___
+* `msisdn` - a MSISDN in E.164 format. Providing an MSISDN is optional as the client might not know it in advance but allows the server to decide which verification mechanism to use in a better way. For instance, if an MSISDN is provided, even if an SMS MO + MT flow is possible an SMS MT only flow should be chosen by the server instead.
 * `mcc` - [Mobile Country Code](http://es.wikipedia.org/wiki/MCC/MNC)
 * `mnc` - [Mobile Network Code](http://es.wikipedia.org/wiki/MCC/MNC)
 * `roaming` - boolean that indicates if the device is on roaming or not
