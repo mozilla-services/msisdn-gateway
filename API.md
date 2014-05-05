@@ -1,3 +1,7 @@
+# MSISDN Verification API
+
+This document provides protocol-level and usage details for the Mozilla MSISDN Verification API.
+
 # Obtaining the MSISDN
 ### Getting it from the SIM card
 It is possible to obtain the MSISDN from the SIM card if this value is filled by the operator. However, this is not the general case and many operators doesn't write this value to the SIM. In any case, even if it is available this field can be modified by the user at any time and so it cannot be trusted without a proper verification.
