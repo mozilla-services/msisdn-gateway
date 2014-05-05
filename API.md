@@ -53,7 +53,7 @@ This flow requires support from the operator to assure that the phone number or 
 
 ## POST /v1/msisdn/register
 
-Starts a registration a MSISDN registration session. The verification service checks the available verification mechanism according to the given network information (mcc, mnc and roaming) and replies back with a session token and a verification URL corresponding to the chosen verification mechanism.
+Starts a MSISDN registration session. The verification service checks the available verification mechanism according to the given network information (mcc, mnc and roaming) and replies back with a session token and a verification URL corresponding to the chosen verification mechanism.
 
 ### Request
 
