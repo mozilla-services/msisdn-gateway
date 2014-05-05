@@ -61,7 +61,7 @@ describe("HTTP API exposed by the server", function() {
     '/': ['get'],
     '/register': ['post'],
     '/unregister': ['post'],
-    '/sms/verify': ['post'],
+    '/sms/mt/verify': ['post'],
     '/sms/verify_code': ['post'],
     '/sms/resend_code': ['post']
   };
@@ -206,15 +206,7 @@ describe("HTTP API exposed by the server", function() {
         .expect('Content-Type', /json/);
     });
 
-    it("should require the MSISDN params", function(done) {
-      jsonReq.send({}).expect(400).end(function(err, res) {
-        if (err) throw err;
-        expectFormatedError(res.body, "body", "msisdn");
-        done();
-      });
-    });
-
-    it("should require a valid MSISDN number", function(done) {
+    it("should take only a valid MSISDN number", function(done) {
       jsonReq.send({msisdn: "0123456789"}).expect(400).end(function(err, res) {
         if (err) throw err;
         expectFormatedError(res.body, "body", "msisdn",
@@ -280,12 +272,12 @@ describe("HTTP API exposed by the server", function() {
     });
   });
 
-  describe("POST /sms/verify", function() {
+  describe("POST /sms/mt/verify", function() {
     var jsonReq;
 
     beforeEach(function() {
       jsonReq = supertest(app)
-        .post('/sms/verify')
+        .post('/sms/mt/verify')
         .type('json')
         .expect('Content-Type', /json/);
     });
