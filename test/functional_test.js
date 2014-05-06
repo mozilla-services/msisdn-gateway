@@ -62,8 +62,8 @@ describe("HTTP API exposed by the server", function() {
     '/register': ['post'],
     '/unregister': ['post'],
     '/sms/mt/verify': ['post'],
-    '/sms/verify_code': ['post'],
-    '/sms/resend_code': ['post']
+    '/sms/mt/resend_code': ['post'],
+    '/sms/verify_code': ['post']
   };
 
   beforeEach(function() {
@@ -393,12 +393,12 @@ describe("HTTP API exposed by the server", function() {
     });
   });
 
-  describe("POST /sms/resend_code", function() {
+  describe("POST /sms/mt/resend_code", function() {
     var jsonReq;
 
     beforeEach(function() {
       jsonReq = supertest(app)
-        .post('/sms/resend_code')
+        .post('/sms/mt/resend_code')
         .type('json')
         .expect('Content-Type', /json/);
     });

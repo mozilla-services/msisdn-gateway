@@ -51,9 +51,9 @@ This flow requires support from the operator to assure that the phone number or 
   * [POST /v1/msisdn/network/verify](#post-v1msisdnnetworkverify) :lock:
   * [POST /v1/msisdn/telephony/verify](#post-v1msisdntelephonyverify) :lock:
   * [POST /v1/msisdn/sms/mt/verify](#post-v1msisdnsmsmtverify) :lock:
+  * [POST /v1/msisdn/sms/mt/resend_code](#post-v1msisdnmtresend_code) :lock:
   * [POST /v1/msisdn/sms/momt/verify](#post-v1msisdnsmsmomtverify) :lock:
   * [POST /v1/msisdn/sms/verify_code](#post-v1msisdnverify_code) :lock:
-  * [POST /v1/msisdn/sms/resend_code](#post-v1msisdnresend_code) :lock:
 
 ## POST /v1/msisdn/register
 
@@ -301,7 +301,7 @@ The signed certificate includes these additional claims:
 * fxa-verifiedMSISDN - the user's verified MSISDN
 * fxa-lastVerifiedAt - time of last MSISDN verification (seconds since epoch)
 
-## POST /v1/msisdn/sms/resend_code
+## POST /v1/msisdn/sms/mt/resend_code
 
 :lock: HAWK-authenticated with a `msisdnSessionToken`.
 
@@ -315,7 +315,7 @@ The request must include a Hawk header that authenticates the request (including
 curl -v \
 -X POST \
 -H "Content-Type: application/json" \
-"https://api.accounts.firefox.com/v1/msisdn/sms/resend_code" \
+"https://api.accounts.firefox.com/v1/msisdn/sms/mt/resend_code" \
 -H 'Authorization: Hawk id="d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d", ts="1373391043", nonce="ohQjqb", hash="vBODPWhDhiRWM4tmI9qp+np+3aoqEFzdGuGk0h7bh9w=", mac="LAnpP3P2PXelC6hUoUaHP72nCqY5Iibaa3eeiGBqIIU="' \
 -d '{
   "msisdn": "+442071838750"

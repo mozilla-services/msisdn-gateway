@@ -331,7 +331,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
 /**
  * Ask for a new verification code
  **/
-app.post("/sms/resend_code", hawkMiddleware, requireParams("msisdn"),
+app.post("/sms/mt/resend_code", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
     var code = digitsCode(DIGIT_CODE_SIZE);
 
