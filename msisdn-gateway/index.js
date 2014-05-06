@@ -8,6 +8,7 @@ var express = require("express");
 var conf = require("./config").conf;
 var pjson = require("../package.json");
 var raven = require("raven");
+var phone = require("phone");
 var cors = require("cors");
 var errors = require("connect-validation");
 var logging = require("express-logging");
@@ -180,25 +181,33 @@ app.get("/", function(req, res) {
 /**
  * Ask for a new number registration
  **/
-app.post("/register", requireParams("msisdn"), validateMSISDN,
-  function(req, res) {
-    var token = new Token();
-    token.getCredentials(function(tokenId, authKey, sessionToken) {
-      storage.setSession(tokenId, authKey, function(err) {
-        if (err) {
-          logError(err);
-          res.json(503, "Service Unavailable");
-          return;
-        }
+app.post("/register", requireParams("msisdn"), function(req, res) {
 
-        res.json(200, {
-          msisdnSessionToken: sessionToken,
-          verificationUrl: req.protocol + "://" + req.get("host") +
-            conf.get("apiPrefix") + "/sms/verify"
-        });
+  if (req.body.hasOwnProperty("msisdn")) {
+    var msisdn = phone(req.body.msisdn);
+    if (msisdn === null) {
+      res.sendError("body", "msisdn", "Invalid MSISDN number.");
+      return;
+    }
+  }
+
+  var token = new Token();
+  token.getCredentials(function(tokenId, authKey, sessionToken) {
+    storage.setSession(tokenId, authKey, function(err) {
+      if (err) {
+        logError(err);
+        res.json(503, "Service Unavailable");
+        return;
+      }
+
+      res.json(200, {
+        msisdnSessionToken: sessionToken,
+        verificationUrl: req.protocol + "://" + req.get("host") +
+          conf.get("apiPrefix") + "/sms/mt/verify"
       });
     });
   });
+});
 
 /**
  * Unregister the session
@@ -218,7 +227,7 @@ app.post("/unregister", hawkMiddleware, requireParams("msisdn"),
 /**
  * Ask for a new number registration
  **/
-app.post("/sms/verify", hawkMiddleware, requireParams("msisdn"),
+app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
     var code = digitsCode(DIGIT_CODE_SIZE);
 
@@ -322,7 +331,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
 /**
  * Ask for a new verification code
  **/
-app.post("/sms/resend_code", hawkMiddleware, requireParams("msisdn"),
+app.post("/sms/mt/resend_code", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
     var code = digitsCode(DIGIT_CODE_SIZE);
 
