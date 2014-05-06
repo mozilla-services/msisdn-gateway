@@ -1,0 +1,25 @@
+CHANGELOG
+=========
+
+0.2.0 (unreleased)
+------------------
+
+- Add the SMS MOMT protocol
+- Separate MT and MOMT protocols
+    - /register
+    - /unregister
+    - /sms/mt/verify
+    - /sms/momt/verify
+    - /sms/code/verify
+
+
+0.1.0 (2014-05-06)
+------------------
+
+- Get a first PoC working
+- Add the SMS MT protocol
+    - /register
+    - /unregister
+    - /sms/verify
+    - /sms/verify_code
+    - /sms/resend_code
