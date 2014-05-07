@@ -15,6 +15,7 @@ var logging = require("express-logging");
 var headers = require("./headers");
 var digitsCode = require("./utils").digitsCode;
 var smsGateway = require("./sms-gateway");
+var hmac = require("./hmac");
 var validateMSISDN = require("./middleware").validateMSISDN;
 var Token = require("./token").Token;
 var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
@@ -206,10 +207,18 @@ app.post("/register", requireParams("msisdn"), function(req, res) {
         return;
       }
 
+      var verificationUrl;
+      if (!req.body.hasOwnProperty("msisdn")) {
+        verificationUrl = req.protocol + "://" + req.get("host") +
+          conf.get("apiPrefix") + "/sms/momt/verify";
+      } else {
+        verificationUrl = req.protocol + "://" + req.get("host") +
+          conf.get("apiPrefix") + "/sms/mt/verify";
+      }
+
       res.json(200, {
         msisdnSessionToken: sessionToken,
-        verificationUrl: req.protocol + "://" + req.get("host") +
-          conf.get("apiPrefix") + "/sms/mt/verify"
+        verificationUrl: verificationUrl
       });
     });
   });
@@ -256,7 +265,94 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
 
 
 /**
- * Ask for a new number code verification.
+ * Ask for a new verification code
+ **/
+app.post("/sms/mt/resend_code", hawkMiddleware, requireParams("msisdn"),
+  validateMSISDN, function(req, res) {
+    var code = digitsCode(DIGIT_CODE_SIZE);
+
+    storage.setCode(req.msisdnId, code, function(err) {
+      if (err) {
+        logError(err);
+        res.json(503, "Service Unavailable");
+        return;
+      }
+      /* Send SMS */
+      smsGateway.sendSMS(req.msisdn,
+        "To validate your number please enter the following code: " + code,
+        function(err) {
+          res.json(200, {});
+        });
+    });
+  });
+
+
+/**
+ * Ask for a moNumber
+ **/
+app.post("/sms/momt/verify", hawkMiddleware, function(req, res) {
+  var code = digitsCode(DIGIT_CODE_SIZE);
+
+  var smsBody = hmac(req.hawk.id, conf.get("msisdnIdSecret"));
+
+  storage.setSmsCode(smsBody, code, function(err) {
+    if (err) {
+      logError(err);
+      res.json(503, "Service Unavailable");
+        return;
+    }
+    res.json(200, {
+      mtNumber: conf.get("mtNumber"),
+      moNumber: conf.get("moNumber"),
+      smsBody: smsBody
+    });
+  });
+});
+
+
+/**
+ * Handle moNumber SMS reception
+ **/
+app.get("/sms/momt/nexmo_callback", function(req, res) {
+  var msisdn = phone(req.query.msisdn);
+  var smsBody = req.query.text;
+
+  storage.popSmsCode(smsBody, function(err, code) {
+    if (err) {
+      logError(err);
+      res.json(503, "Service Unavailable");
+      return;
+    }
+
+    if (code !== null && msisdn !== null) {
+      var msisdnId = hmac(msisdn, conf.get("msisdnIdSecret"));
+
+      storage.setCode(msisdnId, code, function(err) {
+        if (err) {
+          logError(err);
+          res.json(503, "Service Unavailable");
+          return;
+        }
+
+        /* Send SMS */
+        smsGateway.sendSMS(msisdn, "Your number is: " + msisdn +
+          ". To validate it please enter the following code: " + code,
+          function(err) {
+            res.json(200, {});
+          });
+        return;
+      });
+    }
+    /* The callback is always waiting for a 200 or it will keep trying.
+     * In that case the smsBody has expired so we don't want to replay it.
+     */
+    res.json(200, {});
+  });
+});
+
+
+/**
+ * Verify code
  **/
 app.post("/sms/verify_code", hawkMiddleware, requireParams(
   "msisdn", "code", "duration", "publicKey"), validateMSISDN,
@@ -290,8 +386,38 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
       return;
     }
 
-    storage.verifyCode(req.msisdnId, code,
-      function(err, result, verifierSetAt) {
+    storage.verifyCode(req.msisdnId, code, function(err, result) {
+      if (err) {
+        logError(err);
+        res.json(503, "Service Unavailable");
+        return;
+      }
+
+      if (result === null) {
+        res.json(410, "Code has expired.");
+        return;
+      }
+
+      if (!result) {
+        res.json(403, "Code error.");
+        return;
+      }
+
+      // Generate a certificate
+      var now = Date.now();
+
+      jwcrypto.cert.sign({
+        publicKey: jwcrypto.loadPublicKeyFromObject(publicKey),
+        principal: req.msisdnId + "@" + req.get("host")
+      }, {
+        issuer: req.get("host"),
+        // Set issuedAt to 10 seconds ago. Pads for verifier clock skew
+        issuedAt: new Date(now - (10 * 1000)),
+        expiresAt: new Date(now + duration)
+      }, {
+        "fxa-lastAuthAt": now,
+        "fxa-verifiedMSISDN": req.msisdn
+      }, _privKey, function(err, cert) {
         if (err) {
           logError(err);
           res.json(503, "Service Unavailable");
@@ -332,6 +458,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
           res.json(200, {cert: cert, publicKey: _publicKey.serialize()});
         });
       });
+    });
   });
 
 /**
@@ -355,6 +482,7 @@ app.post("/sms/mt/resend_code", hawkMiddleware, requireParams("msisdn"),
         });
     });
   });
+
 
 app.listen(conf.get("port"), conf.get("host"), function(){
   console.log("Server listening on http://" +

@@ -8,6 +8,7 @@ var redis = require("redis");
 var ONE_DAY_SEC = 24 * 3600;  // A day in seconds
 
 var CODE_KEY_PREFIX = "msisdn_code_";
+var SMS_CODE_KEY_PREFIX = "msisdn_sms_";
 var SESSION_KEY_PREFIX = "msisdn_session_";
 
 function RedisStorage(options, settings) {
@@ -46,6 +47,25 @@ RedisStorage.prototype = {
         return;
       }
       callback(null, false);
+    });
+  },
+
+  setSmsCode: function(smsBody, code, callback) {
+    var key = SMS_CODE_KEY_PREFIX + smsBody;
+    this._client.setex(key, ONE_DAY_SEC, code, callback);
+  },
+
+  popSmsCode: function(smsBody, callback) {
+    var self = this;
+    var key = SMS_CODE_KEY_PREFIX + smsBody;
+    this._client.get(key, function(err, code) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      self._client.del(key, function(err) {
+        callback(err, code);
+      });
     });
   },
 

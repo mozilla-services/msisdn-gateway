@@ -138,12 +138,24 @@ var conf = convict({
     doc: "The Browser ID Private Key",
     format: validateJWCryptoKey
   },
+  mtNumber: {
+    doc: "Number from which SMS are sent",
+    format: String,
+    default: "Mozilla"
+  },
+  moNumber: {
+    doc: "Number to SMS should be sent",
+    format: String,
+    default: ""
+  },
   leonixCredentials: {
+    doc: "Leonix SMS Gateway Credentials",
     format: validateKeys(["endpoint", "service", "login",
                           "pwd", "source"], true),
     default: ""
   },
   nexmoCredentials: {
+    doc: "Nexmo SMS Gateway Credentials",
     format: validateKeys(["endpoint", "api_key", "api_secret",
                           "from"], true),
     default: ""
