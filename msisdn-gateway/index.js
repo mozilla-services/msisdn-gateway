@@ -281,6 +281,11 @@ app.post("/sms/mt/resend_code", hawkMiddleware, requireParams("msisdn"),
       smsGateway.sendSMS(req.msisdn,
         "To validate your number please enter the following code: " + code,
         function(err) {
+          if (err) {
+            logError(err);
+            res.json(503, "Service Unavailable");
+            return;
+          }
           res.json(200, {});
         });
     });
@@ -338,6 +343,11 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
         smsGateway.sendSMS(msisdn, "Your number is: " + msisdn +
           ". To validate it please enter the following code: " + code,
           function(err) {
+            if (err) {
+              logError(err);
+              res.json(503, "Service Unavailable");
+              return;
+            }
             res.json(200, {});
           });
         return;
