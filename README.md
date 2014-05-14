@@ -1,9 +1,8 @@
 MSISDN Gateway
 ==============
 
-
-This is a PoC of an MSISDN Gateway server that takes a phone number an
-register it using an SMS validation.
+This is a proof of concept of an MSISDN Gateway server that takes a phone number and
+register it using an SMS validation mechanism.
 
 [API docs](API.md)
 
@@ -15,23 +14,29 @@ register it using an SMS validation.
 Registration process flow
 -------------------------
 
-  1. The client make a ``/register`` request.
+  1. The client sends a request to ``/register``.
 
-  -- The server choose the verification process based on MSISDN, MCC and MNC codes and return
-     a sessionToken and a verify endpoint.
+  -- The server chooses the verification process based on MSISDN, MCC and MNC
+     codes and returns a session token and a verify endpoint.
 
-  2. The client make a ``/sms/verify`` (verify endpoint) request 
+  2. The client sends a request to ``/sms/verify`` (the verify endpoint).
 
-  -- The server send a SMS with a code and return the number used to send it (for silent SMS catch)
+  -- The server sends a SMS text message containing a pin code, and returns the
+     number that was used to send it (the phone number of the server, useful
+     for silent SMS catch)
 
-  3. The client ask for ``/sms/verify_code`` with the sessionToken and the code and get a BrowserID certificate.
-  4. If needed the client can also ask for a new code with ``/sms/resend_code`` and its sessionToken.
-  5. Finally the client can destroy its registration using ``/unregister`` and its sessionToken.
+  3. The client sends a request to verify the pin code (to ``/sms/verify_code``)
+     with the session token and the pin code and gets back a BrowserID
+     certificate.
+  4. If needed, the client can also ask for a new pin code using the
+     ``/sms/resend_code`` URL and its sessionToken.
+  5. Finally the client can unregister itself using the ``/unregister`` URL
+     and its sessionToken.
 
 How to install?
 ---------------
 
-You will need redis-server installed:
+You will need to have redis-server installed:
 
 ### Linux
 
@@ -59,13 +64,14 @@ How to run it?
 
 You can create your configuration file in `config/{NODE_ENV}.json`
 
-You need to generate the BID keys by running `./bin/generate-keypair` and add them to your configuration file.
+You need to generate the BrowserId keys by running `./bin/generate-keypair` and
+add them to your configuration file.
 
-`development` is the environment by default.
+`development` is the default environment.
 
     make runserver
 
-this is equivalent to:
+is equivalent to:
 
     NODE_ENV=development make runserver
 
