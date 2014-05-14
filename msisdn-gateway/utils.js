@@ -15,7 +15,9 @@ function digitsCode(size) {
              .toString("hex"), 16).toString().substr(0, size);
   // If the code starts with zeros, parseInt removed them so we have
   // to put them back.
-  while (code.length < size) code = "0" + code;
+  while (code.length < size) {
+    code = "0" + code;
+  }
   return code;
 }
 
