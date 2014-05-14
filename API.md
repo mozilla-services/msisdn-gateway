@@ -3,35 +3,69 @@
 This document provides protocol-level and usage details for the Mozilla MSISDN Verification API.
 
 # Obtaining the MSISDN
+
 ### Getting it from the SIM card
-It is possible to obtain the MSISDN from the SIM card if this value is filled by the operator. However, this is not the general case and many operators doesn't write this value to the SIM. In any case, even if it is available this field can be modified by the user at any time and so it cannot be trusted without a proper verification.
+
+It is possible to obtain the MSISDN from the SIM card if this value is filled
+by the operator. However, this is not the general case and many operators
+doesn't write this value to the SIM. In any case, even if it is available this
+field can be modified by the user at any time and so it cannot be trusted
+without a proper verification.
 
 ### SMS-MO
-Another mechanism to obtain the MSISDN is by asking the device to send an SMS-MO (Mobile Originated) to a specific phone number or short code. This requires support from the operator in order to make sure that the SMS is charge free for the user.
+
+Another mechanism to obtain the MSISDN is by asking the device to send an
+SMS-MO (Mobile Originated) message to a specific phone number or short code.
+This requires support from the operator in order to make sure that the SMS is
+charge-free for the user.
 
 ### Asking the user
+
 This is the fallback if all the above options are not available.
 
 # Verification mechanisms
-### Network based authentication
-Some operators may support a network based authentication mechanism where the device is authenticated by making an http request to the authentication server over the device's mobile data connection such that the carrier injects a header which contains a token that can be used to verify the users MSISDN.
 
-This kind of authentication mechanism does not require us to provide an MSISDN in advance and so the whole flow can be done without user interaction.
+### Network based authentication
+
+Some operators may support a network-based authentication mechanism where the
+device is authenticated by making an http request to the authentication server
+over the device's mobile data connection such that the carrier injects a header
+which contains a token that can be used to verify the users MSISDN.
+
+This kind of authentication mechanism does not require us to provide an MSISDN
+in advance and so the whole flow can be done without user interaction.
 
 ### SMS based authentication
+
 #### SMS-MT only
-In an SMS-MT (Mobile Terminated) only based authentication the verification server is given an MSISDN to send an SMS with a verification code and the device makes an http request to give the verification code back to the server as a proof of ownership.
 
-This requires us to provide an MSISDN in advance and so the flow might require user interaction.
+In an SMS-MT (Mobile Terminated) only based authentication the verification
+server is given an MSISDN to send an SMS with a verification code and the
+device makes an http request to give the verification code back to the server
+as a proof of ownership.
 
-It is also possible that the given MSISDN does not belong to the device from where the requests to the verification server are done and so the SMS will be receive by another device. In that case, the user will need to manually enter the verification code. This is the scenario for an MSISDN verification triggered by a desktop client.
+This requires us to provide an MSISDN in advance and so the flow might require
+user interaction.
+
+It is also possible that the given MSISDN does not belong to the device from
+where the requests to the verification server are done and so the SMS will be
+received by another device. In that case, the user will need to manually enter
+the verification code. This is the scenario for an MSISDN verification
+triggered by a desktop client.
 
 #### SMS-MO and SMS-MT
-In an SMS-MO (Mobile Originated) + SMS-MT (Mobile Terminated) based authentication, the device sends an SMS to the verification server which replies back with a SMS verification code that must be given back to the server as a proof of ownership.
 
-This mechanism does not require us to provide an MSISDN in advance and so the flow can be done without user interaction.
+In an SMS-MO (Mobile Originated) + SMS-MT (Mobile Terminated) based
+authentication, the device sends an SMS to the verification server which
+replies back with a SMS verification code that must be given back to the server
+as a proof of ownership.
 
-This flow requires support from the operator to assure that the phone number or the short code that the device uses to send the SMS-MO is free of charge for the user.
+This mechanism does not require us to provide an MSISDN in advance and so the
+flow can be done without user interaction.
+
+This flow requires support from the operator to assure that the phone number or
+the short code that the device uses to send the SMS-MO is free of charge for
+the user.
 
 ### Telephony call based authentication
 
@@ -57,7 +91,10 @@ This flow requires support from the operator to assure that the phone number or 
 
 ## POST /v1/msisdn/register
 
-Starts a MSISDN registration session. The verification service checks the available verification mechanism according to the given network information (mcc, mnc and roaming) and replies back with a session token and a verification URL corresponding to the chosen verification mechanism.
+Starts a MSISDN registration session. The verification service checks the
+available verification mechanism according to the given network information
+(mcc, mnc and roaming) and replies back with a session token and a verification
+URL corresponding to the chosen verification mechanism.
 
 ### Request
 
@@ -75,7 +112,11 @@ curl -v \
 ```
 
 ___Parameters___
-* `msisdn` - a MSISDN in E.164 format. Providing an MSISDN is optional as the client might not know it in advance but allows the server to decide which verification mechanism to use in a better way. For instance, if an MSISDN is provided, even if an SMS MO + MT flow is possible an SMS MT only flow should be chosen by the server instead.
+* `msisdn` - a MSISDN in E.164 format. Providing an MSISDN is optional as the
+  client might not know it in advance but allows the server to decide which
+  verification mechanism to use in a better way. For instance, if an MSISDN is
+  provided, even if an SMS MO + MT flow is possible an SMS MT only flow should
+  be chosen by the server instead.
 * `mcc` - [Mobile Country Code](http://es.wikipedia.org/wiki/MCC/MNC)
 * `mnc` - [Mobile Network Code](http://es.wikipedia.org/wiki/MCC/MNC)
 * `roaming` - boolean that indicates if the device is on roaming or not
@@ -94,7 +135,8 @@ Successful requests will produce a "200 OK" response with following format:
 ___Parameters___
 
 * `msisdnSessionToken`
-* `verificationUrl` - Endpoint corresponding to the available verification mechanism that the client should use to start the verification process.
+* `verificationUrl` - Endpoint corresponding to the available verification
+  mechanism that the client should use to start the verification process.
 
 ## POST /v1/msisdn/unregister
 
@@ -104,7 +146,9 @@ This completely removes a previously registered MSISDN.
 
 ### Request
 
-The request must include a Hawk header that authenticates the request (including payload) using a `msisdnSessionToken` received from `/v1/msisdn/register`.
+The request must include a Hawk header that authenticates the request
+(including payload) using a `msisdnSessionToken` received from
+`/v1/msisdn/register`.
 
 ```sh
 curl -v \
@@ -131,11 +175,20 @@ Successful requests will produce a "200 OK" response with following format:
 ## POST /v1/msisdn/network/verify
 :lock: HAWK-authenticated with a `msisdnSessionToken`.
 
-The server is given a public key, and returns a signed certificate using the same JWT-like mechanism as a BrowserID primary IdP would (see the [browserid-certifier project](https://github.com/mozilla/browserid-certifier for details)). The signed certificate includes a `principal.email` property to indicate a "Firefox Account-like" identifier (a uuid at the account server's primary domain). TODO: add discussion about how this id will likely *not* be stable for repeated calls to this endpoint with the same MSISDN (alone), but probably stable for repeated calls with the same MSISDN+`msisdnSessionToken`.
+The server is given a public key, and returns a signed certificate using the
+same JWT-like mechanism as a BrowserID primary IdP would (see the
+[browserid-certifier project](https://github.com/mozilla/browserid-certifier
+for details)). The signed certificate includes a `principal.email` property to
+indicate a "Firefox Account-like" identifier (a uuid at the account server's
+primary domain). TODO: add discussion about how this id will likely *not* be
+stable for repeated calls to this endpoint with the same MSISDN (alone), but
+probably stable for repeated calls with the same MSISDN+`msisdnSessionToken`.
 
 ### Request
 
-The request must include a Hawk header that authenticates the request (including payload) using a `msisdnSessionToken` received from `/v1/msisdn/register`.
+The request must include a Hawk header that authenticates the request
+(including payload) using a `msisdnSessionToken` received from
+`/v1/msisdn/register`.
 
 ```sh
 curl -v \
@@ -211,7 +264,9 @@ Successful requests will produce a "200 OK" response with following format:
 }
 ```
 ___Parameters___
-* `mtNumber` - Phone number or short code that the server will use to send the verification SMS. This is useful for the client to silence the reception of the SMS.
+* `mtNumber` - Phone number or short code that the server will use to send the
+  verification SMS. This is useful for the client to silence the reception of
+  the SMS.
 
 ## POST /v1/msisdn/sms/momt/verify
 
@@ -241,19 +296,33 @@ Successful requests will produce a "200 OK" response with following format:
 }
 ```
 ___Parameters___
-* `mtNumber` - Phone number or short code that the server will use to send the verification SMS. This is useful for the client to silence the reception of the SMS.
-* `moNumber` - Phone number or short code where the server expects to receive an SMS sent from the device.
-* `smsBody` - Random unique string that allows the server to match a /verify request with a received SMS.
+* `mtNumber` - Phone number or short code that the server will use to send the
+  verification SMS. This is useful for the client to silence the reception of
+  the SMS.
+* `moNumber` - Phone number or short code where the server expects to receive
+  an SMS sent from the device.
+* `smsBody` - Random unique string that allows the server to match a /verify
+  request with a received SMS.
 
 ## POST /v1/msisdn/sms/verify_code
 
 :lock: HAWK-authenticated with a `msisdnSessionToken`.
 
-This verifies the SMS code sent to a MSISDN. The server is given a public key, and returns a signed certificate using the same JWT-like mechanism as a BrowserID primary IdP would (see the [browserid-certifier project](https://github.com/mozilla/browserid-certifier for details)). The signed certificate includes a `principal.email` property to indicate a "Firefox Account-like" identifier (a uuid at the account server's primary domain). TODO: add discussion about how this id will likely *not* be stable for repeated calls to this endpoint with the same MSISDN (alone), but probably stable for repeated calls with the same MSISDN+`msisdnSessionToken`.
+This verifies the SMS code sent to a MSISDN. The server is given a public key,
+and returns a signed certificate using the same JWT-like mechanism as
+a BrowserID primary IdP would (see the [browserid-certifier
+project](https://github.com/mozilla/browserid-certifier for details)). The
+signed certificate includes a `principal.email` property to indicate a "Firefox
+Account-like" identifier (a uuid at the account server's primary domain). TODO:
+add discussion about how this id will likely *not* be stable for repeated calls
+to this endpoint with the same MSISDN (alone), but probably stable for repeated
+calls with the same MSISDN+`msisdnSessionToken`.
 
 ### Request
 
-The request must include a Hawk header that authenticates the request (including payload) using a `msisdnSessionToken` received from `/v1/msisdn/register`.
+The request must include a Hawk header that authenticates the request
+(including payload) using a `msisdnSessionToken` received from
+`/v1/msisdn/register`.
 
 ```sh
 curl -v \
@@ -276,7 +345,8 @@ curl -v \
 ___Parameters___
 * `msisdn` - a MSISDN in E.164 format
 * `code` - the SMS verification code sent to the MSISDN
-* `publicKey` - the key to sign (run `bin/generate-keypair` from [jwcrypto](https://github.com/mozilla/jwcrypto))
+* `publicKey` - the key to sign (run `bin/generate-keypair` from
+  [jwcrypto](https://github.com/mozilla/jwcrypto))
     * algorithm - "RS" or "DS"
     * n - RS only
     * e - RS only
@@ -284,7 +354,8 @@ ___Parameters___
     * p - DS only
     * q - DS only
     * g - DS only
-* `duration` - time interval from now when the certificate will expire in seconds
+* `duration` - time interval from now when the certificate will expire in
+  seconds
 
 ### Response
 
@@ -305,11 +376,14 @@ The signed certificate includes these additional claims:
 
 :lock: HAWK-authenticated with a `msisdnSessionToken`.
 
-This triggers the sending of an SMS code the MSISDN registered in /v1/msisdn/register. 
+This triggers the sending of an SMS code the MSISDN registered in
+/v1/msisdn/register. 
 
 ### Request
 
-The request must include a Hawk header that authenticates the request (including payload) using a `msisdnSessionToken` received from `/v1/msisdn/register`.
+The request must include a Hawk header that authenticates the request
+(including payload) using a `msisdnSessionToken` received from
+`/v1/msisdn/register`.
 
 ```sh
 curl -v \
