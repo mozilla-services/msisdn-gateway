@@ -22,7 +22,7 @@ var Hawk = require('hawk');
 
 var jwcrypto = require('jwcrypto');
 
-// Make sure to load supported algorithms
+// Make sure to load supported algorithms.
 require('jwcrypto/lib/algs/rs');
 require('jwcrypto/lib/algs/ds');
 
@@ -90,7 +90,10 @@ function requireParams() {
 }
 
 /**
- * The HawkMiddleware make sure to sign each request.
+ * The Hawk middleware.
+ *
+ * Checks that the requests are authenticated with hawk, and sign the
+ * responses.
  */
 function hawkMiddleware(req, res, next) {
   Hawk.server.authenticate(req, function(id, callback) {
@@ -105,6 +108,9 @@ function hawkMiddleware(req, res, next) {
           logError(err, artifacts);
         }
 
+        // In case no supported authentication was specified, challenge the
+        // client.
+
         res.setHeader("WWW-Authenticate",
                       err.output.headers["WWW-Authenticate"]);
         res.json(401, err.output.payload);
@@ -116,7 +122,7 @@ function hawkMiddleware(req, res, next) {
         return;
       }
 
-      /* Make sure we do it only once */
+      /* Make sure we don't decorate the writeHead more than one time. */
       if (res._hawkEnabled) {
         next();
         return;
@@ -179,7 +185,7 @@ app.get("/", function(req, res) {
 });
 
 /**
- * Ask for a new number registration
+ * Ask for a new number registration.
  **/
 app.post("/register", requireParams("msisdn"), function(req, res) {
 
@@ -210,7 +216,7 @@ app.post("/register", requireParams("msisdn"), function(req, res) {
 });
 
 /**
- * Unregister the session
+ * Unregister the session.
  **/
 app.post("/unregister", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
@@ -225,7 +231,7 @@ app.post("/unregister", hawkMiddleware, requireParams("msisdn"),
   });
 
 /**
- * Ask for a new number registration
+ * Ask for a new number registration.
  **/
 app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
@@ -250,7 +256,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
 
 
 /**
- * Ask for a new number code verification
+ * Ask for a new number code verification.
  **/
 app.post("/sms/verify_code", hawkMiddleware, requireParams(
   "msisdn", "code", "duration", "publicKey"), validateMSISDN,
@@ -259,26 +265,26 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
     var publicKey = req.body.publicKey;
     var duration = req.body.duration;
 
-    // Validate code
+    // Validate code.
     if (code.length !== DIGIT_CODE_SIZE) {
       res.addError("body", "code",
                    "Code should be " + DIGIT_CODE_SIZE + " long.");
     }
 
-    // Validate publicKey
+    // Validate publicKey.
     try {
       validateJWCryptoKey(publicKey);
     } catch (err) {
       res.addError("body", "publicKey", err);
     }
 
-    // Validate duration
+    // Validate duration.
     if (typeof duration !== "number" || duration < 1) {
       res.addError("body", "duration",
                    "Duration should be a number of seconds.");
     }
 
-    // Return errors we find some during the validation procedure.
+    // Return errors found during validation.
     if (res.hasErrors()) {
       res.sendError();
       return;
@@ -302,7 +308,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
           return;
         }
 
-        // XXX Need to generate a certificate
+        // XXX Need to generate a certificate.
         var now = Date.now();
 
         jwcrypto.cert.sign({
@@ -310,7 +316,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
           principal: req.msisdnId + "@" + req.get("host")
         }, {
           issuer: req.get("host"),
-          // Set issuedAt to 10 seconds ago. Pads for verifier clock skew
+          // Set issuedAt to 10 seconds ago. Pads for verifier clock skew.
           issuedAt: new Date(now - (10 * 1000)),
           expiresAt: new Date(now + duration)
         }, {
@@ -329,7 +335,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
   });
 
 /**
- * Ask for a new verification code
+ * Ask for a new verification code.
  **/
 app.post("/sms/mt/resend_code", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {

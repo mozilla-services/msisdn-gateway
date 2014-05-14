@@ -12,11 +12,21 @@ var crypto = require("crypto");
 function digitsCode(size) {
   var nbBytes = Math.ceil(size / 2);
   var code = parseInt(crypto.randomBytes(nbBytes)
-    .toString("hex"), 16).toString().substr(0, size);
+             .toString("hex"), 16).toString().substr(0, size);
   // If the code starts with zeros, parseInt removed them so we have
   // to put them back.
-  while (code.length < size) code = "0" + code;
+  while (code.length < size) {
+    code = "0" + code;
+  }
   return code;
+}
+
+function checkProperties(obj, keys) {
+  keys.forEach(function(key) {
+    if (!obj.hasOwnProperty(key)) {
+      throw new Error("missing " + key + " parameter");
+    }
+  });
 }
 
 /**
@@ -24,31 +34,17 @@ function digitsCode(size) {
  */
 function validateJWCryptoKey(keyObj) {
   if (keyObj === "") {
-    throw new Error("Please generate new JWCrypto keypair using: " +
+    throw new Error("Please generate a new JWCrypto keypair using: " +
                     "node bin/generate-keypair");
   }
+  var keys;
   if (keyObj.algorithm === 'RS') {
-    if (!keyObj.n) {
-      throw new Error("missing n parameter.");
-    }
-    if (!keyObj.e) {
-      throw new Error("missing e parameter.");
-    }
+    keys = ['n', 'e'];
   }
   else { // DS
-    if (!keyObj.y) {
-      throw new Error("missing y parameter.");
-    }
-    if (!keyObj.p) {
-      throw new Error("missing p parameter.");
-    }
-    if (!keyObj.q) {
-      throw new Error("missing q parameter.");
-    }
-    if (!keyObj.g) {
-      throw new Error("missing g parameter.");
-    }
+    keys = ['y', 'p', 'q', 'g'];
   }
+  checkProperties(keyObj, keys);
   return keyObj;
 }
 
