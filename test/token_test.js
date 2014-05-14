@@ -9,7 +9,7 @@ var Token = require("../msisdn-gateway/token").Token;
 
 describe("Token", function() {
   describe("#constructor", function() {
-    it("should generate a new sessionToken if not provide.", function() {
+    it("should generate a new sessionToken if not provided.", function() {
       var token = new Token();
       expect(token.hasOwnProperty("sessionToken")).to.equal(true);
       expect(token.sessionToken).to.length(64);
@@ -28,14 +28,9 @@ describe("Token", function() {
       var sessionToken = crypto.randomBytes(32).toString("hex");
       var token = new Token(sessionToken);
       token.getCredentials(function(tokenId, tokenAuthKey, tokenSessionToken) {
-        expect(token.tokenId).to.length(64);
-        expect(token.tokenId).to.eql(tokenId);
-
-        expect(token.authKey).to.length(64);
-        expect(token.authKey).to.eql(tokenAuthKey);
-
-        expect(token.sessionToken).to.length(64);
-        expect(token.sessionToken).to.eql(tokenSessionToken);
+        expect(tokenId).to.length(64);
+        expect(tokenAuthKey).to.length(64);
+        expect(tokenSessionToken).to.length(64);
         expect(sessionToken).to.eql(tokenSessionToken);
         done();
       });

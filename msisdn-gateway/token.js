@@ -19,9 +19,9 @@ Token.prototype = {
     var self = this;
     var data = new Buffer(this.sessionToken, "hex");
     hkdf(data, "sessionToken", null, 2 * 32, function(keyMaterial) {
-      self.tokenId = keyMaterial.slice(0, 32).toString("hex");
-      self.authKey = keyMaterial.slice(32, 64).toString("hex");
-      callback(self.tokenId, self.authKey, self.sessionToken);
+      var tokenId = keyMaterial.slice(0, 32).toString("hex");
+      var authKey = keyMaterial.slice(32, 64).toString("hex");
+      callback(tokenId, authKey, self.sessionToken);
     });
   }
 };
