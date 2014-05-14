@@ -90,7 +90,10 @@ function requireParams() {
 }
 
 /**
- * The HawkMiddleware make sure to sign each request.
+ * The Hawk middleware.
+ *
+ * Checks that the requests are authenticated with hawk, and sign the
+ * responses.
  */
 function hawkMiddleware(req, res, next) {
   Hawk.server.authenticate(req, function(id, callback) {
@@ -105,6 +108,9 @@ function hawkMiddleware(req, res, next) {
           logError(err, artifacts);
         }
 
+        // In case no supported authentication was specified, challenge the
+        // client.
+
         res.setHeader("WWW-Authenticate",
                       err.output.headers["WWW-Authenticate"]);
         res.json(401, err.output.payload);
@@ -116,7 +122,7 @@ function hawkMiddleware(req, res, next) {
         return;
       }
 
-      /* Make sure we do it only once */
+      /* Make sure we check for hawk only once */
       if (res._hawkEnabled) {
         next();
         return;
