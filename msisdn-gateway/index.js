@@ -122,7 +122,7 @@ function hawkMiddleware(req, res, next) {
         return;
       }
 
-      /* Make sure we check for hawk only once */
+      /* Make sure we don't decorate the writeHead more than one time. */
       if (res._hawkEnabled) {
         next();
         return;
