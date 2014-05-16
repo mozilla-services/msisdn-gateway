@@ -80,6 +80,7 @@ the user.
 <img src="http://www.gliffy.com/go/publish/image/5685725/L.png" />
 
 # API Endpoints
+  * [POST /v1/msisdn/discover](#post-v1msisdndiscover)
   * [POST /v1/msisdn/register](#post-v1msisdnregister)
   * [POST /v1/msisdn/unregister](#post-v1msisdnunregister) :lock:
   * [POST /v1/msisdn/network/verify](#post-v1msisdnnetworkverify) :lock:
@@ -89,12 +90,12 @@ the user.
   * [POST /v1/msisdn/sms/momt/verify](#post-v1msisdnsmsmomtverify) :lock:
   * [POST /v1/msisdn/sms/verify_code](#post-v1msisdnverify_code) :lock:
 
-## POST /v1/msisdn/register
+## POST /v1/msisdn/discover
 
-Starts a MSISDN registration session. The verification service checks the
-available verification mechanism according to the given network information
-(mcc, mnc and roaming) and replies back with a session token and a verification
-URL corresponding to the chosen verification mechanism.
+The verification service checks the available verification mechanism
+according to the given network information (msisdn, mcc, mnc and
+roaming) and replies back with a verification URL corresponding to the
+chosen verification mechanism.
 
 ### Request
 
@@ -102,7 +103,7 @@ URL corresponding to the chosen verification mechanism.
 curl -v \
 -X POST \
 -H "Content-Type: application/json" \
-"https://api.accounts.firefox.com/v1/msisdn/register" \
+"https://api.accounts.firefox.com/v1/msisdn/discover" \
 -d '{
   "msisdn": "+442071838750"
   "mcc": "214",
@@ -127,16 +128,41 @@ Successful requests will produce a "200 OK" response with following format:
 
 ```json
 {
-  "msisdnSessionToken": "27cd4f4a4aa03d7d186a2ec81cbf19d5c8a604713362df9ee15c4f4a4aa03d7d",
   "verificationUrl": "https://api.accounts.firefox.com/v1/msisdn/sms/mt/verify"
 }
 ```
 
 ___Parameters___
 
-* `msisdnSessionToken`
 * `verificationUrl` - Endpoint corresponding to the available verification
   mechanism that the client should use to start the verification process.
+
+## POST /v1/msisdn/register
+
+Starts a MSISDN registration session.
+
+### Request
+
+```sh
+curl -v \
+-X POST \
+-H "Content-Type: application/json" \
+"https://api.accounts.firefox.com/v1/msisdn/register"
+```
+
+### Response
+
+Successful requests will produce a "200 OK" response with following format:
+
+```json
+{
+  "msisdnSessionToken": "27cd4f4a4aa03d7d186a2ec81cbf19d5c8a604713362df9ee15c4f4a4aa03d7d"
+}
+```
+
+___Parameters___
+
+* `msisdnSessionToken` Used to build hawk credentials from HKDF
 
 ## POST /v1/msisdn/unregister
 
@@ -260,11 +286,11 @@ Successful requests will produce a "200 OK" response with following format:
 
 ```json
 {
-  "mtNumber": "123"
+  "mtSender": "123"
 }
 ```
 ___Parameters___
-* `mtNumber` - Phone number or short code that the server will use to send the
+* `mtSender` - Phone number or short code that the server will use to send the
   verification SMS. This is useful for the client to silence the reception of
   the SMS.
 
@@ -290,16 +316,16 @@ Successful requests will produce a "200 OK" response with following format:
 
 ```json
 {
-  "mtNumber": "123",
-  "moNumber": "234",
+  "mtSender": "123",
+  "moVerifier": "234",
   "smsBody": "RandomUniqueID"
 }
 ```
 ___Parameters___
-* `mtNumber` - Phone number or short code that the server will use to send the
+* `mtSender` - Phone number or short code that the server will use to send the
   verification SMS. This is useful for the client to silence the reception of
   the SMS.
-* `moNumber` - Phone number or short code where the server expects to receive
+* `moVerifier` - Phone number or short code where the server expects to receive
   an SMS sent from the device.
 * `smsBody` - Random unique string that allows the server to match a /verify
   request with a received SMS.
