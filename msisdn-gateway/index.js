@@ -293,7 +293,7 @@ app.post("/sms/mt/resend_code", hawkMiddleware, requireParams("msisdn"),
 
 
 /**
- * Ask for a moNumber
+ * Ask for a MO verification
  **/
 app.post("/sms/momt/verify", hawkMiddleware, function(req, res) {
   var code = digitsCode(DIGIT_CODE_SIZE);
