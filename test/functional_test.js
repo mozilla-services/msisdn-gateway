@@ -62,6 +62,8 @@ describe("HTTP API exposed by the server", function() {
     '/register': ['post'],
     '/unregister': ['post'],
     '/sms/mt/verify': ['post'],
+    '/sms/momt/verify': ['post'],
+    '/sms/momt/nexmo_callback': ['post'],
     '/sms/mt/resend_code': ['post'],
     '/sms/verify_code': ['post']
   };
@@ -300,7 +302,7 @@ describe("HTTP API exposed by the server", function() {
         });
     });
 
-    it("should send an SMS with the code.", function(done) {
+    it("should send a SMS with the code.", function(done) {
       sandbox.stub(smsGateway, "sendSMS",
         function(msisdn, message, cb) {
           cb(null, {mtNumber: "123"});
@@ -310,6 +312,80 @@ describe("HTTP API exposed by the server", function() {
           sinon.assert.calledOnce(smsGateway.sendSMS);
           expect(res.body.hasOwnProperty("mtNumber")).to.equal(true);
           expect(res.body.mtNumber).to.equal("123");
+          done();
+        });
+    });
+  });
+
+  describe("POST /sms/momt/verify", function() {
+    var jsonReq;
+
+    beforeEach(function() {
+      jsonReq = supertest(app)
+        .post('/sms/momt/verify')
+        .type('json')
+        .expect('Content-Type', /json/);
+    });
+
+    it("should set a code.", function(done) {
+      var _smsBody;
+      sandbox.stub(storage, "setSmsCode",
+        function(smsBody, code, cb) {
+          _smsBody = smsBody;
+          cb(null);
+        });
+      hawkRequest(jsonReq.send({}).expect(200),
+        function(err, res) {
+          sinon.assert.calledOnce(storage.setSmsCode);
+          expect(res.body.hasOwnProperty("mtNumber")).to.equal(true);
+          expect(res.body.hasOwnProperty("moNumber")).to.equal(true);
+          expect(res.body.mtNumber).to.equal(conf.get("mtNumber"));
+          expect(res.body.moNumber).to.equal(conf.get("moNumber"));
+          expect(res.body.smsBody).to.equal(_smsBody);
+          done();
+        });
+    });
+  });
+
+  describe("GET /sms/momt/nexmo_callback", function() {
+    var jsonReq;
+
+    beforeEach(function() {
+      jsonReq = supertest(app)
+        .get('/sms/momt/nexmo_callback')
+        .expect('Content-Type', /json/);
+
+      sandbox.stub(smsGateway, "sendSMS",
+        function(msisdn, message, cb) {
+          cb(null, {mtNumber: "123"});
+        });
+    });
+
+    it("should always return a 200 even if the smsBody is not found.",
+       function(done) {
+         jsonReq.query({msisdn: "+33123456789", text: "wrong-smsBody"})
+           .expect(200).end(function(err, res) {
+             sinon.assert.notCalled(smsGateway.sendSMS);
+             done();
+           });
+       });
+
+    it("should send a SMS with the code.", function(done) {
+      sandbox.stub(storage, "popSmsCode",
+        function(smsBody, cb) {
+          cb(null, "123456");
+        });
+
+      sandbox.stub(storage, "setCode",
+        function(msisdnId, code, cb) {
+          cb(null);
+        });
+
+      jsonReq.query({msisdn: "+33123456789", text: "good-smsBody"}).expect(200)
+        .end(function(err, res) {
+          sinon.assert.calledOnce(storage.popSmsCode);
+          sinon.assert.calledOnce(storage.setCode);
+          sinon.assert.calledOnce(smsGateway.sendSMS);
           done();
         });
     });
@@ -421,7 +497,7 @@ describe("HTTP API exposed by the server", function() {
         });
     });
 
-    it("should send an SMS with the code.", function(done) {
+    it("should send a SMS with the code.", function(done) {
       sandbox.stub(smsGateway, "sendSMS",
         function(msisdn, message, cb) {
           cb(null);
