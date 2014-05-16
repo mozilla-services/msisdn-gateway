@@ -307,8 +307,8 @@ app.post("/sms/momt/verify", hawkMiddleware, function(req, res) {
         return;
     }
     res.json(200, {
-      mtNumber: conf.get("mtNumber"),
-      moNumber: conf.get("moNumber"),
+      mtSender: conf.get("mtSender"),
+      moVerifier: conf.get("moVerifier"),
       smsBody: smsBody
     });
   });
@@ -316,7 +316,7 @@ app.post("/sms/momt/verify", hawkMiddleware, function(req, res) {
 
 
 /**
- * Handle moNumber SMS reception
+ * Handle Mobile Originated SMS reception
  **/
 app.get("/sms/momt/nexmo_callback", function(req, res) {
   var msisdn = phone(req.query.msisdn);

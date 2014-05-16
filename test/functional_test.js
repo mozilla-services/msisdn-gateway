@@ -305,13 +305,13 @@ describe("HTTP API exposed by the server", function() {
     it("should send a SMS with the code.", function(done) {
       sandbox.stub(smsGateway, "sendSMS",
         function(msisdn, message, cb) {
-          cb(null, {mtNumber: "123"});
+          cb(null, {mtSender: "123"});
         });
       hawkRequest(jsonReq.send({msisdn: "+33123456789"}).expect(200),
         function(err, res) {
           sinon.assert.calledOnce(smsGateway.sendSMS);
-          expect(res.body.hasOwnProperty("mtNumber")).to.equal(true);
-          expect(res.body.mtNumber).to.equal("123");
+          expect(res.body.hasOwnProperty("mtSender")).to.equal(true);
+          expect(res.body.mtSender).to.equal("123");
           done();
         });
     });
@@ -337,10 +337,10 @@ describe("HTTP API exposed by the server", function() {
       hawkRequest(jsonReq.send({}).expect(200),
         function(err, res) {
           sinon.assert.calledOnce(storage.setSmsCode);
-          expect(res.body.hasOwnProperty("mtNumber")).to.equal(true);
-          expect(res.body.hasOwnProperty("moNumber")).to.equal(true);
-          expect(res.body.mtNumber).to.equal(conf.get("mtNumber"));
-          expect(res.body.moNumber).to.equal(conf.get("moNumber"));
+          expect(res.body.hasOwnProperty("mtSender")).to.equal(true);
+          expect(res.body.hasOwnProperty("moVerifier")).to.equal(true);
+          expect(res.body.mtSender).to.equal(conf.get("mtSender"));
+          expect(res.body.moVerifier).to.equal(conf.get("moVerifier"));
           expect(res.body.smsBody).to.equal(_smsBody);
           done();
         });
@@ -357,7 +357,7 @@ describe("HTTP API exposed by the server", function() {
 
       sandbox.stub(smsGateway, "sendSMS",
         function(msisdn, message, cb) {
-          cb(null, {mtNumber: "123"});
+          cb(null, {mtSender: "123"});
         });
     });
 

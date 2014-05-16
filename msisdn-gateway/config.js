@@ -138,12 +138,12 @@ var conf = convict({
     doc: "The Browser ID Private Key",
     format: validateJWCryptoKey
   },
-  mtNumber: {
+  mtSender: {
     doc: "Number from which SMS are sent",
     format: String,
     default: "Mozilla"
   },
-  moNumber: {
+  moVerifier: {
     doc: "Number to SMS should be sent",
     format: String,
     default: ""
