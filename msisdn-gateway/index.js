@@ -186,9 +186,9 @@ app.get("/", function(req, res) {
 });
 
 /**
- * Ask for a new number registration.
+ * Return the best verification method wrt msisdn, mcc, mnc, roaming
  **/
-app.post("/register", requireParams("msisdn"), function(req, res) {
+app.post("/discover", function(req, res) {
 
   if (req.body.hasOwnProperty("msisdn")) {
     var msisdn = phone(req.body.msisdn);
@@ -197,6 +197,25 @@ app.post("/register", requireParams("msisdn"), function(req, res) {
       return;
     }
   }
+
+  var verificationUrl;
+  if (!req.body.hasOwnProperty("msisdn")) {
+    verificationUrl = req.protocol + "://" + req.get("host") +
+                      conf.get("apiPrefix") + "/sms/momt/verify";
+  } else {
+    verificationUrl = req.protocol + "://" + req.get("host") +
+                      conf.get("apiPrefix") + "/sms/mt/verify";
+  }
+
+  res.json(200, {
+    verificationUrl: verificationUrl
+  });
+});
+
+/**
+ * Ask for a new number registration.
+ **/
+app.post("/register", function(req, res) {
 
   var token = new Token();
   token.getCredentials(function(tokenId, authKey, sessionToken) {
@@ -207,18 +226,8 @@ app.post("/register", requireParams("msisdn"), function(req, res) {
         return;
       }
 
-      var verificationUrl;
-      if (!req.body.hasOwnProperty("msisdn")) {
-        verificationUrl = req.protocol + "://" + req.get("host") +
-          conf.get("apiPrefix") + "/sms/momt/verify";
-      } else {
-        verificationUrl = req.protocol + "://" + req.get("host") +
-          conf.get("apiPrefix") + "/sms/mt/verify";
-      }
-
       res.json(200, {
-        msisdnSessionToken: sessionToken,
-        verificationUrl: verificationUrl
+        msisdnSessionToken: sessionToken
       });
     });
   });

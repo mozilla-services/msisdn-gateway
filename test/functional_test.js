@@ -59,6 +59,7 @@ describe("HTTP API exposed by the server", function() {
 
   var routes = {
     '/': ['get'],
+    '/discover': ['post'],
     '/register': ['post'],
     '/unregister': ['post'],
     '/sms/mt/verify': ['post'],
@@ -198,14 +199,18 @@ describe("HTTP API exposed by the server", function() {
       });
   });
 
-  describe("POST /register", function() {
+  describe("POST /discover", function() {
     var jsonReq;
 
     beforeEach(function() {
       jsonReq = supertest(app)
-        .post('/register')
+        .post('/discover')
         .type('json')
         .expect('Content-Type', /json/);
+    });
+
+    it("should works without the MSISDN parameter", function(done) {
+      jsonReq.send({}).expect(200).end(done);
     });
 
     it("should take only a valid MSISDN number", function(done) {
@@ -216,14 +221,23 @@ describe("HTTP API exposed by the server", function() {
         done();
       });
     });
+  });
+
+  describe("POST /register", function() {
+    var jsonReq;
+
+    beforeEach(function() {
+      jsonReq = supertest(app)
+        .post('/register')
+        .type('json')
+        .expect('Content-Type', /json/);
+    });
 
     it("should create the Hawk session.", function(done) {
       jsonReq.send({msisdn: "+33123456789"}).expect(200).end(
         function(err, res) {
           expect(res.body.hasOwnProperty("msisdnSessionToken")).to.equal(true);
           expect(res.body.msisdnSessionToken).to.length(64);
-          expect(res.body.hasOwnProperty("verificationUrl")).to.equal(true);
-          expect(res.body.verificationUrl, /\/v1\/msisdn\/sms\/verify/);
           done();
         });
     });
