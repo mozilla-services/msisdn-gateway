@@ -80,22 +80,15 @@ the user.
 <img src="http://www.gliffy.com/go/publish/image/5685725/L.png" />
 
 # API Endpoints
-  * [POST /v1/msisdn/discover](#post-v1msisdndiscover)
   * [POST /v1/msisdn/register](#post-v1msisdnregister)
   * [POST /v1/msisdn/unregister](#post-v1msisdnunregister) :lock:
-  * [POST /v1/msisdn/network/verify](#post-v1msisdnnetworkverify) :lock:
-  * [POST /v1/msisdn/telephony/verify](#post-v1msisdntelephonyverify) :lock:
   * [POST /v1/msisdn/sms/mt/verify](#post-v1msisdnsmsmtverify) :lock:
-  * [POST /v1/msisdn/sms/mt/resend_code](#post-v1msisdnmtresend_code) :lock:
-  * [POST /v1/msisdn/sms/momt/verify](#post-v1msisdnsmsmomtverify) :lock:
+  * [SMS  /v1/msisdn/sms/momt/verify](#sms-v1msisdnsmsmomtverify)
   * [POST /v1/msisdn/sms/verify_code](#post-v1msisdnverify_code) :lock:
 
 ## POST /v1/msisdn/discover
 
-The verification service checks the available verification mechanism
-according to the given network information (msisdn, mcc, mnc and
-roaming) and replies back with a verification URL corresponding to the
-chosen verification mechanism.
+For the given network information (msisdn, mcc, mnc and roaming), the verification service returns a list of available verification methods and the corresponding details.
 
 ### Request
 
@@ -103,7 +96,7 @@ chosen verification mechanism.
 curl -v \
 -X POST \
 -H "Content-Type: application/json" \
-"https://api.accounts.firefox.com/v1/msisdn/discover" \
+"https://msisdn.accounts.firefox.com/v1/msisdn/discover" \
 -d '{
   "msisdn": "+442071838750"
   "mcc": "214",
@@ -128,14 +121,31 @@ Successful requests will produce a "200 OK" response with following format:
 
 ```json
 {
-  "verificationUrl": "https://api.accounts.firefox.com/v1/msisdn/sms/mt/verify"
+  "verificationMethods": [ "sms:momt", "sms:mt" ],
+  "verificationDetails": {
+    "sms:mt": {
+      "mtSender": "123"
+    },
+    "sms:momt": {
+      "mtSender": "123",
+      "moVerifier": "234"
+    }
+  }
 }
 ```
 
-___Parameters___
+* `verificationMethods` - a list of verification methods available for the given set of parameters
+* `verificationDetails` - an object whose keys are the elements of `verificationMethods` and whose values are the details of each method
 
-* `verificationUrl` - Endpoint corresponding to the available verification
-  mechanism that the client should use to start the verification process.
+Failing requests may be due to the following errors:
+
+* status code 400, errno 106: request body was not valid json
+* status code 400, errno 107: request body contains invalid parameters
+* status code 400, errno 108: request body missing required parameters
+* status code 411, errno 112: content-length header was not provided
+* status code 413, errno 113: request body too large
+* status code 429, errno 114: client has sent too many requests
+* status code 503, errno 201: service temporarily unavailable to due high load
 
 ## POST /v1/msisdn/register
 
@@ -147,7 +157,7 @@ Starts a MSISDN registration session.
 curl -v \
 -X POST \
 -H "Content-Type: application/json" \
-"https://api.accounts.firefox.com/v1/msisdn/register"
+"https://msisdn.accounts.firefox.com/v1/msisdn/register"
 ```
 
 ### Response
@@ -160,15 +170,18 @@ Successful requests will produce a "200 OK" response with following format:
 }
 ```
 
-___Parameters___
+* `msisdnSessionToken` - used to build Hawk credentials from HKDF
 
-* `msisdnSessionToken` Used to build hawk credentials from HKDF
+Failing requests may be due to the following errors:
+
+* status code 429, errno 114: client has sent too many requests
+* status code 503, errno 201: service temporarily unavailable to due high load
 
 ## POST /v1/msisdn/unregister
 
 :lock: HAWK-authenticated with a `msisdnSessionToken`.
 
-This completely removes a previously registered MSISDN.
+This completely removes a previously registered MSISDN associated with the `msisdnSessionToken`.
 
 ### Request
 
@@ -180,15 +193,15 @@ The request must include a Hawk header that authenticates the request
 curl -v \
 -X POST \
 -H "Content-Type: application/json" \
-"https://api.accounts.firefox.com/v1/msisdn/unregister" \
--H 'Authorization: Hawk id="d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d", ts="1373391043", nonce="ohQjqb", hash="vBODPWhDhiRWM4tmI9qp+np+3aoqEFzdGuGk0h7bh9w=", mac="LAnpP3P2PXelC6hUoUaHP72nCqY5Iibaa3eeiGBqIIU="' \
--d '{
-  "msisdn": "+442071838750"
-}'
+"https://msisdn.accounts.firefox.com/v1/msisdn/unregister" \
+-H 'Authorization: Hawk id="d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d", ts="1373391043", nonce="ohQjqb", hash="vBODPWhDhiRWM4tmI9qp+np+3aoqEFzdGuGk0h7bh9w=", mac="LAnpP3P2PXelC6hUoUaHP72nCqY5Iibaa3eeiGBqIIU="'
 ```
 
-___Parameters___
-* msisdn - a MSISDN in E.164 format
+Failing requests may be due to the following errors:
+
+* status code 401, errno 110: invalid authentication token
+* status code 429, errno 114: client has sent too many requests
+* status code 503, errno 201: service temporarily unavailable to due high load
 
 ### Response
 
@@ -197,68 +210,6 @@ Successful requests will produce a "200 OK" response with following format:
 ```json
 {}
 ```
-
-## POST /v1/msisdn/network/verify
-:lock: HAWK-authenticated with a `msisdnSessionToken`.
-
-The server is given a public key, and returns a signed certificate using the
-same JWT-like mechanism as a BrowserID primary IdP would (see the
-[browserid-certifier project](https://github.com/mozilla/browserid-certifier
-for details)). The signed certificate includes a `principal.email` property to
-indicate a "Firefox Account-like" identifier (a uuid at the account server's
-primary domain). TODO: add discussion about how this id will likely *not* be
-stable for repeated calls to this endpoint with the same MSISDN (alone), but
-probably stable for repeated calls with the same MSISDN+`msisdnSessionToken`.
-
-### Request
-
-The request must include a Hawk header that authenticates the request
-(including payload) using a `msisdnSessionToken` received from
-`/v1/msisdn/register`.
-
-```sh
-curl -v \
--X POST \
--H "Content-Type: application/json" \
-"https://api.accounts.firefox.com/v1/msisdn/network/verify" \
--H 'Authorization: Hawk id="d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d", ts="1373391043", nonce="ohQjqb", hash="vBODPWhDhiRWM4tmI9qp+np+3aoqEFzdGuGk0h7bh9w=", mac="LAnpP3P2PXelC6hUoUaHP72nCqY5Iibaa3eeiGBqIIU="' \
--d '{
- "publicKey": {
-    "algorithm":"RS",
-    "n":"4759385967235610503571494339196749614544606692567785790953934768202714280652973091341316862993582789079872007974809511698859885077002492642203267408776123",
-    "e":"65537"
-  },
-  "duration": 86400000
-}'
-```
-
-__Parameters__
-* publicKey - the key to sign (run `bin/generate-keypair` from [jwcrypto](https://github.com/mozilla/jwcrypto))
-    * algorithm - "RS" or "DS"
-    * n - RS only
-    * e - RS only
-    * y - DS only
-    * p - DS only
-    * q - DS only
-    * g - DS only
-* duration - time interval from now when the certificate will expire in seconds
-
-### Response
-
-Successful requests will produce a "200 OK" response with following format:
-
-```json
-{
-  "cert": "eyJhbGciOiJEUzI1NiJ9.eyJwdWJsaWMta2V5Ijp7ImFsZ29yaXRobSI6IlJTIiwibiI6IjU3NjE1NTUwOTM3NjU1NDk2MDk4MjAyMjM2MDYyOTA3Mzg5ODMyMzI0MjUyMDY2Mzc4OTA0ODUyNDgyMjUzODg1MTA3MzQzMTY5MzI2OTEyNDkxNjY5NjQxNTQ3NzQ1OTM3NzAxNzYzMTk1NzQ3NDI1NTEyNjU5NjM2MDgwMzYzNjE3MTc1MzMzNjY5MzEyNTA2OTk1MzMyNDMiLCJlIjoiNjU1MzcifSwicHJpbmNpcGFsIjp7ImVtYWlsIjoiZm9vQGV4YW1wbGUuY29tIn0sImlhdCI6MTM3MzM5MjE4OTA5MywiZXhwIjoxMzczMzkyMjM5MDkzLCJpc3MiOiIxMjcuMC4wLjE6OTAwMCJ9.l5I6WSjsDIwCKIz_9d3juwHGlzVcvI90T2lv2maDlr8bvtMglUKFFWlN_JEzNyPBcMDrvNmu5hnhyN7vtwLu3Q"
-}
-```
-
-The signed certificate includes these additional claims:
-
-* fxa-verifiedMSISDN - the user's verified MSISDN
-* fxa-lastVerifiedAt - time of last MSISDN verification (seconds since epoch)
-
-## POST /v1/msisdn/telephony/verify
 
 ## POST /v1/msisdn/sms/mt/verify
 
@@ -270,7 +221,7 @@ The signed certificate includes these additional claims:
 curl -v \
 -X POST \
 -H "Content-Type: application/json" \
-"https://api.accounts.firefox.com/v1/msisdn/sms/mt/verify" \
+"https://msisdn.accounts.firefox.com/v1/msisdn/sms/mt/verify" \
 -H 'Authorization: Hawk id="d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d", ts="1373391043", nonce="ohQjqb", hash="vBODPWhDhiRWM4tmI9qp+np+3aoqEFzdGuGk0h7bh9w=", mac="LAnpP3P2PXelC6hUoUaHP72nCqY5Iibaa3eeiGBqIIU="' \
 -d '{
   "msisdn": "+442071838750"
@@ -285,50 +236,60 @@ ___Parameters___
 Successful requests will produce a "200 OK" response with following format:
 
 ```json
+{}
+```
+
+Failing requests may be due to the following errors:
+
+* status code 400, errno 106: request body was not valid json
+* status code 400, errno 107: request body contains invalid parameters
+* status code 400, errno 108: request body missing required parameters
+* status code 401, errno 110: invalid authentication token
+* status code 411, errno 112: content-length header was not provided
+* status code 413, errno 113: request body too large
+* status code 429, errno 114: client has sent too many requests
+* status code 503, errno 201: service temporarily unavailable to due high load
+
+Successful requests also trigger the sending of a SMS-MT message from the server's `mtSender` number to the client's MSISDN.
+
+```SMS-MT -> client's MSISDN
 {
-  "mtSender": "123"
+  "code": "e3c5b"
 }
 ```
-___Parameters___
-* `mtSender` - Phone number or short code that the server will use to send the
-  verification SMS. This is useful for the client to silence the reception of
-  the SMS.
 
-## POST /v1/msisdn/sms/momt/verify
+* `code` - the verification code
+
+## SMS /v1/msisdn/sms/momt/verify
+
+A SMS-MO message to the `moVerifier` number in the `verificationDetails` for the `sms:momt` flow returned by a previous call to [POST /v1/msisdn/discover](#post-v1msisdndiscover). The body of the SMS is a JSON body.
 
 ### Request
 
-:lock: HAWK-authenticated with a `msisdnSessionToken`.
-
-```sh
-curl -v \
--X POST \
--H "Content-Type: application/json" \
-"https://api.accounts.firefox.com/v1/msisdn/sms/momt/verify" \
--H 'Authorization: Hawk id="d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d", ts="1373391043", nonce="ohQjqb", hash="vBODPWhDhiRWM4tmI9qp+np+3aoqEFzdGuGk0h7bh9w=", mac="LAnpP3P2PXelC6hUoUaHP72nCqY5Iibaa3eeiGBqIIU="' \
--d '{
+```SMS-MO -> moVerifier \
+'{
+  "endpoint": "/v1/msisdn/sms/momt/verify"
+  "id": "d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d"
 }'
 ```
 
+___Parameters___
+* `endpoint` - the API endpoint for this request
+* `id` - the Hawk `id` parameter derived via HKDF
+
 ### Response
 
-Successful requests will produce a "200 OK" response with following format:
+Successful requests trigger the sending of a SMS-MT message from the server's `mtSender` number to the client's MSISDN.
 
-```json
+```SMS-MT -> client's MSISDN
 {
-  "mtSender": "123",
-  "moVerifier": "234",
-  "smsBody": "RandomUniqueID"
+  "msisdn": "+442071838750",
+  "code": "e3c5b"
 }
 ```
-___Parameters___
-* `mtSender` - Phone number or short code that the server will use to send the
-  verification SMS. This is useful for the client to silence the reception of
-  the SMS.
-* `moVerifier` - Phone number or short code where the server expects to receive
-  an SMS sent from the device.
-* `smsBody` - Random unique string that allows the server to match a /verify
-  request with a received SMS.
+
+* `msisdn` - the client's MSISDN, as determined by the server
+* `code` - the verification code
 
 ## POST /v1/msisdn/sms/verify_code
 
@@ -354,10 +315,9 @@ The request must include a Hawk header that authenticates the request
 curl -v \
 -X POST \
 -H "Content-Type: application/json" \
-"https://api.accounts.firefox.com/v1/msisdn/sms/verify_code" \
+"https://msisdn.accounts.firefox.com/v1/msisdn/sms/verify_code" \
 -H 'Authorization: Hawk id="d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d", ts="1373391043", nonce="ohQjqb", hash="vBODPWhDhiRWM4tmI9qp+np+3aoqEFzdGuGk0h7bh9w=", mac="LAnpP3P2PXelC6hUoUaHP72nCqY5Iibaa3eeiGBqIIU="' \
 -d '{
-  "msisdn": "+442071838750",
   "code": "e3c5b",
   "publicKey": {
     "algorithm":"RS",
@@ -369,7 +329,6 @@ curl -v \
 ```
 
 ___Parameters___
-* `msisdn` - a MSISDN in E.164 format
 * `code` - the SMS verification code sent to the MSISDN
 * `publicKey` - the key to sign (run `bin/generate-keypair` from
   [jwcrypto](https://github.com/mozilla/jwcrypto))
@@ -398,36 +357,13 @@ The signed certificate includes these additional claims:
 * fxa-verifiedMSISDN - the user's verified MSISDN
 * fxa-lastVerifiedAt - time of last MSISDN verification (seconds since epoch)
 
-## POST /v1/msisdn/sms/mt/resend_code
+Failing requests may be due to the following errors:
 
-:lock: HAWK-authenticated with a `msisdnSessionToken`.
-
-This triggers the sending of an SMS code the MSISDN registered in
-/v1/msisdn/register. 
-
-### Request
-
-The request must include a Hawk header that authenticates the request
-(including payload) using a `msisdnSessionToken` received from
-`/v1/msisdn/register`.
-
-```sh
-curl -v \
--X POST \
--H "Content-Type: application/json" \
-"https://api.accounts.firefox.com/v1/msisdn/sms/mt/resend_code" \
--H 'Authorization: Hawk id="d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d", ts="1373391043", nonce="ohQjqb", hash="vBODPWhDhiRWM4tmI9qp+np+3aoqEFzdGuGk0h7bh9w=", mac="LAnpP3P2PXelC6hUoUaHP72nCqY5Iibaa3eeiGBqIIU="' \
--d '{
-  "msisdn": "+442071838750"
-}'
-```
-___Parameters___
-* `msisdn` - a MSISDN in E.164 format
-
-### Response
-
-Successful requests will produce a "200 OK" response with following format:
-
-```json
-{}
-```
+* status code 400, errno 106: request body was not valid json
+* status code 400, errno 107: request body contains invalid parameters
+* status code 400, errno 108: request body missing required parameters
+* status code 401, errno 110: invalid authentication token
+* status code 411, errno 112: content-length header was not provided
+* status code 413, errno 113: request body too large
+* status code 429, errno 114: client has sent too many requests
+* status code 503, errno 201: service temporarily unavailable to due high load
