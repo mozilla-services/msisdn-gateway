@@ -250,7 +250,7 @@ Failing requests may be due to the following errors:
 * status code 429, errno 114: client has sent too many requests
 * status code 503, errno 201: service temporarily unavailable to due high load
 
-Successful requests also trigger the sending of a SMS-MT message from the server's `mtSender` number to the client's MSISDN.
+Successful requests also trigger the sending of a SMS-MT message from the server's `mtSender` number to the client's MSISDN with the following body:
 
 ```json
 {
