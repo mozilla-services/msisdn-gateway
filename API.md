@@ -270,7 +270,7 @@ SMS-MO message sent to `moVerifier` number with following body:
 
 ```json
 '{
-  "endpoint": "/v1/msisdn/sms/momt/verify"
+  "endpoint": "/v1/msisdn/sms/momt/verify",
   "id": "d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d"
 }'
 ```
