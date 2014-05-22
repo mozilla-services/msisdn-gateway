@@ -80,6 +80,7 @@ the user.
 <img src="http://www.gliffy.com/go/publish/image/5685725/L.png" />
 
 # API Endpoints
+  * [POST /v1/msisdn/discover](#post-v1msisdndiscover)
   * [POST /v1/msisdn/register](#post-v1msisdnregister)
   * [POST /v1/msisdn/unregister](#post-v1msisdnunregister) :lock:
   * [POST /v1/msisdn/sms/mt/verify](#post-v1msisdnsmsmtverify) :lock:
@@ -134,8 +135,10 @@ Successful requests will produce a "200 OK" response with following format:
 }
 ```
 
-* `verificationMethods` - a list of verification methods available for the given set of parameters
+* `verificationMethods` - a list of verification methods available for the given set of parameters, in order of preferred use
 * `verificationDetails` - an object whose keys are the elements of `verificationMethods` and whose values are the details of each method
+
+The methods listed in `verificationMethods` are sorted in the preferred order from the perspective of the server, i.e., the method listed first is the most preferred method. 
 
 Failing requests may be due to the following errors:
 
