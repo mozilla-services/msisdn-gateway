@@ -252,7 +252,7 @@ Failing requests may be due to the following errors:
 
 Successful requests also trigger the sending of a SMS-MT message from the server's `mtSender` number to the client's MSISDN.
 
-```SMS-MT -> client's MSISDN
+```json
 {
   "code": "e3c5b"
 }
@@ -266,7 +266,9 @@ A SMS-MO message to the `moVerifier` number in the `verificationDetails` for the
 
 ### Request
 
-```SMS-MO -> moVerifier \
+SMS-MO message sent to `moVerifier` number with following body:
+
+```json
 '{
   "endpoint": "/v1/msisdn/sms/momt/verify"
   "id": "d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d"
@@ -279,9 +281,9 @@ ___Parameters___
 
 ### Response
 
-Successful requests trigger the sending of a SMS-MT message from the server's `mtSender` number to the client's MSISDN.
+Successful requests trigger the sending of a SMS-MT message from the server's `mtSender` number to the client's MSISDN with the following body:
 
-```SMS-MT -> client's MSISDN
+```json
 {
   "msisdn": "+442071838750",
   "code": "e3c5b"
