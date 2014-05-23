@@ -403,8 +403,12 @@ ___Parameters___
 Successful requests will produce a "200 OK" response with following format:
 
 ```json
-{}
+{
+  "msisdn": "+442071838750"
+}
 ```
+
+The response includes the client's MSISDN value. This may be useful in the future, e.g., if the client previously used the SMS MO+MT flow because it didn't know the MSISDN.
 
 Failing requests may be due to the following errors:
 * status code 400, errno 105: invalid verification code
