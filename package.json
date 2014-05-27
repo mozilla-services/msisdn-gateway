@@ -34,7 +34,8 @@
     "jshint": "2.x",
     "mocha": "1.8.x",
     "sinon": "1.9.x",
-    "supertest": "0.10.x"
+    "supertest": "0.10.x",
+    "superagent-hawk": "git://github.com/CrowdProcess/superagent-hawk.git"
   },
   "scripts": {
     "test": "make test",
