@@ -36,8 +36,6 @@ var ravenClient = new raven.Client(conf.get("sentryDSN"));
 var getStorage = require("./storage");
 var storage = getStorage(conf.get("storage"));
 
-var DIGIT_CODE_SIZE = 6;
-
 function logError(err) {
   console.log(err);
   ravenClient.captureError(err);
@@ -268,7 +266,7 @@ app.post("/unregister", hawkMiddleware, requireParams("msisdn"),
  **/
 app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
-    var code = digitsCode(DIGIT_CODE_SIZE);
+    var code = digitsCode(conf.get("shortCodeLength"));
 
     storage.setCode(req.hawkHmacId, code, function(err) {
       if (err) {
@@ -293,7 +291,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
  **/
 app.post("/sms/mt/resend_code", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
-    var code = digitsCode(DIGIT_CODE_SIZE);
+    var code = digitsCode(conf.get("shortCodeLength"));
 
     storage.storeMSISDN(req.hawkHmacId, req.msisdn, function(err) {
       if (err) {
@@ -338,7 +336,7 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
       return;
     }
 
-    var code = crypto.randomBytes(16).toString("hex");
+    var code = crypto.randomBytes(conf.get("longCodeBytes")).toString("hex");
     storage.setCode(hawkHmacId, code, function(err) {
       if (err) {
         logError(err);
@@ -371,9 +369,9 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
     var duration = req.body.duration;
 
     // Validate code.
-    if (code.length !== DIGIT_CODE_SIZE) {
+    if (code.length !== conf.get("shortCodeLength")) {
       res.addError("body", "code",
-                   "Code should be " + DIGIT_CODE_SIZE + " long.");
+                   "Code should be " + conf.get("shortCodeLength") + " long.");
     }
 
     // Validate publicKey.

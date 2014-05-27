@@ -108,6 +108,16 @@ var conf = convict({
     format: String,
     default: "%y/%b/%d %H:%M:%S"
   },
+  shortCodeLength: {
+    doc: "Number of digits a shortVerificationCode should have",
+    format: Number,
+    default: 6
+  },
+  longCodeBytes: {
+    doc: "Number of bytes a longVerificationCode should have",
+    format: Number,
+    default: 16
+  },
   hawkIdSecret: {
     doc: "The secret for hmac-ing hawk.id (16 bytes key encoded as hex)",
     format: hexKeyOfSize(16),
