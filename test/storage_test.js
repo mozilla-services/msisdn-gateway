@@ -80,14 +80,14 @@ describe("Storage", function() {
         });
       });
 
-      describe("#setSmsCode", function() {
-        it("should store the smsBody's code.", function(done) {
-          storage.setSmsCode(tokenId, authKey,
+      describe("#storeMSISDN", function() {
+        it("should store the MSISDN.", function(done) {
+          storage.storeMSISDN(hawkId, authKey,
             function(err) {
               if (err)  {
                 throw err;
               }
-              storage.popSmsCode(tokenId, function(err, value){
+              storage.getMSISDN(hawkId, function(err, value){
                 expect(value).to.eql(authKey);
                 done();
               });
@@ -95,36 +95,19 @@ describe("Storage", function() {
         });
       });
 
-      describe("#popSmsCode", function() {
+      describe("#getMSISDN", function() {
         it("should return null on invalid tokenId.", function(done) {
-          storage.setSmsCode(tokenId, authKey,
+          storage.storeMSISDN(hawkId, authKey,
             function(err) {
               if (err)  {
                 throw err;
               }
-              storage.popSmsCode("wrong-tokenId", function(err, value){
+              storage.getMSISDN("wrong-hawkId", function(err, value){
                   expect(value).to.equal(null);
                   done();
                 });
             });
         });
-
-        it("should return null the second time we ask for a tokenId.",
-          function(done) {
-            storage.setSmsCode(tokenId, authKey,
-              function(err) {
-                if (err)  {
-                  throw err;
-                }
-                storage.popSmsCode(tokenId, function(err, value){
-                  expect(value).to.equal(authKey);
-                  storage.popSmsCode(tokenId, function(err, value){
-                    expect(value).to.equal(null);
-                    done();
-                  });
-                });
-              });
-          });
       });
 
       describe("#setSession", function() {

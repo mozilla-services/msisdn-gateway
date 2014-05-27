@@ -5,6 +5,7 @@
 "use strict";
 
 var express = require("express");
+var crypto = require("crypto");
 var conf = require("./config").conf;
 var pjson = require("../package.json");
 var raven = require("raven");
@@ -122,7 +123,7 @@ function hawkMiddleware(req, res, next) {
         return;
       }
 
-      req.hawkId = hmac(req.hawk.id, conf.get("hawkIdSecret"));
+      req.hawkHmacId = hmac(req.hawk.id, conf.get("hawkIdSecret"));
 
       /* Make sure we don't decorate the writeHead more than one time. */
       if (res._hawkEnabled) {
@@ -250,7 +251,7 @@ app.post("/register", function(req, res) {
  **/
 app.post("/unregister", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
-    storage.cleanSession(req.hawk.id, req.hawkId, function(err) {
+    storage.cleanSession(req.hawk.id, req.hawkHmacId, function(err) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");
@@ -267,7 +268,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
     var code = digitsCode(DIGIT_CODE_SIZE);
 
-    storage.setCode(req.hawkId, code, function(err) {
+    storage.setCode(req.hawkHmacId, code, function(err) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");
@@ -286,55 +287,28 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
 
 
 /**
- * Ask for a MO verification
+ * Ask for a new verification code
  **/
-app.post("/sms/momt/verify", hawkMiddleware, function(req, res) {
-  var code = digitsCode(DIGIT_CODE_SIZE);
+app.post("/sms/mt/resend_code", hawkMiddleware, requireParams("msisdn"),
+  validateMSISDN, function(req, res) {
+    var code = digitsCode(DIGIT_CODE_SIZE);
 
-  var smsBody = hmac(req.hawk.id, conf.get("msisdnIdSecret"));
-
-  storage.setSmsCode(smsBody, code, function(err) {
-    if (err) {
-      logError(err);
-      res.json(503, "Service Unavailable");
+    storage.storeMSISDN(req.hawkHmacId, req.msisdn, function(err) {
+      if (err) {
+        logError(err);
+        res.json(503, "Service Unavailable");
         return;
-    }
-    res.json(200, {
-      mtSender: conf.get("mtSender"),
-      moVerifier: conf.get("moVerifier"),
-      smsBody: smsBody
-    });
-  });
-});
-
-
-/**
- * Handle Mobile Originated SMS reception
- **/
-app.get("/sms/momt/nexmo_callback", function(req, res) {
-  var msisdn = phone(req.query.msisdn);
-  var smsBody = req.query.text;
-
-  storage.popSmsCode(smsBody, function(err, code) {
-    if (err) {
-      logError(err);
-      res.json(503, "Service Unavailable");
-      return;
-    }
-
-    if (code !== null && msisdn !== null) {
-      var msisdnId = hmac(msisdn, conf.get("msisdnIdSecret"));
-
-      storage.setCode(msisdnId, code, function(err) {
+      }
+  
+      storage.setCode(req.hawkHmacId, code, function(err) {
         if (err) {
           logError(err);
           res.json(503, "Service Unavailable");
           return;
         }
-
         /* Send SMS */
-        smsGateway.sendSMS(msisdn, "Your number is: " + msisdn +
-          ". To validate it please enter the following code: " + code,
+        smsGateway.sendSMS(req.msisdn,
+          "To validate your number please enter the following code: " + code,
           function(err) {
             if (err) {
               logError(err);
@@ -343,13 +317,43 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
             }
             res.json(200, {});
           });
-        return;
       });
+    });
+  });
+
+
+/**
+ * Handle Mobile Originated SMS reception
+ **/
+app.get("/sms/momt/nexmo_callback", function(req, res) {
+  var msisdn = phone(req.query.msisdn);
+  var hawkHmacId = hmac(req.query.text, conf.get("hawkIdSecret"));
+
+  storage.storeMSISDN(hawkHmacId, msisdn, function(err) {
+    if (err) {
+      logError(err);
+      res.json(503, "Service Unavailable");
+      return;
     }
-    /* The callback is always waiting for a 200 or it will keep trying.
-     * In that case the smsBody has expired so we don't want to replay it.
-     */
-    res.json(200, {});
+
+    var code = crypto.randomBytes(16).toString("hex");
+    storage.setCode(hawkHmacId, code, function(err) {
+      if (err) {
+        logError(err);
+        res.json(503, "Service Unavailable");
+        return;
+      }
+
+      /* Send SMS */
+      smsGateway.sendSMS(req.msisdn, code, function(err) {
+        if (err) {
+          logError(err);
+          res.json(503, "Service Unavailable");
+          return;
+        }
+        res.json(200, {});
+      });
+    });
   });
 });
 
@@ -389,7 +393,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
       return;
     }
 
-    storage.verifyCode(req.hawkId, code, function(err, result) {
+    storage.verifyCode(req.hawkHmacId, code, function(err, result) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");

@@ -8,7 +8,7 @@ var redis = require("redis");
 var ONE_DAY_SEC = 24 * 3600;  // A day in seconds
 
 var CODE_KEY_PREFIX = "msisdn_code_";
-var SMS_CODE_KEY_PREFIX = "msisdn_sms_";
+var MSISDN_KEY_PREFIX = "msisdn_sms_";
 var SESSION_KEY_PREFIX = "msisdn_session_";
 
 function RedisStorage(options, settings) {
@@ -24,13 +24,13 @@ function RedisStorage(options, settings) {
 }
 
 RedisStorage.prototype = {
-  setCode: function(hawkId, code, callback) {
-    var key = CODE_KEY_PREFIX + hawkId;
+  setCode: function(hawkHmacId, code, callback) {
+    var key = CODE_KEY_PREFIX + hawkHmacId;
     this._client.setex(key, ONE_DAY_SEC, code, callback);
   },
 
-  verifyCode: function(hawkId, code, callback) {
-    var key = CODE_KEY_PREFIX + hawkId;
+  verifyCode: function(hawkHmacId, code, callback) {
+    var key = CODE_KEY_PREFIX + hawkHmacId;
     this._client.get(key, function(err, result) {
       if (err) {
         callback(err);
@@ -50,22 +50,20 @@ RedisStorage.prototype = {
     });
   },
 
-  setSmsCode: function(hawkId, code, callback) {
-    var key = SMS_CODE_KEY_PREFIX + hawkId;
-    this._client.setex(key, ONE_DAY_SEC, code, callback);
+  storeMSISDN: function(hawkHmacId, msisdn, callback) {
+    var key = MSISDN_KEY_PREFIX + hawkHmacId;
+    this._client.setex(key, ONE_DAY_SEC, msisdn, callback);
   },
 
-  popSmsCode: function(hawkId, callback) {
-    var self = this;
-    var key = SMS_CODE_KEY_PREFIX + hawkId;
-    this._client.get(key, function(err, code) {
+  getMSISDN: function(hawkHmacId, callback) {
+    var key = MSISDN_KEY_PREFIX + hawkHmacId;
+    this._client.get(key, function(err, result) {
       if (err) {
         callback(err);
         return;
       }
-      self._client.del(key, function(err) {
-        callback(err, code);
-      });
+
+      callback(null, result);
     });
   },
 
@@ -94,17 +92,17 @@ RedisStorage.prototype = {
     });
   },
 
-  cleanSession: function(tokenId, hawkId, callback) {
+  cleanSession: function(tokenId, hawkHmacId, callback) {
     var self = this;
     var sessionKey = SESSION_KEY_PREFIX + tokenId;
-    var smsCodeKey = SMS_CODE_KEY_PREFIX + hawkId;
-    var codeKey = CODE_KEY_PREFIX + hawkId;
+    var msisdnKey = MSISDN_KEY_PREFIX + hawkHmacId;
+    var codeKey = CODE_KEY_PREFIX + hawkHmacId;
     self._client.del(sessionKey, function(err) {
       if (err) {
         callback(err);
         return;
       }
-      self._client.del(smsCodeKey, function(err) {
+      self._client.del(msisdnKey, function(err) {
         if (err) {
           callback(err);
           return;
