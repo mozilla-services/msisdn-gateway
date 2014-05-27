@@ -28,7 +28,7 @@ Leonix.prototype = {
       msg: message
     });
     request.get(url, function(err) {
-      callback(err, {mtNumber: source});
+      callback(err);
     });
   }
 };

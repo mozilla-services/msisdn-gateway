@@ -266,7 +266,15 @@ app.post("/unregister", hawkMiddleware, requireParams("msisdn"),
  **/
 app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
-    var code = digitsCode(conf.get("shortCodeLength"));
+    var code, message;
+    if (!req.body.hasOwnProperty("shortVerificationCode") ||
+        req.body.shortVerificationCode !== true) {
+      code = crypto.randomBytes(conf.get("longCodeBytes")).toString("hex");
+      message = code;
+    } else {
+      code = digitsCode(conf.get("shortCodeLength"));
+      message = "Your verification code is: " + code;
+    }
 
     storage.setCode(req.hawkHmacId, code, function(err) {
       if (err) {
@@ -276,11 +284,9 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
       }
       /* Send SMS */
       // XXX export string in l10n external file.
-      smsGateway.sendSMS(req.msisdn,
-        "To validate your number please enter the following code: " + code +
-        " ",
+      smsGateway.sendSMS(req.msisdn, message,
         function(err, data) {
-          res.json(200, data);
+          res.json(200);
         });
     });
   });
