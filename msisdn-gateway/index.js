@@ -189,6 +189,7 @@ app.get("/", function(req, res) {
  * Return the best verification method wrt msisdn, mcc, mnc, roaming
  **/
 app.post("/discover", function(req, res) {
+  var verificationMethods = [], verificationDetails = {}, url;
 
   if (req.body.hasOwnProperty("msisdn")) {
     var msisdn = phone(req.body.msisdn);
@@ -196,19 +197,27 @@ app.post("/discover", function(req, res) {
       res.sendError("body", "msisdn", "Invalid MSISDN number.");
       return;
     }
+    // SMS/MT methods configuration
+    url = req.protocol + "://" + req.get("host") +
+          conf.get("apiPrefix") + "/sms/mt/verify";
+
+    verificationMethods.push("sms/mt");
+    verificationDetails["sms/mt"] = {
+      mtSender: conf.get("mtSender"),
+      url: url
+    };
   }
 
-  var verificationUrl;
-  if (!req.body.hasOwnProperty("msisdn")) {
-    verificationUrl = req.protocol + "://" + req.get("host") +
-                      conf.get("apiPrefix") + "/sms/momt/verify";
-  } else {
-    verificationUrl = req.protocol + "://" + req.get("host") +
-                      conf.get("apiPrefix") + "/sms/mt/verify";
-  }
+  // SMS/MOMT methods configuration
+  verificationMethods.push("sms/momt");
+  verificationDetails["sms/momt"] = {
+    mtSender: conf.get("mtSender"),
+    moVerifier: conf.get("moVerifier")
+  };
 
   res.json(200, {
-    verificationUrl: verificationUrl
+    verificationMethods: verificationMethods,
+    verificationDetails: verificationDetails
   });
 });
 
