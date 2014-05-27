@@ -220,6 +220,46 @@ describe("HTTP API exposed by the server", function() {
         done();
       });
     });
+
+    it("should return the sms/mt flow if the MSISDN is configured.",
+      function(done) {
+        jsonReq.send({msisdn: "+33123456789"}).expect(200).end(
+          function(err, res) {
+            if (err) throw err;
+            expect(res.body).to.eql({
+              "verificationMethods": ["sms/mt", "sms/momt"],
+              "verificationDetails": {
+                "sms/mt": {
+                  "mtSender": "Mozilla",
+                  "url": "http://" + res.req._headers.host +
+                    "/v1/msisdn/sms/mt/verify"
+                },
+                "sms/momt": {
+                  "mtSender": "Mozilla",
+                  "moVerifier": "456"
+                }
+              }
+            });
+            done();
+          });
+      });
+
+    it("should return the sms/momt flow if the MSISDN is not configured.",
+      function(done) {
+        jsonReq.send({}).expect(200).end(function(err, res) {
+          if (err) throw err;
+          expect(res.body).to.eql({
+            "verificationMethods": ["sms/momt"],
+            "verificationDetails": {
+              "sms/momt": {
+                "mtSender": "Mozilla",
+                "moVerifier": "456"
+              }
+            }
+          });
+          done();
+        });
+      });
   });
 
   describe("POST /register", function() {

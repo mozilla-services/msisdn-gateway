@@ -185,12 +185,13 @@ Successful requests will produce a "200 OK" response with following format:
 
 ```json
 {
-  "verificationMethods": [ "sms:momt", "sms:mt" ],
+  "verificationMethods": ["sms/momt", "sms/mt"],
   "verificationDetails": {
-    "sms:mt": {
-      "mtSender": "123"
+    "sms/mt": {
+      "mtSender": "123",
+      "url": "https://msisdn.accounts.firefox.com/v1/msisdn/sms/mt/verify"
     },
-    "sms:momt": {
+    "sms/momt": {
       "mtSender": "123",
       "moVerifier": "234"
     }
