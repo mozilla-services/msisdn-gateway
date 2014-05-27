@@ -189,7 +189,9 @@ app.get("/", function(req, res) {
  * Return the best verification method wrt msisdn, mcc, mnc, roaming
  **/
 app.post("/discover", function(req, res) {
-  var verificationMethods = [], verificationDetails = {}, url;
+  var verificationMethods = [],
+      verificationDetails = {},
+      url;
 
   if (req.body.hasOwnProperty("msisdn")) {
     var msisdn = phone(req.body.msisdn);
