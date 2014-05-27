@@ -65,7 +65,6 @@ describe("HTTP API exposed by the server", function() {
     '/sms/mt/verify': ['post'],
     '/sms/momt/verify': ['post'],
     '/sms/momt/nexmo_callback': ['post'],
-    '/sms/mt/resend_code': ['post'],
     '/sms/verify_code': ['post']
   };
 
@@ -480,43 +479,6 @@ describe("HTTP API exposed by the server", function() {
           cb(null, null);
         });
       hawkRequest(jsonReq.send(validPayload).expect(410), done);
-    });
-  });
-
-  describe("POST /sms/mt/resend_code", function() {
-    var jsonReq;
-
-    beforeEach(function() {
-      jsonReq = supertest(app)
-        .post('/sms/mt/resend_code')
-        .type('json')
-        .expect('Content-Type', /json/);
-    });
-
-    it("should require the MSISDN params", function(done) {
-      hawkRequest(jsonReq.send({}).expect(400), function(err, res) {
-        if (err) throw err;
-        expectFormatedError(res.body, "body", "msisdn");
-        done();
-      });
-    });
-
-    it("should require a valid MSISDN number", function(done) {
-      hawkRequest(jsonReq.send({msisdn: "0123456789"}).expect(400),
-        function(err, res) {
-          if (err) throw err;
-          expectFormatedError(res.body, "body", "msisdn",
-                              "Invalid MSISDN number.");
-          done();
-        });
-    });
-
-    it("should send a SMS with the code.", function(done) {
-      sandbox.stub(smsGateway, "sendSMS",
-        function(msisdn, message, cb) {
-          cb(null);
-        });
-      hawkRequest(jsonReq.send({msisdn: "+33123456789"}).expect(200), done);
     });
   });
 });
