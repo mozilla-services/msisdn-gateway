@@ -100,7 +100,8 @@ function requireParams() {
 function hawkMiddleware(req, res, next) {
   Hawk.server.authenticate(req, function(id, callback) {
     var client = getStorage(conf.get("storage"));
-    client.getSession(id, callback);
+    var hawkHmacId = hmac(id, conf.get("hawkIdSecret"));
+    client.getSession(hawkHmacId, callback);
   }, {},
     function(err, credentials, artifacts) {
       req.hawk = artifacts;
@@ -232,7 +233,8 @@ app.post("/register", function(req, res) {
 
   var token = new Token();
   token.getCredentials(function(tokenId, authKey, sessionToken) {
-    storage.setSession(tokenId, authKey, function(err) {
+    var hawkHmacId = hmac(tokenId, conf.get("hawkIdSecret"));
+    storage.setSession(hawkHmacId, authKey, function(err) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");
@@ -251,7 +253,7 @@ app.post("/register", function(req, res) {
  **/
 app.post("/unregister", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
-    storage.cleanSession(req.hawk.id, req.hawkHmacId, function(err) {
+    storage.cleanSession(req.hawkHmacId, function(err) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");

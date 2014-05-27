@@ -14,6 +14,7 @@ var storage = require("../msisdn-gateway").storage;
 var smsGateway = require("../msisdn-gateway/sms-gateway");
 var Token = require("../msisdn-gateway/token").Token;
 var Hawk = require("hawk");
+var hmac = require("../msisdn-gateway/hmac");
 
 var testKeyPair = require("./testKeyPair.json");
 
@@ -38,7 +39,8 @@ function hawkRequest(jsonReq, callback) {
       key: authKey,
       algorithm: "sha256"
     };
-    storage.setSession(tokenId, authKey, function(err) {
+    var hawkHmacId = hmac(tokenId, conf.get("hawkIdSecret"));
+    storage.setSession(hawkHmacId, authKey, function(err) {
       if (err) {
         throw err;
       }

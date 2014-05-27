@@ -67,13 +67,13 @@ RedisStorage.prototype = {
     });
   },
 
-  setSession: function(tokenId, authKey, callback) {
-    var key = SESSION_KEY_PREFIX + tokenId
+  setSession: function(hawkHmacId, authKey, callback) {
+    var key = SESSION_KEY_PREFIX + hawkHmacId;
     this._client.set(key, authKey, callback);
   },
 
-  getSession: function(tokenId, callback) {
-    var key = SESSION_KEY_PREFIX + tokenId;
+  getSession: function(hawkHmacId, callback) {
+    var key = SESSION_KEY_PREFIX + hawkHmacId;
     this._client.get(key, function(err, result) {
       if (err) {
         callback(err);
@@ -92,9 +92,9 @@ RedisStorage.prototype = {
     });
   },
 
-  cleanSession: function(tokenId, hawkHmacId, callback) {
+  cleanSession: function(hawkHmacId, callback) {
     var self = this;
-    var sessionKey = SESSION_KEY_PREFIX + tokenId;
+    var sessionKey = SESSION_KEY_PREFIX + hawkHmacId;
     var msisdnKey = MSISDN_KEY_PREFIX + hawkHmacId;
     var codeKey = CODE_KEY_PREFIX + hawkHmacId;
     self._client.del(sessionKey, function(err) {
