@@ -16,6 +16,7 @@ var code = "123456";
   "5f2c3087c09c42"; */
 var tokenId = "8848164fde6943377ed301bfa4f2e3792f737e5f535998d4ddcc218" +
   "3c5be4523";
+var hawkId = hmac(tokenId, conf.get("hawkIdSecret"));
 var authKey = "37387f4e03e5767ba8266f004003423202778b55041ea70c0d00256" +
   "e78a3bad8";
 
@@ -166,7 +167,7 @@ describe("Storage", function() {
               if (err)  {
                 throw err;
               }
-              storage.cleanSession(tokenId, function(err) {
+              storage.cleanSession(tokenId, hawkId, function(err) {
                 if (err)  {
                   throw err;
                 }

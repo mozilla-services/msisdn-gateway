@@ -430,7 +430,7 @@ describe("HTTP API exposed by the server", function() {
         });
 
       sandbox.stub(storage, "setCode",
-        function(msisdnId, code, cb) {
+        function(hawkId, code, cb) {
           cb(null);
         });
 

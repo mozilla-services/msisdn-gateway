@@ -103,7 +103,6 @@ function hawkMiddleware(req, res, next) {
   }, {},
     function(err, credentials, artifacts) {
       req.hawk = artifacts;
-
       if (err) {
         if (!err.isMissing) {
           logError(err, artifacts);
@@ -122,6 +121,8 @@ function hawkMiddleware(req, res, next) {
         res.json(403, "Forbidden");
         return;
       }
+
+      req.hawkId = hmac(req.hawk.id, conf.get("hawkIdSecret"));
 
       /* Make sure we don't decorate the writeHead more than one time. */
       if (res._hawkEnabled) {
@@ -249,7 +250,7 @@ app.post("/register", function(req, res) {
  **/
 app.post("/unregister", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
-    storage.cleanSession(req.hawk.id, function(err) {
+    storage.cleanSession(req.hawk.id, req.hawkId, function(err) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");
@@ -266,7 +267,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
   validateMSISDN, function(req, res) {
     var code = digitsCode(DIGIT_CODE_SIZE);
 
-    storage.setCode(req.msisdnId, code, function(err) {
+    storage.setCode(req.hawkId, code, function(err) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");
@@ -388,7 +389,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
       return;
     }
 
-    storage.verifyCode(req.msisdnId, code, function(err, result) {
+    storage.verifyCode(req.hawkId, code, function(err, result) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");

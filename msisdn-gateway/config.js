@@ -108,6 +108,12 @@ var conf = convict({
     format: String,
     default: "%y/%b/%d %H:%M:%S"
   },
+  hawkIdSecret: {
+    doc: "The secret for hmac-ing hawk.id (16 bytes key encoded as hex)",
+    format: hexKeyOfSize(16),
+    default: "",
+    env: "HAWK_ID_SECRET"
+  },
   msisdnIdSecret: {
     doc: "The secret for hmac-ing msisdnId (16 bytes key encoded as hex)",
     format: hexKeyOfSize(16),
@@ -150,14 +156,12 @@ var conf = convict({
   },
   leonixCredentials: {
     doc: "Leonix SMS Gateway Credentials",
-    format: validateKeys(["endpoint", "service", "login",
-                          "pwd", "source"], true),
+    format: validateKeys(["endpoint", "service", "login", "pwd"], true),
     default: ""
   },
   nexmoCredentials: {
     doc: "Nexmo SMS Gateway Credentials",
-    format: validateKeys(["endpoint", "api_key", "api_secret",
-                          "from"], true),
+    format: validateKeys(["endpoint", "api_key", "api_secret"], true),
     default: ""
   }
 });

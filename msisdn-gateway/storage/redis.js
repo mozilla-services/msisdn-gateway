@@ -24,13 +24,13 @@ function RedisStorage(options, settings) {
 }
 
 RedisStorage.prototype = {
-  setCode: function(msisdnId, code, callback) {
-    var key = CODE_KEY_PREFIX + msisdnId;
+  setCode: function(hawkId, code, callback) {
+    var key = CODE_KEY_PREFIX + hawkId;
     this._client.setex(key, ONE_DAY_SEC, code, callback);
   },
 
-  verifyCode: function(msisdnId, code, callback) {
-    var key = CODE_KEY_PREFIX + msisdnId;
+  verifyCode: function(hawkId, code, callback) {
+    var key = CODE_KEY_PREFIX + hawkId;
     this._client.get(key, function(err, result) {
       if (err) {
         callback(err);
@@ -50,14 +50,14 @@ RedisStorage.prototype = {
     });
   },
 
-  setSmsCode: function(smsBody, code, callback) {
-    var key = SMS_CODE_KEY_PREFIX + smsBody;
+  setSmsCode: function(hawkId, code, callback) {
+    var key = SMS_CODE_KEY_PREFIX + hawkId;
     this._client.setex(key, ONE_DAY_SEC, code, callback);
   },
 
-  popSmsCode: function(smsBody, callback) {
+  popSmsCode: function(hawkId, callback) {
     var self = this;
-    var key = SMS_CODE_KEY_PREFIX + smsBody;
+    var key = SMS_CODE_KEY_PREFIX + hawkId;
     this._client.get(key, function(err, code) {
       if (err) {
         callback(err);
@@ -94,9 +94,26 @@ RedisStorage.prototype = {
     });
   },
 
-  cleanSession: function(tokenId, callback) {
+  cleanSession: function(tokenId, hawkId, callback) {
+    var self = this;
     var sessionKey = SESSION_KEY_PREFIX + tokenId;
-    this._client.del(sessionKey, callback);
+    var smsCodeKey = SMS_CODE_KEY_PREFIX + hawkId;
+    var codeKey = CODE_KEY_PREFIX + hawkId;
+    self._client.del(sessionKey, function(err) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      self._client.del(smsCodeKey, function(err) {
+        if (err) {
+          callback(err);
+          return;
+        }
+        self._client.del(codeKey, function(err) {
+          callback(err);
+        });
+      });
+    });
   },
 
   drop: function(callback) {
