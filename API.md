@@ -345,7 +345,7 @@ aac4b1e3f1791ef83886c27519979b93a45e6d0da34c7509ca632aca5a28a47c
 
 (`shortVerificationCode` is `true`)
 ```
-Your verification code: e3c5b
+Your verification code: 146193
 ```
 
 ## SMS /v1/msisdn/sms/momt/verify
@@ -392,7 +392,7 @@ curl -v \
 "https://msisdn.accounts.firefox.com/v1/msisdn/sms/verify_code" \
 -H 'Authorization: Hawk id="d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d", ts="1373391043", nonce="ohQjqb", hash="vBODPWhDhiRWM4tmI9qp+np+3aoqEFzdGuGk0h7bh9w=", mac="LAnpP3P2PXelC6hUoUaHP72nCqY5Iibaa3eeiGBqIIU="' \
 -d '{
-  "code": "e3c5b"
+  "code": "146193"
 }'
 ```
 
