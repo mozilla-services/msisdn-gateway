@@ -8,7 +8,7 @@ var redis = require("redis");
 var ONE_DAY_SEC = 24 * 3600;  // A day in seconds
 
 var CODE_KEY_PREFIX = "msisdn_code_";
-var SMS_CODE_KEY_PREFIX = "msisdn_sms_";
+var MSISDN_KEY_PREFIX = "msisdn_sms_";
 var SESSION_KEY_PREFIX = "msisdn_session_";
 
 function RedisStorage(options, settings) {
@@ -24,13 +24,13 @@ function RedisStorage(options, settings) {
 }
 
 RedisStorage.prototype = {
-  setCode: function(msisdnId, code, callback) {
-    var key = CODE_KEY_PREFIX + msisdnId;
+  setCode: function(hawkHmacId, code, callback) {
+    var key = CODE_KEY_PREFIX + hawkHmacId;
     this._client.setex(key, ONE_DAY_SEC, code, callback);
   },
 
-  verifyCode: function(msisdnId, code, callback) {
-    var key = CODE_KEY_PREFIX + msisdnId;
+  verifyCode: function(hawkHmacId, code, callback) {
+    var key = CODE_KEY_PREFIX + hawkHmacId;
     this._client.get(key, function(err, result) {
       if (err) {
         callback(err);
@@ -50,32 +50,30 @@ RedisStorage.prototype = {
     });
   },
 
-  setSmsCode: function(smsBody, code, callback) {
-    var key = SMS_CODE_KEY_PREFIX + smsBody;
-    this._client.setex(key, ONE_DAY_SEC, code, callback);
+  storeMSISDN: function(hawkHmacId, msisdn, callback) {
+    var key = MSISDN_KEY_PREFIX + hawkHmacId;
+    this._client.setex(key, ONE_DAY_SEC, msisdn, callback);
   },
 
-  popSmsCode: function(smsBody, callback) {
-    var self = this;
-    var key = SMS_CODE_KEY_PREFIX + smsBody;
-    this._client.get(key, function(err, code) {
+  getMSISDN: function(hawkHmacId, callback) {
+    var key = MSISDN_KEY_PREFIX + hawkHmacId;
+    this._client.get(key, function(err, result) {
       if (err) {
         callback(err);
         return;
       }
-      self._client.del(key, function(err) {
-        callback(err, code);
-      });
+
+      callback(null, result);
     });
   },
 
-  setSession: function(tokenId, authKey, callback) {
-    var key = SESSION_KEY_PREFIX + tokenId
+  setSession: function(hawkHmacId, authKey, callback) {
+    var key = SESSION_KEY_PREFIX + hawkHmacId;
     this._client.set(key, authKey, callback);
   },
 
-  getSession: function(tokenId, callback) {
-    var key = SESSION_KEY_PREFIX + tokenId;
+  getSession: function(hawkHmacId, callback) {
+    var key = SESSION_KEY_PREFIX + hawkHmacId;
     this._client.get(key, function(err, result) {
       if (err) {
         callback(err);
@@ -94,9 +92,26 @@ RedisStorage.prototype = {
     });
   },
 
-  cleanSession: function(tokenId, callback) {
-    var sessionKey = SESSION_KEY_PREFIX + tokenId;
-    this._client.del(sessionKey, callback);
+  cleanSession: function(hawkHmacId, callback) {
+    var self = this;
+    var sessionKey = SESSION_KEY_PREFIX + hawkHmacId;
+    var msisdnKey = MSISDN_KEY_PREFIX + hawkHmacId;
+    var codeKey = CODE_KEY_PREFIX + hawkHmacId;
+    self._client.del(sessionKey, function(err) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      self._client.del(msisdnKey, function(err) {
+        if (err) {
+          callback(err);
+          return;
+        }
+        self._client.del(codeKey, function(err) {
+          callback(err);
+        });
+      });
+    });
   },
 
   drop: function(callback) {

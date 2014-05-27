@@ -14,6 +14,7 @@ var storage = require("../msisdn-gateway").storage;
 var smsGateway = require("../msisdn-gateway/sms-gateway");
 var Token = require("../msisdn-gateway/token").Token;
 var Hawk = require("hawk");
+var hmac = require("../msisdn-gateway/hmac");
 
 var testKeyPair = require("./testKeyPair.json");
 
@@ -38,7 +39,8 @@ function hawkRequest(jsonReq, callback) {
       key: authKey,
       algorithm: "sha256"
     };
-    storage.setSession(tokenId, authKey, function(err) {
+    var hawkHmacId = hmac(tokenId, conf.get("hawkIdSecret"));
+    storage.setSession(hawkHmacId, authKey, function(err) {
       if (err) {
         throw err;
       }
@@ -63,7 +65,6 @@ describe("HTTP API exposed by the server", function() {
     '/register': ['post'],
     '/unregister': ['post'],
     '/sms/mt/verify': ['post'],
-    '/sms/momt/verify': ['post'],
     '/sms/momt/nexmo_callback': ['post'],
     '/sms/verify_code': ['post']
   };
@@ -370,37 +371,7 @@ describe("HTTP API exposed by the server", function() {
     });
   });
 
-  describe("POST /sms/momt/verify", function() {
-    var jsonReq;
-
-    beforeEach(function() {
-      jsonReq = supertest(app)
-        .post('/sms/momt/verify')
-        .type('json')
-        .expect('Content-Type', /json/);
-    });
-
-    it("should set a code.", function(done) {
-      var _smsBody;
-      sandbox.stub(storage, "setSmsCode",
-        function(smsBody, code, cb) {
-          _smsBody = smsBody;
-          cb(null);
-        });
-      hawkRequest(jsonReq.send({}).expect(200),
-        function(err, res) {
-          sinon.assert.calledOnce(storage.setSmsCode);
-          expect(res.body.hasOwnProperty("mtSender")).to.equal(true);
-          expect(res.body.hasOwnProperty("moVerifier")).to.equal(true);
-          expect(res.body.mtSender).to.equal(conf.get("mtSender"));
-          expect(res.body.moVerifier).to.equal(conf.get("moVerifier"));
-          expect(res.body.smsBody).to.equal(_smsBody);
-          done();
-        });
-    });
-  });
-
-  describe("GET /sms/momt/nexmo_callback", function() {
+  describe.skip("GET /sms/momt/nexmo_callback", function() {
     var jsonReq;
 
     beforeEach(function() {
@@ -410,7 +381,7 @@ describe("HTTP API exposed by the server", function() {
 
       sandbox.stub(smsGateway, "sendSMS",
         function(msisdn, message, cb) {
-          cb(null, {mtSender: "123"});
+          cb(null);
         });
     });
 
@@ -430,7 +401,7 @@ describe("HTTP API exposed by the server", function() {
         });
 
       sandbox.stub(storage, "setCode",
-        function(msisdnId, code, cb) {
+        function(hawkId, code, cb) {
           cb(null);
         });
 

@@ -8,12 +8,13 @@
     }
   },
   "allowedOrigins": ["http://localhost:3000"],
+  "hawkIdSecret": "98a5a5a44efb0f01a1dee6e5b962c3c8",
   "msisdnIdSecret": "859a5a4ae4fb0b0f1d1eae65e692c3c8",
   "msisdnMacSecret": "58a9aab45fe4b00fe11dea566e9c238c",
   "nexmoCredentials": {
 	"endpoint": "https://rest.nexmo.com/sms/json",
 	"api_key": "Get it from your Nexmo account",
-	"api_secret": "Get it from your Nexmo account",
-	"from": "Mozilla"
-  }
+	"api_secret": "Get it from your Nexmo account"
+  },
+  "mtSender": "Mozilla"
 }

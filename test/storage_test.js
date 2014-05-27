@@ -16,6 +16,7 @@ var code = "123456";
   "5f2c3087c09c42"; */
 var tokenId = "8848164fde6943377ed301bfa4f2e3792f737e5f535998d4ddcc218" +
   "3c5be4523";
+var hawkHmacId = hmac(tokenId, conf.get("hawkIdSecret"));
 var authKey = "37387f4e03e5767ba8266f004003423202778b55041ea70c0d00256" +
   "e78a3bad8";
 
@@ -79,14 +80,14 @@ describe("Storage", function() {
         });
       });
 
-      describe("#setSmsCode", function() {
-        it("should store the smsBody's code.", function(done) {
-          storage.setSmsCode(tokenId, authKey,
+      describe("#storeMSISDN", function() {
+        it("should store the MSISDN.", function(done) {
+          storage.storeMSISDN(hawkHmacId, authKey,
             function(err) {
               if (err)  {
                 throw err;
               }
-              storage.popSmsCode(tokenId, function(err, value){
+              storage.getMSISDN(hawkHmacId, function(err, value){
                 expect(value).to.eql(authKey);
                 done();
               });
@@ -94,46 +95,29 @@ describe("Storage", function() {
         });
       });
 
-      describe("#popSmsCode", function() {
-        it("should return null on invalid tokenId.", function(done) {
-          storage.setSmsCode(tokenId, authKey,
+      describe("#getMSISDN", function() {
+        it("should return null on invalid hawkHmacId.", function(done) {
+          storage.storeMSISDN(hawkHmacId, authKey,
             function(err) {
               if (err)  {
                 throw err;
               }
-              storage.popSmsCode("wrong-tokenId", function(err, value){
+              storage.getMSISDN("wrong-hawkHmacId", function(err, value){
                   expect(value).to.equal(null);
                   done();
                 });
             });
         });
-
-        it("should return null the second time we ask for a tokenId.",
-          function(done) {
-            storage.setSmsCode(tokenId, authKey,
-              function(err) {
-                if (err)  {
-                  throw err;
-                }
-                storage.popSmsCode(tokenId, function(err, value){
-                  expect(value).to.equal(authKey);
-                  storage.popSmsCode(tokenId, function(err, value){
-                    expect(value).to.equal(null);
-                    done();
-                  });
-                });
-              });
-          });
       });
 
       describe("#setSession", function() {
         it("should store the session.", function(done) {
-          storage.setSession(tokenId, authKey,
+          storage.setSession(hawkHmacId, authKey,
             function(err) {
               if (err)  {
                 throw err;
               }
-              storage.getSession(tokenId, function(err, value){
+              storage.getSession(hawkHmacId, function(err, value){
                 expect(value).to.eql({
                   key: authKey,
                   algorithm: "sha256"
@@ -145,13 +129,13 @@ describe("Storage", function() {
       });
 
       describe("#getSession", function() {
-        it("should return null on invalid tokenId.", function(done) {
-          storage.setSession(tokenId, authKey,
+        it("should return null on invalid hawkHmacId.", function(done) {
+          storage.setSession(hawkHmacId, authKey,
             function(err) {
               if (err)  {
                 throw err;
               }
-              storage.getSession("wrong-tokenId", function(err, value){
+              storage.getSession("wrong-hawkHmacId", function(err, value){
                   expect(value).to.equal(null);
                   done();
                 });
@@ -161,16 +145,16 @@ describe("Storage", function() {
 
       describe("#cleanSession", function() {
         it("should remove everything related to the session", function(done) {
-          storage.setSession(tokenId, authKey,
+          storage.setSession(hawkHmacId, authKey,
             function(err) {
               if (err)  {
                 throw err;
               }
-              storage.cleanSession(tokenId, function(err) {
+              storage.cleanSession(hawkHmacId, function(err) {
                 if (err)  {
                   throw err;
                 }
-                storage.getSession(tokenId, function(err, value){
+                storage.getSession(hawkHmacId, function(err, value){
                   if (err)  {
                     throw err;
                   }
