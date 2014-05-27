@@ -363,7 +363,7 @@ describe("HTTP API exposed by the server", function() {
         });
     });
 
-    it("should send a SMS with the short code if shortVerificationCode is set.",
+    it("should send a SMS with a short code if shortVerificationCode is true.",
       function(done) {
         var message;
         sandbox.stub(smsGateway, "sendSMS",

@@ -286,7 +286,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
       // XXX export string in l10n external file.
       smsGateway.sendSMS(req.msisdn, message,
         function(err, data) {
-          res.json(200);
+          res.json(200, {});
         });
     });
   });
