@@ -274,34 +274,6 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
 
 
 /**
- * Ask for a new verification code
- **/
-app.post("/sms/mt/resend_code", hawkMiddleware, requireParams("msisdn"),
-  validateMSISDN, function(req, res) {
-    var code = digitsCode(DIGIT_CODE_SIZE);
-
-    storage.setCode(req.msisdnId, code, function(err) {
-      if (err) {
-        logError(err);
-        res.json(503, "Service Unavailable");
-        return;
-      }
-      /* Send SMS */
-      smsGateway.sendSMS(req.msisdn,
-        "To validate your number please enter the following code: " + code,
-        function(err) {
-          if (err) {
-            logError(err);
-            res.json(503, "Service Unavailable");
-            return;
-          }
-          res.json(200, {});
-        });
-    });
-  });
-
-
-/**
  * Ask for a MO verification
  **/
 app.post("/sms/momt/verify", hawkMiddleware, function(req, res) {
@@ -477,28 +449,6 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
           res.json(200, {cert: cert, publicKey: _publicKey.serialize()});
         });
       });
-    });
-  });
-
-/**
- * Ask for a new verification code.
- **/
-app.post("/sms/mt/resend_code", hawkMiddleware, requireParams("msisdn"),
-  validateMSISDN, function(req, res) {
-    var code = digitsCode(DIGIT_CODE_SIZE);
-
-    storage.setCode(req.msisdnId, code, function(err) {
-      if (err) {
-        logError(err);
-        res.json(503, "Service Unavailable");
-        return;
-      }
-      /* Send SMS */
-      smsGateway.sendSMS(req.msisdn,
-        "To validate your number please enter the following code: " + code,
-        function(err) {
-          res.json(200, {});
-        });
     });
   });
 
