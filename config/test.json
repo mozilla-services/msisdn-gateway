@@ -19,5 +19,5 @@
 	"api_secret": "",
 	"from": "Mozilla"
   },
-  "moNumber": "456"
+  "moVerifier": "456"
 }

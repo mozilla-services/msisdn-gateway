@@ -59,6 +59,7 @@ describe("HTTP API exposed by the server", function() {
 
   var routes = {
     '/': ['get'],
+    '/discover': ['post'],
     '/register': ['post'],
     '/unregister': ['post'],
     '/sms/mt/verify': ['post'],
@@ -198,14 +199,18 @@ describe("HTTP API exposed by the server", function() {
       });
   });
 
-  describe("POST /register", function() {
+  describe("POST /discover", function() {
     var jsonReq;
 
     beforeEach(function() {
       jsonReq = supertest(app)
-        .post('/register')
+        .post('/discover')
         .type('json')
         .expect('Content-Type', /json/);
+    });
+
+    it("should works without the MSISDN parameter", function(done) {
+      jsonReq.send({}).expect(200).end(done);
     });
 
     it("should take only a valid MSISDN number", function(done) {
@@ -216,14 +221,23 @@ describe("HTTP API exposed by the server", function() {
         done();
       });
     });
+  });
+
+  describe("POST /register", function() {
+    var jsonReq;
+
+    beforeEach(function() {
+      jsonReq = supertest(app)
+        .post('/register')
+        .type('json')
+        .expect('Content-Type', /json/);
+    });
 
     it("should create the Hawk session.", function(done) {
       jsonReq.send({msisdn: "+33123456789"}).expect(200).end(
         function(err, res) {
           expect(res.body.hasOwnProperty("msisdnSessionToken")).to.equal(true);
           expect(res.body.msisdnSessionToken).to.length(64);
-          expect(res.body.hasOwnProperty("verificationUrl")).to.equal(true);
-          expect(res.body.verificationUrl, /\/v1\/msisdn\/sms\/verify/);
           done();
         });
     });
@@ -305,13 +319,13 @@ describe("HTTP API exposed by the server", function() {
     it("should send a SMS with the code.", function(done) {
       sandbox.stub(smsGateway, "sendSMS",
         function(msisdn, message, cb) {
-          cb(null, {mtNumber: "123"});
+          cb(null, {mtSender: "123"});
         });
       hawkRequest(jsonReq.send({msisdn: "+33123456789"}).expect(200),
         function(err, res) {
           sinon.assert.calledOnce(smsGateway.sendSMS);
-          expect(res.body.hasOwnProperty("mtNumber")).to.equal(true);
-          expect(res.body.mtNumber).to.equal("123");
+          expect(res.body.hasOwnProperty("mtSender")).to.equal(true);
+          expect(res.body.mtSender).to.equal("123");
           done();
         });
     });
@@ -337,10 +351,10 @@ describe("HTTP API exposed by the server", function() {
       hawkRequest(jsonReq.send({}).expect(200),
         function(err, res) {
           sinon.assert.calledOnce(storage.setSmsCode);
-          expect(res.body.hasOwnProperty("mtNumber")).to.equal(true);
-          expect(res.body.hasOwnProperty("moNumber")).to.equal(true);
-          expect(res.body.mtNumber).to.equal(conf.get("mtNumber"));
-          expect(res.body.moNumber).to.equal(conf.get("moNumber"));
+          expect(res.body.hasOwnProperty("mtSender")).to.equal(true);
+          expect(res.body.hasOwnProperty("moVerifier")).to.equal(true);
+          expect(res.body.mtSender).to.equal(conf.get("mtSender"));
+          expect(res.body.moVerifier).to.equal(conf.get("moVerifier"));
           expect(res.body.smsBody).to.equal(_smsBody);
           done();
         });
@@ -357,7 +371,7 @@ describe("HTTP API exposed by the server", function() {
 
       sandbox.stub(smsGateway, "sendSMS",
         function(msisdn, message, cb) {
-          cb(null, {mtNumber: "123"});
+          cb(null, {mtSender: "123"});
         });
     });
 

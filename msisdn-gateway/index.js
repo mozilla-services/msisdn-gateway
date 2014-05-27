@@ -186,9 +186,9 @@ app.get("/", function(req, res) {
 });
 
 /**
- * Ask for a new number registration.
+ * Return the best verification method wrt msisdn, mcc, mnc, roaming
  **/
-app.post("/register", requireParams("msisdn"), function(req, res) {
+app.post("/discover", function(req, res) {
 
   if (req.body.hasOwnProperty("msisdn")) {
     var msisdn = phone(req.body.msisdn);
@@ -197,6 +197,25 @@ app.post("/register", requireParams("msisdn"), function(req, res) {
       return;
     }
   }
+
+  var verificationUrl;
+  if (!req.body.hasOwnProperty("msisdn")) {
+    verificationUrl = req.protocol + "://" + req.get("host") +
+                      conf.get("apiPrefix") + "/sms/momt/verify";
+  } else {
+    verificationUrl = req.protocol + "://" + req.get("host") +
+                      conf.get("apiPrefix") + "/sms/mt/verify";
+  }
+
+  res.json(200, {
+    verificationUrl: verificationUrl
+  });
+});
+
+/**
+ * Ask for a new number registration.
+ **/
+app.post("/register", function(req, res) {
 
   var token = new Token();
   token.getCredentials(function(tokenId, authKey, sessionToken) {
@@ -207,18 +226,8 @@ app.post("/register", requireParams("msisdn"), function(req, res) {
         return;
       }
 
-      var verificationUrl;
-      if (!req.body.hasOwnProperty("msisdn")) {
-        verificationUrl = req.protocol + "://" + req.get("host") +
-          conf.get("apiPrefix") + "/sms/momt/verify";
-      } else {
-        verificationUrl = req.protocol + "://" + req.get("host") +
-          conf.get("apiPrefix") + "/sms/mt/verify";
-      }
-
       res.json(200, {
-        msisdnSessionToken: sessionToken,
-        verificationUrl: verificationUrl
+        msisdnSessionToken: sessionToken
       });
     });
   });
@@ -307,8 +316,8 @@ app.post("/sms/momt/verify", hawkMiddleware, function(req, res) {
         return;
     }
     res.json(200, {
-      mtNumber: conf.get("mtNumber"),
-      moNumber: conf.get("moNumber"),
+      mtSender: conf.get("mtSender"),
+      moVerifier: conf.get("moVerifier"),
       smsBody: smsBody
     });
   });
@@ -316,7 +325,7 @@ app.post("/sms/momt/verify", hawkMiddleware, function(req, res) {
 
 
 /**
- * Handle moNumber SMS reception
+ * Handle Mobile Originated SMS reception
  **/
 app.get("/sms/momt/nexmo_callback", function(req, res) {
   var msisdn = phone(req.query.msisdn);
