@@ -27,7 +27,7 @@ Nexmo.prototype = {
       text: message
     });
     request.get(url, function(err) {
-      callback(err, {mtNumber: from});
+      callback(err);
     });
   }
 };

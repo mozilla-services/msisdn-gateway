@@ -338,14 +338,6 @@ describe("HTTP API exposed by the server", function() {
         .expect('Content-Type', /json/);
     });
 
-    it("should require the MSISDN params", function(done) {
-      hawkRequest(jsonReq.send({}).expect(400), function(err, res) {
-        if (err) throw err;
-        expectFormatedError(res.body, "body", "msisdn");
-        done();
-      });
-    });
-
     it("should require a valid MSISDN number", function(done) {
       hawkRequest(jsonReq.send({msisdn: "0123456789"}).expect(400),
         function(err, res) {
@@ -356,19 +348,62 @@ describe("HTTP API exposed by the server", function() {
         });
     });
 
-    it("should send a SMS with the code.", function(done) {
+    it("should send a SMS with the long code by default.", function(done) {
+      var message;
       sandbox.stub(smsGateway, "sendSMS",
-        function(msisdn, message, cb) {
-          cb(null, {mtSender: "123"});
+        function(msisdn, msg, cb) {
+          message = msg;
+          cb(null);
         });
       hawkRequest(jsonReq.send({msisdn: "+33123456789"}).expect(200),
         function(err, res) {
           sinon.assert.calledOnce(smsGateway.sendSMS);
-          expect(res.body.hasOwnProperty("mtSender")).to.equal(true);
-          expect(res.body.mtSender).to.equal("123");
+          expect(message).to.length(32);
           done();
         });
     });
+
+    it("should send a SMS with a short code if shortVerificationCode is true.",
+      function(done) {
+        var message;
+        sandbox.stub(smsGateway, "sendSMS",
+          function(msisdn, msg, cb) {
+            message = msg;
+            cb(null);
+          });
+        hawkRequest(jsonReq.send({
+          msisdn: "+33123456789",
+          shortVerificationCode: true
+        }).expect(200),
+          function(err, res) {
+            sinon.assert.calledOnce(smsGateway.sendSMS);
+            var code = message.substr(message.length-6);
+            expect(message).to.eql("Your verification code is: " + code);
+            expect(isNaN(parseInt(code))).to.eql(false);
+            done();
+          });
+      });
+
+    it("should send a SMS with the long code if shortVerificationCode " +
+       "is false.", function(done) {
+        var message;
+        sandbox.stub(smsGateway, "sendSMS",
+          function(msisdn, msg, cb) {
+            message = msg;
+            cb(null);
+          });
+         hawkRequest(jsonReq.send({
+           msisdn: "+33123456789",
+           shortVerificationCode: false
+         }).expect(200),
+          function(err, res) {
+            sinon.assert.calledOnce(smsGateway.sendSMS);
+            expect(message).to.length(32);
+            done();
+          });
+      });
+
+
   });
 
   describe.skip("GET /sms/momt/nexmo_callback", function() {
