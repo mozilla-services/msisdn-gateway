@@ -145,24 +145,32 @@ describe("Storage", function() {
 
       describe("#cleanSession", function() {
         it("should remove everything related to the session", function(done) {
-          storage.setSession(hawkHmacId, authKey,
-            function(err) {
-              if (err)  {
-                throw err;
-              }
-              storage.cleanSession(hawkHmacId, function(err) {
-                if (err)  {
-                  throw err;
-                }
-                storage.getSession(hawkHmacId, function(err, value){
-                  if (err)  {
-                    throw err;
-                  }
-                  expect(value).to.equal(null);
-                  done();
+          storage.setCode(hawkHmacId, code, function(err) {
+            if (err) throw err;
+            storage.storeMSISDN(hawkHmacId, msisdn, function(err) {
+              if (err) throw err;
+              storage.setSession(hawkHmacId, authKey, function(err) {
+                if (err) throw err;
+                storage.cleanSession(hawkHmacId, function(err) {
+                  if (err) throw err;
+                  storage.getSession(hawkHmacId, function(err, value){
+                    if (err) throw err;
+                    expect(value).to.equal(null);
+                    storage.getMSISDN(hawkHmacId, function(err, value) {
+                      if (err) throw err;
+                      expect(value).to.equal(null);
+                      storage.verifyCode(hawkHmacId, code,
+                        function(err, value) {
+                          if (err) throw err;
+                          expect(value).to.equal(null);
+                          done();
+                        });
+                    });
+                  });
                 });
               });
             });
+          });
         });
       });
 
