@@ -33,6 +33,13 @@ Registration process flow
   5. Finally the client can unregister itself using the ``/unregister`` URL
      and its sessionToken.
 
+
+What is the needed stack?
+-------------------------
+
+<img src="http://www.gliffy.com/go/publish/image/5799498/L.png" />
+
+
 How to install?
 ---------------
 
@@ -59,6 +66,7 @@ Then clone the loop server and install its dependencies:
     git clone https://github.com/mozilla-services/msisdn-gateway.git
     cd msisdn-gateway && make install
 
+
 How to run it?
 --------------
 
@@ -81,10 +89,12 @@ How to run the tests?
 
     make test
 
+
 Where to report bugs?
 ---------------------
 
 You should report bugs/issues or feature requests via [Github Issues](https://github.com/mozilla-services/msisdn-gateway/issues)
+
 
 License
 -------
