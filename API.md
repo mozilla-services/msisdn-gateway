@@ -491,8 +491,8 @@ Successful requests will produce a "200 OK" response with following format:
 
 The signed certificate includes these additional claims:
 
-* fxa-verifiedMSISDN - the user's verified MSISDN
-* fxa-lastVerifiedAt - time of last MSISDN verification (seconds since epoch)
+* verifiedMSISDN - the user's verified MSISDN
+* lastVerifiedAt - time of last MSISDN verification (seconds since epoch)
 
 Failing requests may be due to the following errors:
 
