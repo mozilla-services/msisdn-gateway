@@ -293,42 +293,6 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
 
 
 /**
- * Ask for a new verification code
- **/
-app.post("/sms/mt/resend_code", hawkMiddleware, requireParams("msisdn"),
-  validateMSISDN, function(req, res) {
-    var code = digitsCode(conf.get("shortCodeLength"));
-
-    storage.storeMSISDN(req.hawkHmacId, req.msisdn, function(err) {
-      if (err) {
-        logError(err);
-        res.json(503, "Service Unavailable");
-        return;
-      }
-  
-      storage.setCode(req.hawkHmacId, code, function(err) {
-        if (err) {
-          logError(err);
-          res.json(503, "Service Unavailable");
-          return;
-        }
-        /* Send SMS */
-        smsGateway.sendSMS(req.msisdn,
-          "To validate your number please enter the following code: " + code,
-          function(err) {
-            if (err) {
-              logError(err);
-              res.json(503, "Service Unavailable");
-              return;
-            }
-            res.json(200, {});
-          });
-      });
-    });
-  });
-
-
-/**
  * Handle Mobile Originated SMS reception
  **/
 app.get("/sms/momt/nexmo_callback", function(req, res) {
