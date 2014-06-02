@@ -536,7 +536,7 @@ describe("HTTP API exposed by the server", function() {
         .expect('Content-Type', /json/);
 
       validPayload = {
-        publicKey: testKeyPair.publicKey,
+        publicKey: JSON.stringify(testKeyPair.publicKey),
         duration: 24 * 3600
       };
     });

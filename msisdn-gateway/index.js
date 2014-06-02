@@ -402,7 +402,12 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
  **/
 app.post("/certificate/sign", hawkMiddleware, requireParams(
   "duration", "publicKey"), function(req, res) {
-    var publicKey = req.body.publicKey;
+    var publicKey;
+    try {
+      publicKey = JSON.parse(req.body.publicKey);
+    } catch (err) {
+      res.addError("body", "publicKey", err);
+    }
     var duration = req.body.duration;
 
     // Validate publicKey.
