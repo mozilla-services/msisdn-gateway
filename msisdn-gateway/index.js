@@ -451,8 +451,8 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
         issuedAt: new Date(now - (10 * 1000)),
         expiresAt: new Date(now + duration)
       }, {
-        "fxa-lastAuthAt": now,
-        "fxa-verifiedMSISDN": msisdn
+        "lastAuthAt": now,
+        "verifiedMSISDN": msisdn
       }, _privKey, function(err, cert) {
         if (err) {
           logError(err);
