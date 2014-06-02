@@ -21,6 +21,7 @@ var validateMSISDN = require("./middleware").validateMSISDN;
 var Token = require("./token").Token;
 var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
 var Hawk = require('hawk');
+var uuid = require('node-uuid');
 
 var jwcrypto = require('jwcrypto');
 
@@ -276,18 +277,26 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
       message = "Your verification code is: " + code;
     }
 
-    storage.setCode(req.hawkHmacId, code, function(err) {
+    storage.storeMSISDN(req.hawkHmacId, req.msisdn, function(err) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");
         return;
       }
-      /* Send SMS */
-      // XXX export string in l10n external file.
-      smsGateway.sendSMS(req.msisdn, message,
-        function(err, data) {
-          res.json(200, {});
-        });
+
+      storage.setCode(req.hawkHmacId, code, function(err) {
+        if (err) {
+          logError(err);
+          res.json(503, "Service Unavailable");
+          return;
+        }
+        /* Send SMS */
+        // XXX export string in l10n external file.
+        smsGateway.sendSMS(req.msisdn, message,
+          function(err, data) {
+            res.json(200, {});
+          });
+      });
     });
   });
 
@@ -331,18 +340,70 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
 /**
  * Verify code
  **/
-app.post("/sms/verify_code", hawkMiddleware, requireParams(
-  "msisdn", "code", "duration", "publicKey"), validateMSISDN,
+app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
   function(req, res) {
     var code = req.body.code;
-    var publicKey = req.body.publicKey;
-    var duration = req.body.duration;
 
     // Validate code.
-    if (code.length !== conf.get("shortCodeLength")) {
-      res.addError("body", "code",
-                   "Code should be " + conf.get("shortCodeLength") + " long.");
+    if (code.length !== conf.get("shortCodeLength") &&
+        code.length !== conf.get("longCodeBytes") * 2) {
+      res.sendError("body", "code",
+                   "Code should be short (" + conf.get("shortCodeLength") + 
+                   " characters) or long (" + conf.get("longCodeBytes") * 2 +
+                   " characters).");
+      return;
     }
+
+    storage.verifyCode(req.hawkHmacId, code, function(err, result) {
+      if (err) {
+        logError(err);
+        res.json(503, "Service Unavailable");
+        return;
+      }
+
+      if (result === null) {
+        res.json(410, "Code has expired.");
+        return;
+      }
+
+      if (!result) {
+        res.json(400, "Code error.");
+        return;
+      }
+
+	  storage.getMSISDN(req.hawkHmacId, function(err, msisdn) {
+        if (err) {
+          logError(err);
+          res.json(503, "Service Unavailable");
+          return;
+        }
+
+        if (msisdn === null) {
+          res.json(410, "Token has expired.");
+          return;
+        }
+
+        storage.setValidation(req.hawkHmacId, msisdn, function(err) {
+          if (err) {
+            logError(err);
+            res.json(503, "Service Unavailable");
+            return;
+          }
+
+          res.json(200, {msisdn: msisdn});
+        });
+      });
+    });
+  });
+
+
+/**
+ * Generate certificate
+ **/
+app.post("/certificate/sign", hawkMiddleware, requireParams(
+  "duration", "publicKey"), function(req, res) {
+    var publicKey = req.body.publicKey;
+    var duration = req.body.duration;
 
     // Validate publicKey.
     try {
@@ -363,29 +424,27 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
       return;
     }
 
-    storage.verifyCode(req.hawkHmacId, code, function(err, result) {
+    storage.getValidation(req.hawkHmacId, function(err, msisdn) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");
         return;
       }
 
-      if (result === null) {
-        res.json(410, "Code has expired.");
-        return;
-      }
-
-      if (!result) {
-        res.json(403, "Code error.");
+      if (msisdn === null) {
+        res.json(410, "Validation has expired.");
         return;
       }
 
       // Generate a certificate
       var now = Date.now();
+      var md5sum = crypto.createHash("md5");
+      md5sum.update(msisdn);
+      var msisdn_uuid = uuid.unparse(md5sum.digest());
 
       jwcrypto.cert.sign({
         publicKey: jwcrypto.loadPublicKeyFromObject(publicKey),
-        principal: req.msisdnId + "@" + req.get("host")
+          principal: msisdn_uuid + "@" + req.get("host")
       }, {
         issuer: req.get("host"),
         // Set issuedAt to 10 seconds ago. Pads for verifier clock skew
@@ -393,47 +452,14 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams(
         expiresAt: new Date(now + duration)
       }, {
         "fxa-lastAuthAt": now,
-        "fxa-verifiedMSISDN": req.msisdn
+        "fxa-verifiedMSISDN": msisdn
       }, _privKey, function(err, cert) {
         if (err) {
           logError(err);
           res.json(503, "Service Unavailable");
           return;
         }
-
-        if (result === null) {
-          res.json(410, "Code has expired.");
-          return;
-        }
-
-        if (!result) {
-          res.json(403, "Code error.");
-          return;
-        }
-
-        // XXX Need to generate a certificate.
-        var now = Date.now();
-
-        jwcrypto.cert.sign({
-          publicKey: jwcrypto.loadPublicKeyFromObject(publicKey),
-          principal: req.msisdnId + "@" + req.get("host")
-        }, {
-          issuer: req.get("host"),
-          // Set issuedAt to 10 seconds ago. Pads for verifier clock skew.
-          issuedAt: new Date(now - (10 * 1000)),
-          expiresAt: new Date(now + duration)
-        }, {
-          "fxa-lastAuthAt": now,
-          "fxa-verifiedMSISDN": req.msisdn
-        }, _privKey,
-        function(err, cert) {
-          if (err) {
-            logError(err);
-            res.json(503, "Service Unavailable");
-            return;
-          }
-          res.json(200, {cert: cert, publicKey: _publicKey.serialize()});
-        });
+        res.json(200, {cert: cert, publicKey: _publicKey.serialize()});
       });
     });
   });

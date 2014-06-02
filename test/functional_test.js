@@ -32,7 +32,7 @@ function expectFormatedError(body, location, name, description) {
 
 describe("HTTP API exposed by the server", function() {
 
-  var sandbox, genuineOrigins, hawkCredentials;
+  var sandbox, genuineOrigins, hawkCredentials, hawkHmacId;
 
   var routes = {
     '/': ['get'],
@@ -41,7 +41,8 @@ describe("HTTP API exposed by the server", function() {
     '/unregister': ['post'],
     '/sms/mt/verify': ['post'],
     '/sms/momt/nexmo_callback': ['post'],
-    '/sms/verify_code': ['post']
+    '/sms/verify_code': ['post'],
+    '/certificate/sign': ['post']
   };
 
   beforeEach(function(done) {
@@ -58,7 +59,7 @@ describe("HTTP API exposed by the server", function() {
         key: authKey,
         algorithm: "sha256"
       };
-      var hawkHmacId = hmac(tokenId, conf.get("hawkIdSecret"));
+      hawkHmacId = hmac(tokenId, conf.get("hawkIdSecret"));
       storage.setSession(hawkHmacId, authKey, done);
     });
 
@@ -451,30 +452,8 @@ describe("HTTP API exposed by the server", function() {
         .expect('Content-Type', /json/);
 
       validPayload = {
-        msisdn: "+33123456789",
-        code: "123456",
-        publicKey: testKeyPair.publicKey,
-        duration: 24 * 3600
+        code: "123456"
       };
-    });
-
-    it("should require the MSISDN params", function(done) {
-      delete validPayload.msisdn;
-      jsonReq.send(validPayload).expect(400).end(function(err, res) {
-        if (err) throw err;
-        expectFormatedError(res.body, "body", "msisdn");
-        done();
-      });
-    });
-
-    it("should require a valid MSISDN number", function(done) {
-      validPayload.msisdn = "0123456789";
-      jsonReq.send(validPayload).expect(400).end(function(err, res) {
-        if (err) throw err;
-        expectFormatedError(res.body, "body", "msisdn",
-                            "Invalid MSISDN number.");
-        done();
-      });
     });
 
     it("should require the code params", function(done) {
@@ -487,17 +466,22 @@ describe("HTTP API exposed by the server", function() {
     });
 
     it("should validate if the code is valid.", function(done) {
+      var msisdn = "+33123456789";
       sandbox.stub(storage, "verifyCode",
-        function(msisdn, code, cb) {
+        function(hawkHmacId, code, cb) {
           cb(null, true);
+        });
+      sandbox.stub(storage, "getMSISDN",
+        function(hawkHmacId, cb) {
+          cb(null, msisdn);
         });
       jsonReq.send(validPayload).expect(200).end(function(err, res) {
         if (err) {
-            throw err;
+          console.log(res);
+          throw err;
         }
         
-        expect(res.body.hasOwnProperty('cert')).to.equal(true);
-        expect(res.body.hasOwnProperty('publicKey')).to.equal(true);
+        expect(res.body.hasOwnProperty('msisdn')).to.equal(true);
         done();
       });
     });
@@ -507,15 +491,97 @@ describe("HTTP API exposed by the server", function() {
         function(msisdn, code, cb) {
           cb(null, false);
         });
-      jsonReq.send(validPayload).expect(403).end(done);
+      jsonReq.send(validPayload).expect(400).end(done);
     });
 
-    it("should validate if the MSISDN is not registered.", function(done) {
+    it("should validate if the MSISDN expired.", function(done) {
       sandbox.stub(storage, "verifyCode",
         function(msisdn, code, cb) {
+          cb(null, true);
+        });
+      sandbox.stub(storage, "getMSISDN",
+        function(hawkHmacId, cb) {
           cb(null, null);
         });
       jsonReq.send(validPayload).expect(410).end(done);
+    });
+
+    it("should set validation.", function(done) {
+      var msisdn = "+33123456789";
+      sandbox.stub(storage, "verifyCode",
+        function(key, code, cb) {
+          cb(null, true);
+        });
+      sandbox.stub(storage, "getMSISDN",
+        function(key, cb) {
+          cb(null, msisdn);
+        });
+      jsonReq.send(validPayload).expect(200).end(function(err, res) {
+        storage.getValidation(hawkHmacId, function(err, msisdnNumber) {
+          expect(msisdnNumber).to.equal(msisdn);
+          done();
+        });
+      });
+    });
+  });
+
+  describe("POST /certificate/sign", function() {
+    var jsonReq, validPayload;
+
+    beforeEach(function() {
+      jsonReq = supertest(app)
+        .post('/certificate/sign')
+        .hawk(hawkCredentials)
+        .type('json')
+        .expect('Content-Type', /json/);
+
+      validPayload = {
+        publicKey: testKeyPair.publicKey,
+        duration: 24 * 3600
+      };
+    });
+
+    it("should require the publicKey params", function(done) {
+      delete validPayload.publicKey;
+      jsonReq.send(validPayload).expect(400).end(function(err, res) {
+        if (err) throw err;
+        expectFormatedError(res.body, "body", "publicKey");
+        done();
+      });
+    });
+
+    it("should require the duration params", function(done) {
+      delete validPayload.duration;
+      jsonReq.send(validPayload).expect(400).end(function(err, res) {
+        if (err) throw err;
+        expectFormatedError(res.body, "body", "duration");
+        done();
+      });
+    });
+
+    it("should fail with an unregister MSISDN.", function(done) {
+      sandbox.stub(storage, "getValidation",
+        function(key, cb) {
+          cb(null, null);
+        });
+      jsonReq.send(validPayload).expect(410).end(done);
+    });
+
+    it("should success with a registered MSISDN.", function(done) {
+      var msisdn = "+33123456789";
+      sandbox.stub(storage, "getValidation",
+        function(key, cb) {
+          cb(null, msisdn);
+        });
+      jsonReq.send(validPayload).expect(200).end(function(err, res) {
+        if (err) {
+          console.log(res);
+          throw err;
+        }
+        expect(res.body.hasOwnProperty("cert")).to.eql(true);
+        expect(res.body.hasOwnProperty("publicKey")).to.eql(true);
+        done();
+      });
     });
   });
 });
