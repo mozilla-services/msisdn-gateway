@@ -110,6 +110,36 @@ describe("Storage", function() {
         });
       });
 
+      describe("#setValidation", function() {
+        it("should set the MSISDN.", function(done) {
+          storage.setValidation(hawkHmacId, authKey,
+            function(err) {
+              if (err)  {
+                throw err;
+              }
+              storage.getValidation(hawkHmacId, function(err, value){
+                expect(value).to.eql(authKey);
+                done();
+              });
+            });
+        });
+      });
+
+      describe("#getValidation", function() {
+        it("should return null on invalid hawkHmacId.", function(done) {
+          storage.setValidation(hawkHmacId, authKey,
+            function(err) {
+              if (err)  {
+                throw err;
+              }
+              storage.getValidation("wrong-hawkHmacId", function(err, value){
+                  expect(value).to.equal(null);
+                  done();
+                });
+            });
+        });
+      });
+
       describe("#setSession", function() {
         it("should store the session.", function(done) {
           storage.setSession(hawkHmacId, authKey,

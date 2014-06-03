@@ -10,6 +10,7 @@ var ONE_DAY_SEC = 24 * 3600;  // A day in seconds
 var CODE_KEY_PREFIX = "msisdn_code_";
 var MSISDN_KEY_PREFIX = "msisdn_sms_";
 var SESSION_KEY_PREFIX = "msisdn_session_";
+var VALIDATED_KEY_PREFIX = "code_validated_";
 
 function RedisStorage(options, settings) {
   this._settings = settings;
@@ -57,6 +58,23 @@ RedisStorage.prototype = {
 
   getMSISDN: function(hawkHmacId, callback) {
     var key = MSISDN_KEY_PREFIX + hawkHmacId;
+    this._client.get(key, function(err, result) {
+      if (err) {
+        callback(err);
+        return;
+      }
+
+      callback(null, result);
+    });
+  },
+
+  setValidation: function(hawkHmacId, msisdn, callback) {
+    var key = VALIDATED_KEY_PREFIX + hawkHmacId;
+    this._client.setex(key, ONE_DAY_SEC, msisdn, callback);
+  },
+
+  getValidation: function(hawkHmacId, callback) {
+    var key = VALIDATED_KEY_PREFIX + hawkHmacId;
     this._client.get(key, function(err, result) {
       if (err) {
         callback(err);
