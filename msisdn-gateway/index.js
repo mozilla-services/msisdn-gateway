@@ -449,7 +449,7 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
 
       jwcrypto.cert.sign({
         publicKey: jwcrypto.loadPublicKeyFromObject(publicKey),
-          principal: msisdn_uuid + "@" + req.get("host")
+        principal: msisdn_uuid + "@" + req.get("host")
       }, {
         issuer: req.get("host"),
         // Set issuedAt to 10 seconds ago. Pads for verifier clock skew
