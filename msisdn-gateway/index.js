@@ -329,7 +329,7 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
       }
 
       /* Send SMS */
-      smsGateway.sendSMS(req.msisdn, code, function(err) {
+      smsGateway.sendSMS(msisdn, code, function(err) {
         if (err) {
           logError(err);
           res.json(503, "Service Unavailable");
