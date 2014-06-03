@@ -14,20 +14,29 @@ var storage = require("../msisdn-gateway").storage;
 var smsGateway = require("../msisdn-gateway/sms-gateway");
 var Token = require("../msisdn-gateway/token").Token;
 var hmac = require("../msisdn-gateway/hmac");
-
+var errors = require("../msisdn-gateway/errno");
 var testKeyPair = require("./testKeyPair.json");
 
 
-function expectFormatedError(body, location, name, description) {
-  if (typeof description === "undefined") {
-    description = "missing: " + name;
+function expectFormatedError(body, code, errno, error, message, info) {
+  var errmap = {};
+  if (code) {
+    errmap.code = code;
   }
-  expect(body).eql({
-    status: "errors",
-    errors: [{location: location,
-              name: name,
-              description: description}]
-  });
+  if (errno) {
+    errmap.errno = errno;
+  }
+  if (error) {
+    errmap.error = error;
+  }
+  if (message) {
+    errmap.message = message;
+  }
+  if (info) {
+    errmap.info = info;
+  }
+
+  expect(body).eql(errmap);
 }
 
 describe("HTTP API exposed by the server", function() {
@@ -205,7 +214,7 @@ describe("HTTP API exposed by the server", function() {
     it("should take only a valid MSISDN number", function(done) {
       jsonReq.send({msisdn: "0123456789"}).expect(400).end(function(err, res) {
         if (err) throw err;
-        expectFormatedError(res.body, "body", "msisdn",
+        expectFormatedError(res.body, 400, errors.INVALID_MSISDN, 
                             "Invalid MSISDN number.");
         done();
       });
@@ -286,7 +295,8 @@ describe("HTTP API exposed by the server", function() {
     it("should require the MSISDN params", function(done) {
       jsonReq.send({}).expect(400).end(function(err, res) {
         if (err) throw err;
-        expectFormatedError(res.body, "body", "msisdn");
+        expectFormatedError(res.body, 400, errors.MISSING, 
+                            "Missing msisdn");
         done();
       });
     });
@@ -295,7 +305,7 @@ describe("HTTP API exposed by the server", function() {
       jsonReq.send({msisdn: "0123456789"}).expect(400).end(
         function(err, res) {
           if (err) throw err;
-          expectFormatedError(res.body, "body", "msisdn",
+          expectFormatedError(res.body, 400, errors.INVALID_MSISDN, 
                               "Invalid MSISDN number.");
           done();
         });
@@ -333,7 +343,7 @@ describe("HTTP API exposed by the server", function() {
       jsonReq.send({msisdn: "0123456789"}).expect(400).end(
         function(err, res) {
           if (err) throw err;
-          expectFormatedError(res.body, "body", "msisdn",
+          expectFormatedError(res.body, 400, errors.INVALID_MSISDN, 
                               "Invalid MSISDN number.");
           done();
         });
@@ -460,7 +470,8 @@ describe("HTTP API exposed by the server", function() {
       delete validPayload.code;
       jsonReq.send(validPayload).expect(400).end(function(err, res) {
         if (err) throw err;
-        expectFormatedError(res.body, "body", "code");
+        expectFormatedError(res.body, 400, errors.MISSING, 
+                            "Missing code");
         done();
       });
     });
@@ -545,7 +556,8 @@ describe("HTTP API exposed by the server", function() {
       delete validPayload.publicKey;
       jsonReq.send(validPayload).expect(400).end(function(err, res) {
         if (err) throw err;
-        expectFormatedError(res.body, "body", "publicKey");
+        expectFormatedError(res.body, 400, errors.MISSING, 
+                            "Missing publicKey");
         done();
       });
     });
@@ -554,7 +566,8 @@ describe("HTTP API exposed by the server", function() {
       delete validPayload.duration;
       jsonReq.send(validPayload).expect(400).end(function(err, res) {
         if (err) throw err;
-        expectFormatedError(res.body, "body", "duration");
+        expectFormatedError(res.body, 400, errors.MISSING, 
+                            "Missing duration");
         done();
       });
     });

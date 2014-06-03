@@ -6,6 +6,7 @@
 var expect = require("chai").expect;
 var supertest = require("supertest");
 
+var errors = require("../msisdn-gateway/errno");
 var app = require("../msisdn-gateway").app;
 var requireParams = require("../msisdn-gateway").requireParams;
 
@@ -39,10 +40,9 @@ describe("index.js", function() {
           .end(function(err, res) {
             if (err) throw err;
             expect(res.body).eql({
-              status: "errors",
-              errors: [{location: "body",
-                        name: "b",
-                        description: "missing: b"}]
+              code: 400,
+              errno: errors.MISSING,
+              error: "Missing b", 
             });
             done();
           });
@@ -56,13 +56,9 @@ describe("index.js", function() {
         .end(function(err, res) {
           if (err) throw err;
           expect(res.body).eql({
-            status: "errors",
-            errors: [{location: "body",
-                      name: "a",
-                      description: "missing: a"},
-                     {location: "body",
-                      name: "b",
-                      description: "missing: b"}]
+            code: 400,
+            errno: errors.MISSING,
+            error: "Missing a,b", 
           });
           done();
         });

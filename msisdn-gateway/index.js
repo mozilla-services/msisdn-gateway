@@ -11,18 +11,18 @@ var pjson = require("../package.json");
 var raven = require("raven");
 var phone = require("phone");
 var cors = require("cors");
-var errors = require("connect-validation");
 var logging = require("express-logging");
 var headers = require("./headers");
 var digitsCode = require("./utils").digitsCode;
 var smsGateway = require("./sms-gateway");
 var hmac = require("./hmac");
 var validateMSISDN = require("./middleware").validateMSISDN;
+var sendError = require("./middleware").sendError;
 var Token = require("./token").Token;
 var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
 var Hawk = require('hawk');
 var uuid = require('node-uuid');
-
+var errors = require("./errno");
 var jwcrypto = require('jwcrypto');
 
 // Make sure to load supported algorithms.
@@ -51,7 +51,6 @@ app.use(headers);
 app.disable("x-powered-by");
 app.use(express.json());
 app.use(express.urlencoded());
-app.use(errors);
 app.use(app.router);
 // Exception logging should come at the end of the list of middlewares.
 app.use(raven.middleware.express(conf.get("sentryDSN")));
@@ -81,10 +80,8 @@ function requireParams() {
     });
 
     if (missingParams.length > 0) {
-      missingParams.forEach(function(item) {
-        res.addError("body", item, "missing: " + item);
-      });
-      res.sendError();
+      sendError(res, 400, errors.MISSING, "Missing " + missingParams.join());
+      return;
     }
     next();
   };
@@ -198,7 +195,8 @@ app.post("/discover", function(req, res) {
   if (req.body.hasOwnProperty("msisdn")) {
     var msisdn = phone(req.body.msisdn);
     if (msisdn === null) {
-      res.sendError("body", "msisdn", "Invalid MSISDN number.");
+      sendError(res, 400,
+                errors.INVALID_MSISDN, "Invalid MSISDN number.");
       return;
     }
     // SMS/MT methods configuration
@@ -352,10 +350,11 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
     // Validate code.
     if (code.length !== conf.get("shortCodeLength") &&
         code.length !== conf.get("longCodeBytes") * 2) {
-      res.sendError("body", "code",
-                   "Code should be short (" + conf.get("shortCodeLength") + 
-                   " characters) or long (" + conf.get("longCodeBytes") * 2 +
-                   " characters).");
+
+      sendError(res, 400, errors.INVALID_CODE,
+                "Code should be short (" + conf.get("shortCodeLength") + 
+                " characters) or long (" + conf.get("longCodeBytes") * 2 +
+                " characters).");
       return;
     }
 
@@ -411,7 +410,8 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
     try {
       publicKey = JSON.parse(req.body.publicKey);
     } catch (err) {
-      res.addError("body", "publicKey", err);
+      sendError(res, 400, errors.BADJSON, err);
+      return;
     }
     var duration = req.body.duration;
 
@@ -419,30 +419,27 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
     try {
       validateJWCryptoKey(publicKey);
     } catch (err) {
-      res.addError("body", "publicKey", err);
+      // not sending back the error for security
+      sendError(res, 400, errors.BADKEY);
+      return;
     }
 
     // Validate duration.
     if (typeof duration !== "number" || duration < 1) {
-      res.addError("body", "duration",
-                   "Duration should be a number of seconds.");
-    }
-
-    // Return errors found during validation.
-    if (res.hasErrors()) {
-      res.sendError();
+      sendError(res, 400, errors.DURATION, 
+                "Duration should be a number of seconds."); 
       return;
     }
 
     storage.getValidation(req.hawkHmacId, function(err, msisdn) {
       if (err) {
         logError(err);
-        res.json(503, "Service Unavailable");
+        sendError(res, 503, errors.BACKEND, "Service Unavailable");
         return;
       }
 
       if (msisdn === null) {
-        res.json(410, "Validation has expired.");
+        sendError(res, 410, errors.EXPIRED, "Validation has expired.");
         return;
       }
 
@@ -466,7 +463,7 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
       }, _privKey, function(err, cert) {
         if (err) {
           logError(err);
-          res.json(503, "Service Unavailable");
+          sendError(res, 503, errors.BACKEND, "Service Unavailable");
           return;
         }
         res.json(200, {cert: cert, publicKey: _publicKey.serialize()});

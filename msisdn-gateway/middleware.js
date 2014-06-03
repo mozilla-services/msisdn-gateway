@@ -6,12 +6,36 @@
 var conf = require("./config").conf;
 var hmac = require("./hmac");
 var phone = require("phone");
+var errors = require("./errno");
+
+
+function sendError(res, code, errno, error, message, info) {
+  var errmap = {};
+  if (code) {
+    errmap.code = code;
+  }
+  if (errno) {
+    errmap.errno = errno;
+  }
+  if (error) {
+    errmap.error = error;
+  }
+  if (message) {
+    errmap.message = message;
+  }
+  if (info) {
+    errmap.info = info;
+  }
+
+  res.json(code, errmap);
+}
+
 
 function validateMSISDN(req, res, next) {
   req.msisdn = phone(req.body.msisdn);
 
   if (req.msisdn === null) {
-    res.sendError("body", "msisdn", "Invalid MSISDN number.");
+    sendError(res, 400, errors.INVALID_MSISDN, "Invalid MSISDN number.");
     return;
   }
   req.msisdnId = hmac(req.msisdn, conf.get("msisdnIdSecret"));
@@ -20,5 +44,6 @@ function validateMSISDN(req, res, next) {
 }
 
 module.exports = {
-  validateMSISDN: validateMSISDN
+  validateMSISDN: validateMSISDN,
+  sendError: sendError
 };
