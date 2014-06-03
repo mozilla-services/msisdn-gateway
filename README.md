@@ -1,6 +1,8 @@
 MSISDN Gateway
 ==============
 
+[![Build Status](https://travis-ci.org/mozilla-services/msisdn-gateway.svg?branch=master)](https://travis-ci.org/mozilla-services/msisdn-gateway)
+
 This is a proof of concept of an MSISDN Gateway server that takes a phone number and
 register it using an SMS validation mechanism.
 
