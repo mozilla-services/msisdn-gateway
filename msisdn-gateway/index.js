@@ -305,7 +305,12 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
  * Handle Mobile Originated SMS reception
  **/
 app.get("/sms/momt/nexmo_callback", function(req, res) {
-  var msisdn = phone(req.query.msisdn);
+  if (!req.query.hasOwnProperty("msisdn")) {
+    res.json(200, {});
+    return;
+  }
+
+  var msisdn = phone('+' + req.query.msisdn);
   var hawkHmacId = hmac(req.query.text, conf.get("hawkIdSecret"));
 
   storage.storeMSISDN(hawkHmacId, msisdn, function(err) {
