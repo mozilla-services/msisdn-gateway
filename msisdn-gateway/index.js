@@ -308,7 +308,13 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
   }
 
   var msisdn = phone('+' + req.query.msisdn);
-  var hawkHmacId = hmac(req.query.text, conf.get("hawkIdSecret"));
+  var text = req.query.text.split(" ");
+  if (text.length !== 2) {
+    logError(text + " is not in the right format.");
+    res.json(200, {});
+    return;
+  }
+  var hawkHmacId = hmac(text[1], conf.get("hawkIdSecret"));
 
   storage.storeMSISDN(hawkHmacId, msisdn, function(err) {
     if (err) {
