@@ -312,6 +312,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
  **/
 app.get("/sms/momt/nexmo_callback", function(req, res) {
   if (!req.query.hasOwnProperty("msisdn")) {
+    // New number setup should answer 200
     res.json(200, {});
     return;
   }
@@ -325,38 +326,61 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
   }
   var hawkHmacId = hmac(text[1], conf.get("hawkIdSecret"));
 
-  storage.getMSISDN(req.hawkHmacId, function(err, storedMsisdn) {
-    if (storedMsisdn !== null && storedMsisdn !== msisdn) {
-      logError(
-        new Error("You can only verify one MSISDN number per session.")
-      );
+  storage.getSession(hawkHmacId, function(err, result) {
+    if (err) {
+      logError(err);
+      res.json(503, "Service Unavailable");
+      return;
+    }
+
+    if (result === null) {
+      // This session doesn't exists should answer 200
       res.json(200, {});
       return;
     }
 
-    storage.storeMSISDN(hawkHmacId, msisdn, function(err) {
+    storage.getMSISDN(hawkHmacId, function(err, storedMsisdn) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");
         return;
       }
-
-      var code = crypto.randomBytes(conf.get("longCodeBytes")).toString("hex");
-      storage.setCode(hawkHmacId, code, function(err) {
+  
+      if (storedMsisdn !== null && storedMsisdn !== msisdn) {
+        logError(
+          new Error("You can only verify one MSISDN number per session.")
+        );
+  
+        res.json(200, {});
+        return;
+      }
+  
+      storage.storeMSISDN(hawkHmacId, msisdn, function(err) {
         if (err) {
           logError(err);
           res.json(503, "Service Unavailable");
           return;
         }
+  
+        var code = crypto.randomBytes(conf.get("longCodeBytes"))
+          .toString("hex");
 
-        /* Send SMS */
-        smsGateway.sendSMS(msisdn, code, function(err) {
+        storage.setCode(hawkHmacId, code, function(err) {
           if (err) {
             logError(err);
             res.json(503, "Service Unavailable");
             return;
           }
-          res.json(200, {});
+  
+          /* Send SMS */
+          smsGateway.sendSMS(msisdn, code, function(err) {
+            if (err) {
+              logError(err);
+              res.json(503, "Service Unavailable");
+              return;
+            }
+            res.json(200, {});
+          });
         });
       });
     });

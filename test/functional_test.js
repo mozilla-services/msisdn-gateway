@@ -310,14 +310,17 @@ describe("HTTP API exposed by the server", function() {
   });
 
   describe("POST /sms/mt/verify", function() {
-    var jsonReq;
+    var jsonReq, buildJsonReq;
 
     beforeEach(function() {
-      jsonReq = supertest(app)
-        .post('/sms/mt/verify')
-        .hawk(hawkCredentials)
-        .type('json')
-        .expect('Content-Type', /json/);
+      buildJsonReq = function buildJsonReq() {
+        return supertest(app)
+          .post('/sms/mt/verify')
+          .hawk(hawkCredentials)
+          .type('json')
+          .expect('Content-Type', /json/);
+      };
+      jsonReq = buildJsonReq();
     });
 
     it("should require a valid MSISDN number", function(done) {
@@ -385,50 +388,93 @@ describe("HTTP API exposed by the server", function() {
           });
       });
 
-
+    it("should not accept another number verification for the same session",
+      function(done) {
+        sandbox.stub(smsGateway, "sendSMS",
+          function(msisdn, msg, cb) {
+            cb(null);
+          });
+         jsonReq.send({
+           msisdn: "+33123456789"
+         }).expect(200).end(
+          function(err, res) {
+            buildJsonReq().send({
+              msisdn: "+33214365879"
+            }).expect(400).end(function(err, res) {
+              expectFormatedError(res.body, 400, errors.MSISDN_CONFLICT,
+                "You can validate only one MSISDN per session.");
+              done(err);
+            });
+          });
+      });
   });
 
-  describe.skip("GET /sms/momt/nexmo_callback", function() {
-    var jsonReq;
+  describe("GET /sms/momt/nexmo_callback", function() {
+    var buildJsonReq, jsonReq, message;
 
     beforeEach(function() {
-      jsonReq = supertest(app)
-        .get('/sms/momt/nexmo_callback')
-        .expect('Content-Type', /json/);
+      buildJsonReq = function buildJsonReq() {
+        return supertest(app)
+          .get('/sms/momt/nexmo_callback')
+          .expect('Content-Type', /json/);
+      };
+      jsonReq = buildJsonReq();
 
       sandbox.stub(smsGateway, "sendSMS",
-        function(msisdn, message, cb) {
+        function(msisdn, msg, cb) {
+          message = msg;
           cb(null);
         });
     });
 
+    it("should always return a 200 even with no msisdn.", function(done) {
+       jsonReq.query()
+         .expect(200).end(function(err, res) {
+           sinon.assert.notCalled(smsGateway.sendSMS);
+           done();
+         });
+    });
+
     it("should always return a 200 even if the smsBody is not found.",
        function(done) {
-         jsonReq.query({msisdn: "+33123456789", text: "wrong-smsBody"})
+         jsonReq.query({msisdn: "33123456789", text: "wrong-smsBody"})
            .expect(200).end(function(err, res) {
              sinon.assert.notCalled(smsGateway.sendSMS);
              done();
            });
        });
 
+    it("should not send a sms if another number try to register to session.",
+       function(done) {
+         jsonReq.query({
+           msisdn: "33123456789",
+           text: "/sms/momt/verify " + hawkCredentials.id
+         }).expect(200).end(function(err, res) {
+           sinon.assert.called(smsGateway.sendSMS);
+           smsGateway.sendSMS.reset();
+
+           buildJsonReq().query({
+             msisdn: "33214365879",
+             text: "/sms/momt/verify " + hawkCredentials.id
+           }).expect(200).end(function(err, res) {
+             sinon.assert.notCalled(smsGateway.sendSMS);
+             done();
+           });
+         });
+       });
+
     it("should send a SMS with the code.", function(done) {
-      sandbox.stub(storage, "popSmsCode",
-        function(smsBody, cb) {
-          cb(null, "123456");
-        });
-
-      sandbox.stub(storage, "setCode",
-        function(hawkId, code, cb) {
-          cb(null);
-        });
-
-      jsonReq.query({msisdn: "+33123456789", text: "good-smsBody"}).expect(200)
-        .end(function(err, res) {
-          sinon.assert.calledOnce(storage.popSmsCode);
-          sinon.assert.calledOnce(storage.setCode);
-          sinon.assert.calledOnce(smsGateway.sendSMS);
-          done();
-        });
+         jsonReq.query({
+           msisdn: "33123456789",
+           text: "/sms/momt/verify " + hawkCredentials.id
+         }).expect(200).end(function(err, res) {
+             sinon.assert.called(smsGateway.sendSMS);
+             storage.getMSISDN(hawkHmacId, function(err, msisdn) {
+               if (err) throw err;
+               expect(msisdn).to.eql("+33123456789");
+               done();
+             });
+         });
     });
   });
 
