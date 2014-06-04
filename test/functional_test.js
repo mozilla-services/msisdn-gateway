@@ -292,25 +292,6 @@ describe("HTTP API exposed by the server", function() {
         .expect('Content-Type', /json/);
     });
 
-    it("should require the MSISDN params", function(done) {
-      jsonReq.send({}).expect(400).end(function(err, res) {
-        if (err) throw err;
-        expectFormatedError(res.body, 400, errors.MISSING, 
-                            "Missing msisdn");
-        done();
-      });
-    });
-
-    it("should require a valid MSISDN number", function(done) {
-      jsonReq.send({msisdn: "0123456789"}).expect(400).end(
-        function(err, res) {
-          if (err) throw err;
-          expectFormatedError(res.body, 400, errors.INVALID_MSISDN, 
-                              "Invalid MSISDN number.");
-          done();
-        });
-    });
-
     it("should clean the session.", function(done) {
       jsonReq.send({msisdn: "+33123456789"}).expect(200).end(
         function(err, res, tokenId) {

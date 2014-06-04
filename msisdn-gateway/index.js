@@ -248,17 +248,16 @@ app.post("/register", function(req, res) {
 /**
  * Unregister the session.
  **/
-app.post("/unregister", hawkMiddleware, requireParams("msisdn"),
-  validateMSISDN, function(req, res) {
-    storage.cleanSession(req.hawkHmacId, function(err) {
-      if (err) {
-        logError(err);
-        res.json(503, "Service Unavailable");
-        return;
-      }
-      res.json(200, {});
-    });
+app.post("/unregister", hawkMiddleware, function(req, res) {
+  storage.cleanSession(req.hawkHmacId, function(err) {
+    if (err) {
+      logError(err);
+      res.json(503, "Service Unavailable");
+      return;
+    }
+    res.json(200, {});
   });
+});
 
 /**
  * Ask for a new number registration.
