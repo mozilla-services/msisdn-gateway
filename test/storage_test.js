@@ -26,7 +26,9 @@ describe("Storage", function() {
 
     describe(name, function() {
       beforeEach(function() {
-        storage = createStorage();
+        storage = createStorage({
+          hawkSessionDuration: conf.get("hawkSessionDuration")
+        });
       });
   
       afterEach(function(done) {

@@ -87,7 +87,8 @@ RedisStorage.prototype = {
 
   setSession: function(hawkHmacId, authKey, callback) {
     var key = SESSION_KEY_PREFIX + hawkHmacId;
-    this._client.set(key, authKey, callback);
+    this._client.setex(key, this._settings.hawkSessionDuration,
+                       authKey, callback);
   },
 
   getSession: function(hawkHmacId, callback) {
