@@ -18,11 +18,10 @@ function Nexmo() {
 
 Nexmo.prototype = {
   sendSms: function sendSms(msisdn, message, callback) {
-    var from = this._conf.from;
     var url = this._conf.endpoint + "?" + querystring.stringify({
       api_key: this._conf.api_key,
       api_secret: this._conf.api_secret,
-      from: from,
+      from: conf.get("mtSender"),
       to: msisdn.replace("+", ""),
       text: message
     });

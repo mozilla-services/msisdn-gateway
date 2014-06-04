@@ -18,12 +18,11 @@ function Leonix() {
 
 Leonix.prototype = {
   sendSms: function sendSms(msisdn, message, callback) {
-    var source = this._conf.source;
     var url = this._conf.endpoint + "?" + querystring.stringify({
       service: this._conf.service,
       login: this._conf.login,
       pwd: this._conf.pwd,
-      source: source,
+      source: conf.get("mtSender"),
       number: msisdn.replace("+33", "0"),
       msg: message
     });
