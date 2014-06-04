@@ -124,6 +124,11 @@ var conf = convict({
     default: "",
     env: "HAWK_ID_SECRET"
   },
+  hawkSessionDuration: {
+    doc: "The duration of hawk credentials (in seconds)",
+    format: Number,
+    default: 3600 * 24  // One day.
+  },
   msisdnIdSecret: {
     doc: "The secret for hmac-ing msisdnId (16 bytes key encoded as hex)",
     format: hexKeyOfSize(16),
