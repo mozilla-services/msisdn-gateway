@@ -188,6 +188,11 @@ var conf = convict({
     doc: "Nexmo SMS Gateway Credentials",
     format: validateKeys(["endpoint", "api_key", "api_secret"], true),
     default: ""
+  },
+  requestMaxSize: {
+    doc: "The maximum size of the request",
+    format: String,
+    default: "1mb"
   }
 });
 

@@ -51,8 +51,11 @@ if (conf.get("env") === "development") {
 }
 app.use(headers);
 app.disable("x-powered-by");
-app.use(express.json());
-app.use(express.urlencoded());
+
+var limit = conf.get("requestMaxSize");
+app.use(express.json({limit: limit}));
+app.use(express.urlencoded({limit: limit}));
+
 app.use(app.router);
 // Exception logging should come at the end of the list of middlewares.
 app.use(raven.middleware.express(conf.get("sentryDSN")));
