@@ -16,6 +16,7 @@ var smsGateway = require("../msisdn-gateway/sms-gateway");
 var Token = require("../msisdn-gateway/token").Token;
 var hmac = require("../msisdn-gateway/hmac");
 var errors = require("../msisdn-gateway/errno");
+var aes = require("../msisdn-gateway/aes");
 var testKeyPair = require("./testKeyPair.json");
 var range = require("./utils").range;
 var fs = require('fs');
@@ -585,7 +586,7 @@ describe("HTTP API exposed by the server", function() {
              sinon.assert.called(smsGateway.sendSMS);
              storage.getMSISDN(hawkHmacId, function(err, msisdn) {
                if (err) throw err;
-               expect(msisdn).to.eql("+33123456789");
+               expect(msisdn).to.not.eql(null);
                done();
              });
          });
@@ -628,7 +629,7 @@ describe("HTTP API exposed by the server", function() {
         });
       sandbox.stub(storage, "getMSISDN",
         function(hawkHmacId, cb) {
-          cb(null, msisdn);
+          cb(null, aes.encrypt(hawkHmacId, msisdn));
         });
       jsonReq.send(validPayload).expect(200).end(function(err, res) {
         if (err) {
@@ -692,11 +693,11 @@ describe("HTTP API exposed by the server", function() {
         });
       sandbox.stub(storage, "getMSISDN",
         function(key, cb) {
-          cb(null, msisdn);
+          cb(null, aes.encrypt(key, msisdn));
         });
       jsonReq.send(validPayload).expect(200).end(function(err, res) {
         storage.getValidation(hawkHmacId, function(err, msisdnNumber) {
-          expect(msisdnNumber).to.equal(msisdn);
+          expect(msisdnNumber).to.not.eql(null);
           done();
         });
       });
