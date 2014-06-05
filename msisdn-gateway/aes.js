@@ -33,10 +33,11 @@ function decrypt(hawkId, encryptedString) {
   }
 
   var encrypted = JSON.parse(encryptedString);
-  encrypted.cipherText = new Buffer(encrypted.cipherText, "base64");
-  encrypted.nonce = new Buffer(encrypted.nonce, "base64");
+  var data = {};
+  data.cipherText = new Buffer(encrypted.cipherText, "base64");
+  data.nonce = new Buffer(encrypted.nonce, "base64");
   var box = new sodium.SecretBox(hawkId);
-  return box.decrypt(encrypted, "utf8");
+  return box.decrypt(data, "utf8");
 }
 
 module.exports = {

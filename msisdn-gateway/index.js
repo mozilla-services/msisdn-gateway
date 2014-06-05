@@ -314,7 +314,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
     }
 
     storage.getMSISDN(req.hawkHmacId, function(err, cipherMsisdn) {
-      var storedMsisdn = aes.decrypt(req.hawkHmacId, cipherMsisdn);
+      var storedMsisdn = aes.decrypt(req.hawk.id, cipherMsisdn);
 
       if (storedMsisdn !== null && storedMsisdn !== req.msisdn) {
         sendError(res, 400, errors.INVALID_PARAMETERS,
@@ -323,7 +323,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
       }
 
       if (cipherMsisdn === null) {
-        cipherMsisdn = aes.encrypt(req.hawkHmacId, req.msisdn);
+        cipherMsisdn = aes.encrypt(req.hawk.id, req.msisdn);
       }
 
       storage.storeMSISDN(req.hawkHmacId, cipherMsisdn, function(err) {
@@ -367,7 +367,8 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
     res.json(200, {});
     return;
   }
-  var hawkHmacId = hmac(text[1], conf.get("hawkIdSecret"));
+  var hawkId = text[1];
+  var hawkHmacId = hmac(hawkId, conf.get("hawkIdSecret"));
 
   storage.getSession(hawkHmacId, function(err, result) {
     if (err) {
@@ -389,7 +390,7 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
         return;
       }
 
-      var storedMsisdn = aes.decrypt(hawkHmacId, cipherMsisdn);
+      var storedMsisdn = aes.decrypt(hawkId, cipherMsisdn);
   
       if (storedMsisdn !== null && storedMsisdn !== msisdn) {
         logError(
@@ -405,7 +406,7 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
       }
 
       if (cipherMsisdn === null) {
-        cipherMsisdn = aes.encrypt(hawkHmacId, msisdn);
+        cipherMsisdn = aes.encrypt(hawkId, msisdn);
       }
   
       storage.storeMSISDN(hawkHmacId, cipherMsisdn, function(err) {
@@ -513,7 +514,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
             return;
           }
 
-          var msisdn = aes.decrypt(req.hawkHmacId, cipherMsisdn);
+          var msisdn = aes.decrypt(req.hawk.id, cipherMsisdn);
 
           res.json(200, {msisdn: msisdn});
         });

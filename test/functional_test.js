@@ -586,7 +586,9 @@ describe("HTTP API exposed by the server", function() {
              sinon.assert.called(smsGateway.sendSMS);
              storage.getMSISDN(hawkHmacId, function(err, msisdn) {
                if (err) throw err;
-               expect(msisdn).to.not.eql(null);
+               expect(
+                 aes.decrypt(hawkCredentials.id, msisdn)
+               ).to.eql("+33123456789");
                done();
              });
          });
@@ -623,22 +625,21 @@ describe("HTTP API exposed by the server", function() {
 
     it("should validate if the code is valid.", function(done) {
       var msisdn = "+33123456789";
-      sandbox.stub(storage, "verifyCode",
-        function(hawkHmacId, code, cb) {
-          cb(null, true);
-        });
-      sandbox.stub(storage, "getMSISDN",
-        function(hawkHmacId, cb) {
-          cb(null, aes.encrypt(hawkHmacId, msisdn));
-        });
-      jsonReq.send(validPayload).expect(200).end(function(err, res) {
-        if (err) {
-          console.log(res);
-          throw err;
-        }
+      storage.setCode(hawkHmacId, "123456", function(err) {
+        if (err) throw err;
+        storage.storeMSISDN(hawkHmacId, aes.encrypt(hawkCredentials.id, msisdn),
+          function(err) {
+            if (err) throw err;
+            jsonReq.send(validPayload).expect(200).end(function(err, res) {
+              if (err) {
+                console.log(res);
+                throw err;
+              }
         
-        expect(res.body.hasOwnProperty('msisdn')).to.equal(true);
-        done();
+              expect(res.body.hasOwnProperty('msisdn')).to.equal(true);
+              done();
+            });
+          });
       });
     });
 
@@ -687,19 +688,20 @@ describe("HTTP API exposed by the server", function() {
 
     it("should set validation.", function(done) {
       var msisdn = "+33123456789";
-      sandbox.stub(storage, "verifyCode",
-        function(key, code, cb) {
-          cb(null, true);
-        });
-      sandbox.stub(storage, "getMSISDN",
-        function(key, cb) {
-          cb(null, aes.encrypt(key, msisdn));
-        });
-      jsonReq.send(validPayload).expect(200).end(function(err, res) {
-        storage.getValidation(hawkHmacId, function(err, msisdnNumber) {
-          expect(msisdnNumber).to.not.eql(null);
-          done();
-        });
+      storage.setCode(hawkHmacId, "123456", function(err) {
+        if (err) throw err;
+        storage.storeMSISDN(hawkHmacId, aes.encrypt(hawkCredentials.id, msisdn),
+          function(err) {
+            if (err) throw err;
+            jsonReq.send(validPayload).expect(200).end(function(err, res) {
+              storage.getValidation(hawkHmacId, function(err, cipherMsisdn) {
+                expect(
+                  aes.decrypt(hawkCredentials.id, cipherMsisdn)
+                ).to.eql(msisdn);
+                done();
+              });
+            });
+          });
       });
     });
   });
