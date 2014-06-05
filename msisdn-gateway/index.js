@@ -529,7 +529,7 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
           sendError(res, 503, errors.BACKEND, "Service Unavailable");
           return;
         }
-        res.json(200, {cert: cert, publicKey: _publicKey.serialize()});
+        res.json(200, {cert: cert});
       });
     });
   });

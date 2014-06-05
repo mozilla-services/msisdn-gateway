@@ -638,7 +638,6 @@ describe("HTTP API exposed by the server", function() {
           throw err;
         }
         expect(res.body.hasOwnProperty("cert")).to.eql(true);
-        expect(res.body.hasOwnProperty("publicKey")).to.eql(true);
         done();
       });
     });
