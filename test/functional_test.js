@@ -8,6 +8,7 @@ var expect = require("chai").expect;
 var addHawk = require("superagent-hawk");
 var supertest = addHawk(require("supertest"));
 var sinon = require("sinon");
+var async = require("async");
 var app = require("../msisdn-gateway").app;
 var conf = require("../msisdn-gateway").conf;
 var storage = require("../msisdn-gateway").storage;
@@ -16,7 +17,7 @@ var Token = require("../msisdn-gateway/token").Token;
 var hmac = require("../msisdn-gateway/hmac");
 var errors = require("../msisdn-gateway/errno");
 var testKeyPair = require("./testKeyPair.json");
-
+var range = require("./utils").range;
 
 function expectFormatedError(body, code, errno, error, message, info) {
   var errmap = {};
@@ -548,23 +549,24 @@ describe("HTTP API exposed by the server", function() {
 
     it("should invalidate the code after three wrong tries.", function(done) {
       storage.setCode(hawkHmacId, "123456", function(err) {
-        jsonReq.send({"code": "654321"}).expect(400).end(function(err, res) {
-          if (err) throw err;
-          buildJsonReq().send({"code": "654321"}).expect(400).end(
-            function(err, res) {
-              if (err) throw err;
-              buildJsonReq().send({"code": "654321"}).expect(410).end(
-                function(err, res) {
-                  if (err) throw err;
-                  storage.verifyCode(hawkHmacId, "123456",
-                    function(err, result) {
-                      if (err) throw err;
-                      expect(result).to.eql(null);
-                      done();
-                    });
-                });
-            });
-        });
+        if (err) throw err;
+        async.map(range(conf.get("nbCodeTries")),
+          function(id, done) {
+            buildJsonReq().send({"code": "654321"}).expect(400).end(done);
+          },
+          function(err, results) {
+            if (err) throw err;
+            jsonReq.send({"code": "654321"}).expect(410).end(
+              function(err, res) {
+                if (err) throw err;
+                storage.verifyCode(hawkHmacId, "123456",
+                  function(err, result) {
+                    if (err) throw err;
+                    expect(result).to.eql(null);
+                    done();
+                  });
+              });
+          });
       });
     });
 

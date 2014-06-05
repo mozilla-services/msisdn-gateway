@@ -441,7 +441,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
             return;
           }
 
-          if (tries >= conf.get("nbCodeTries") - 1) {
+          if (tries >= conf.get("nbCodeTries")) {
             storage.expireCode(req.hawkHmacId, function(err) {
               if (err) {
                 logError(err);
