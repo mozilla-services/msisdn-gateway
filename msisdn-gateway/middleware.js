@@ -52,9 +52,32 @@ function checkHeaders(req, res, next) {
   next();
 }
 
+function logErrors(err, req, res, next) {
+  req.unhandledError = err;
+  var message = err.message;
+  var error = err.error || err;
+  var status = err.status || 500;
+
+  sendError(res, status, -1, message, error);
+}
+
+
+function applyErrorLogging(app) {
+  function patchRoute (route) {
+      route.callbacks.push(logErrors);
+  }
+
+  for (var verb in app.routes) {
+      var routes = app.routes[verb];
+      routes.forEach(patchRoute);
+  }
+
+}
+
 
 module.exports = {
   validateMSISDN: validateMSISDN,
   sendError: sendError,
-  checkHeaders: checkHeaders
+  checkHeaders: checkHeaders,
+  applyErrorLogging: applyErrorLogging
 };

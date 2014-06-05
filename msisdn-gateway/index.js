@@ -19,6 +19,7 @@ var hmac = require("./hmac");
 var validateMSISDN = require("./middleware").validateMSISDN;
 var sendError = require("./middleware").sendError;
 var checkHeaders = require("./middleware").checkHeaders;
+var applyErrorLogging = require("./middleware").applyErrorLogging;
 var Token = require("./token").Token;
 var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
 var Hawk = require('hawk');
@@ -53,7 +54,6 @@ if (conf.get("env") === "development") {
 app.use(headers);
 app.disable("x-powered-by");
 app.use(checkHeaders);
-
 var limit = conf.get("requestMaxSize");
 app.use(express.json({limit: limit}));
 app.use(express.urlencoded({limit: limit}));
@@ -61,6 +61,8 @@ app.use(express.urlencoded({limit: limit}));
 app.use(app.router);
 // Exception logging should come at the end of the list of middlewares.
 app.use(raven.middleware.express(conf.get("sentryDSN")));
+
+applyErrorLogging(app);
 
 var corsEnabled = cors({
   origin: function(origin, callback) {
