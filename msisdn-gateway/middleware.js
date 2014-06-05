@@ -43,7 +43,18 @@ function validateMSISDN(req, res, next) {
   next();
 }
 
+
+function checkHeaders(req, res, next) {
+  if (req.body && !req.headers['content-length']) {
+    sendError(res, 411, errors.LENGTH_MISSING, "No content-length");
+    return;
+  }
+  next();
+}
+
+
 module.exports = {
   validateMSISDN: validateMSISDN,
-  sendError: sendError
+  sendError: sendError,
+  checkHeaders: checkHeaders
 };

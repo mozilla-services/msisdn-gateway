@@ -18,6 +18,7 @@ var smsGateway = require("./sms-gateway");
 var hmac = require("./hmac");
 var validateMSISDN = require("./middleware").validateMSISDN;
 var sendError = require("./middleware").sendError;
+var checkHeaders = require("./middleware").checkHeaders;
 var Token = require("./token").Token;
 var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
 var Hawk = require('hawk');
@@ -51,6 +52,7 @@ if (conf.get("env") === "development") {
 }
 app.use(headers);
 app.disable("x-powered-by");
+app.use(checkHeaders);
 
 var limit = conf.get("requestMaxSize");
 app.use(express.json({limit: limit}));
