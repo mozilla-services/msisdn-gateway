@@ -348,7 +348,11 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
   
       if (storedMsisdn !== null && storedMsisdn !== msisdn) {
         logError(
-          new Error("You can only verify one MSISDN number per session.")
+          new Error("Attempt to very several MSISDN per session.", {
+            sessionId: hawkHmacId,
+            previousMsisdn: storedMsisdn,
+            currentMsisdn: msisdn
+          })
         );
   
         res.json(200, {});
