@@ -276,25 +276,32 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
       message = "Your verification code is: " + code;
     }
 
-    storage.storeMSISDN(req.hawkHmacId, req.msisdn, function(err) {
-      if (err) {
-        logError(err);
-        res.json(503, "Service Unavailable");
+    storage.getMSISDN(req.hawkHmacId, function(err, msisdn) {
+      if (msisdn !== null && msisdn !== req.msisdn) {
+        sendError(res, 400, errors.MSISDN_CONFLICT,
+                  "You can validate only one MSISDN per session.");
         return;
       }
 
-      storage.setCode(req.hawkHmacId, code, function(err) {
+      storage.storeMSISDN(req.hawkHmacId, req.msisdn, function(err) {
         if (err) {
           logError(err);
           res.json(503, "Service Unavailable");
           return;
         }
-        /* Send SMS */
-        // XXX export string in l10n external file.
-        smsGateway.sendSMS(req.msisdn, message,
-          function(err, data) {
+
+        storage.setCode(req.hawkHmacId, code, function(err) {
+          if (err) {
+            logError(err);
+            res.json(503, "Service Unavailable");
+            return;
+          }
+          /* Send SMS */
+          // XXX export string in l10n external file.
+          smsGateway.sendSMS(req.msisdn, message, function(err, data) {
             res.json(200, {});
           });
+        });
       });
     });
   });
@@ -305,6 +312,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
  **/
 app.get("/sms/momt/nexmo_callback", function(req, res) {
   if (!req.query.hasOwnProperty("msisdn")) {
+    // New number setup should answer 200
     res.json(200, {});
     return;
   }
@@ -318,34 +326,70 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
   }
   var hawkHmacId = hmac(text[1], conf.get("hawkIdSecret"));
 
-  storage.storeMSISDN(hawkHmacId, msisdn, function(err) {
+  storage.getSession(hawkHmacId, function(err, result) {
     if (err) {
       logError(err);
       res.json(503, "Service Unavailable");
       return;
     }
 
-    var code = crypto.randomBytes(conf.get("longCodeBytes")).toString("hex");
-    storage.setCode(hawkHmacId, code, function(err) {
+    if (result === null) {
+      // This session doesn't exists should answer 200
+      res.json(200, {});
+      return;
+    }
+
+    storage.getMSISDN(hawkHmacId, function(err, storedMsisdn) {
       if (err) {
         logError(err);
         res.json(503, "Service Unavailable");
         return;
       }
-
-      /* Send SMS */
-      smsGateway.sendSMS(msisdn, code, function(err) {
+  
+      if (storedMsisdn !== null && storedMsisdn !== msisdn) {
+        logError(
+          new Error("Attempt to very several MSISDN per session.", {
+            sessionId: hawkHmacId,
+            previousMsisdn: storedMsisdn,
+            currentMsisdn: msisdn
+          })
+        );
+  
+        res.json(200, {});
+        return;
+      }
+  
+      storage.storeMSISDN(hawkHmacId, msisdn, function(err) {
         if (err) {
           logError(err);
           res.json(503, "Service Unavailable");
           return;
         }
-        res.json(200, {});
+  
+        var code = crypto.randomBytes(conf.get("longCodeBytes"))
+          .toString("hex");
+
+        storage.setCode(hawkHmacId, code, function(err) {
+          if (err) {
+            logError(err);
+            res.json(503, "Service Unavailable");
+            return;
+          }
+  
+          /* Send SMS */
+          smsGateway.sendSMS(msisdn, code, function(err) {
+            if (err) {
+              logError(err);
+              res.json(503, "Service Unavailable");
+              return;
+            }
+            res.json(200, {});
+          });
+        });
       });
     });
   });
 });
-
 
 /**
  * Verify code
