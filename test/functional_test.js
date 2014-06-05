@@ -208,21 +208,22 @@ describe("HTTP API exposed by the server", function() {
     });
 
     it("should works without the MSISDN parameter", function(done) {
-      jsonReq.send({}).expect(200).end(done);
+      jsonReq.send({"mcc": "302"}).expect(200).end(done);
     });
 
     it("should take only a valid MSISDN number", function(done) {
-      jsonReq.send({msisdn: "0123456789"}).expect(400).end(function(err, res) {
-        if (err) throw err;
-        expectFormatedError(res.body, 400, errors.INVALID_MSISDN, 
-                            "Invalid MSISDN number.");
-        done();
-      });
+      jsonReq.send({msisdn: "0123456789", "mcc": "302"}).expect(400).end(
+        function(err, res) {
+          if (err) throw err;
+          expectFormatedError(res.body, 400, errors.INVALID_MSISDN, 
+                              "Invalid MSISDN number.");
+          done();
+        });
     });
 
     it("should return the sms/mt flow if the MSISDN is configured.",
       function(done) {
-        jsonReq.send({msisdn: "+33123456789"}).expect(200).end(
+        jsonReq.send({msisdn: "+33123456789", "mcc": "555"}).expect(200).end(
           function(err, res) {
             if (err) throw err;
             expect(res.body).to.eql({
@@ -245,7 +246,7 @@ describe("HTTP API exposed by the server", function() {
 
     it("should return the sms/momt flow if the MSISDN is not configured.",
       function(done) {
-        jsonReq.send({}).expect(200).end(function(err, res) {
+        jsonReq.send({"mcc": "555"}).expect(200).end(function(err, res) {
           if (err) throw err;
           expect(res.body).to.eql({
             "verificationMethods": ["sms/momt"],
@@ -259,6 +260,24 @@ describe("HTTP API exposed by the server", function() {
           done();
         });
       });
+
+    it("should return the sms/momt flow with the MCC specific number.",
+      function(done) {
+        jsonReq.send({"mcc": "302"}).expect(200).end(function(err, res) {
+          if (err) throw err;
+          expect(res.body).to.eql({
+            "verificationMethods": ["sms/momt"],
+            "verificationDetails": {
+              "sms/momt": {
+                "mtSender": "Mozilla",
+                "moVerifier": "+1..."
+              }
+            }
+          });
+          done();
+        });
+      });
+
   });
 
   describe("POST /register", function() {

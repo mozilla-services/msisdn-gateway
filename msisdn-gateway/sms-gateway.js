@@ -5,6 +5,7 @@
 
 var Leonix = require("./sms/leonix");
 var Nexmo = require("./sms/nexmo");
+var conf = require("./config").conf;
 
 var providers = {default: new Nexmo()};
 
@@ -25,6 +26,23 @@ function sendSMS(msisdn, message, callback) {
   provider.sendSms(msisdn, message, callback);
 }
 
+
+/**
+ * Get the moVerifier number with regards to MCC/MNC
+ */
+function getMoVerifierFor(mcc, mnc) {
+  var moVerifierList = conf.get("moVerifierList");
+  if (moVerifierList.hasOwnProperty(mcc + mnc)) {
+    return moVerifierList[mcc + mnc];
+  }
+  if (moVerifierList.hasOwnProperty(mcc)) {
+    return moVerifierList[mcc];
+  }
+  return conf.get("moVerifier");
+}
+
+
 module.exports = {
-  sendSMS: sendSMS
+  sendSMS: sendSMS,
+  getMoVerifierFor: getMoVerifierFor
 };
