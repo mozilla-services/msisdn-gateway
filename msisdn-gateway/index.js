@@ -192,7 +192,19 @@ app.get("/", function(req, res) {
 app.post("/discover", function(req, res) {
   var verificationMethods = [],
       verificationDetails = {},
-      url;
+      url, mcc, mnc;
+
+  if (!req.body.hasOwnProperty("mcc") || req.body.mcc.length !== 3) {
+    sendError(res, 400,
+              errors.INVALID_MCC, "Invalid MCC.");
+    return;
+  }
+
+  mcc = req.body.mcc;
+
+  if (req.body.hasOwnProperty("mcc") || req.body.mcc.length === 3) {
+    mnc = req.body.mnc;
+  }
 
   if (req.body.hasOwnProperty("msisdn")) {
     var msisdn = phone(req.body.msisdn);
@@ -216,7 +228,7 @@ app.post("/discover", function(req, res) {
   verificationMethods.push("sms/momt");
   verificationDetails["sms/momt"] = {
     mtSender: conf.get("mtSender"),
-    moVerifier: conf.get("moVerifier")
+    moVerifier: smsGateway.getMoVerifierFor(mcc, mnc)
   };
 
   res.json(200, {

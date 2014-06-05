@@ -169,6 +169,11 @@ var conf = convict({
     format: String,
     default: ""
   },
+  moVerifierList: {
+    doc: "List of moVerifierNumber with regards to MCC/MNC",
+    format: validateKeys([], false),
+    default: {}
+  },
   leonixCredentials: {
     doc: "Leonix SMS Gateway Credentials",
     format: validateKeys(["endpoint", "service", "login", "pwd"], true),
