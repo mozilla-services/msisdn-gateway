@@ -498,14 +498,17 @@ describe("HTTP API exposed by the server", function() {
   });
 
   describe("POST /sms/verify_code", function() {
-    var jsonReq, validPayload;
+    var buildJsonReq, jsonReq, validPayload;
 
     beforeEach(function() {
-      jsonReq = supertest(app)
-        .post('/sms/verify_code')
-        .hawk(hawkCredentials)
-        .type('json')
-        .expect('Content-Type', /json/);
+      buildJsonReq = function buildJsonReq() {
+        return supertest(app)
+          .post('/sms/verify_code')
+          .hawk(hawkCredentials)
+          .type('json')
+          .expect('Content-Type', /json/);
+      };
+      jsonReq = buildJsonReq();
 
       validPayload = {
         code: "123456"
@@ -540,6 +543,28 @@ describe("HTTP API exposed by the server", function() {
         
         expect(res.body.hasOwnProperty('msisdn')).to.equal(true);
         done();
+      });
+    });
+
+    it("should invalidate the code after three wrong tries.", function(done) {
+      storage.setCode(hawkHmacId, "123456", function(err) {
+        jsonReq.send({"code": "654321"}).expect(400).end(function(err, res) {
+          if (err) throw err;
+          buildJsonReq().send({"code": "654321"}).expect(400).end(
+            function(err, res) {
+              if (err) throw err;
+              buildJsonReq().send({"code": "654321"}).expect(410).end(
+                function(err, res) {
+                  if (err) throw err;
+                  storage.verifyCode(hawkHmacId, "123456",
+                    function(err, result) {
+                      if (err) throw err;
+                      expect(result).to.eql(null);
+                      done();
+                    });
+                });
+            });
+        });
       });
     });
 
