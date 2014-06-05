@@ -17,7 +17,7 @@ jwcrypto.generateKeypair({
       return;
     }
     console.log("{");
-    console.log("    BIDPublicKey: ", keypair.publicKey.serialize(), ",");
-    console.log("    BIDSecretKey: ", keypair.secretKey.serialize());
+    console.log('    "BIDPublicKey": ', keypair.publicKey.serialize(), ",");
+    console.log('    "BIDSecretKey": ', keypair.secretKey.serialize());
     console.log("}");
 });
