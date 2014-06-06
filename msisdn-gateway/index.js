@@ -434,7 +434,26 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
       }
 
       if (!result) {
-        res.json(400, "Code error.");
+        storage.setCodeWrongTry(req.hawkHmacId, function(err, tries) {
+          if (err) {
+            logError(err);
+            res.json(503, "Service Unavailable");
+            return;
+          }
+
+          if (tries >= conf.get("nbCodeTries")) {
+            storage.expireCode(req.hawkHmacId, function(err) {
+              if (err) {
+                logError(err);
+                res.json(503, "Service Unavailable");
+                return;
+              }
+              res.json(400, "Code error.");
+            });
+            return;
+          }
+          res.json(400, "Code error.");
+        });
         return;
       }
 

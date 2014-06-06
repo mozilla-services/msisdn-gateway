@@ -118,6 +118,11 @@ var conf = convict({
     format: Number,
     default: 16
   },
+  nbCodeTries: {
+    doc: "Number of wrong code tries before expiration",
+    format: Number,
+    default: 3
+  },
   hawkIdSecret: {
     doc: "The secret for hmac-ing hawk.id (16 bytes key encoded as hex)",
     format: hexKeyOfSize(16),

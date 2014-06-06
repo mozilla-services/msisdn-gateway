@@ -82,6 +82,41 @@ describe("Storage", function() {
         });
       });
 
+      describe("#setCodeWrongTry", function() {
+        it("should increment the number starting at one.", function(done) {
+          storage.setCodeWrongTry(hawkHmacId, function(err, tries) {
+            expect(tries).to.eql(1);
+            storage.setCodeWrongTry(hawkHmacId, function(err, tries) {
+              expect(tries).to.eql(2);
+              done();
+            });
+          });
+        });
+      });
+
+      describe("#expireCode", function() {
+        it("should drop the code.", function(done) {
+          storage.setCode(hawkHmacId, "123", function(err) {
+            if (err) throw err;
+            storage.setCodeWrongTry(hawkHmacId, function(err, tries) {
+              if (err) throw err;
+              storage.expireCode(hawkHmacId, function(err) {
+                if (err) throw err;
+                storage.verifyCode(hawkHmacId, "123", function(err, result) {
+                  if (err) throw err;
+                  expect(result).to.eql(null);
+                  storage.setCodeWrongTry(hawkHmacId, function(err, tries) {
+                    if (err) throw err;
+                    expect(tries).to.eql(1);
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+
       describe("#storeMSISDN", function() {
         it("should store the MSISDN.", function(done) {
           storage.storeMSISDN(hawkHmacId, authKey,
