@@ -19,6 +19,7 @@ var hmac = require("./hmac");
 var validateMSISDN = require("./middleware").validateMSISDN;
 var sendError = require("./middleware").sendError;
 var checkHeaders = require("./middleware").checkHeaders;
+var handle404 = require("./middleware").handle404;
 var applyErrorLogging = require("./middleware").applyErrorLogging;
 var Token = require("./token").Token;
 var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
@@ -61,8 +62,11 @@ app.use(express.urlencoded({limit: limit}));
 app.use(app.router);
 // Exception logging should come at the end of the list of middlewares.
 app.use(raven.middleware.express(conf.get("sentryDSN")));
-
 applyErrorLogging(app);
+
+// last route = 404
+app.use(handle404);
+
 
 var corsEnabled = cors({
   origin: function(origin, callback) {

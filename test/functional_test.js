@@ -198,6 +198,19 @@ describe("HTTP API exposed by the server", function() {
       });
   });
 
+  describe("General request filtering", function() {
+    it("should send back JSON, always", function(done) {
+      supertest(app)
+          .get('/unexistant')
+          .expect(404)
+          .end(function(err, res) {
+            expectFormatedError(res.body, 404, -1);
+            done();
+          });
+
+    });
+  });
+
   describe("POST /discover", function() {
     var jsonReq;
 

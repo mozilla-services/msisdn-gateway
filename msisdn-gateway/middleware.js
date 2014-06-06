@@ -75,9 +75,16 @@ function applyErrorLogging(app) {
 }
 
 
+function handle404(req, res, next) {
+  sendError(res, 404, -1);
+}
+
+
+
 module.exports = {
   validateMSISDN: validateMSISDN,
   sendError: sendError,
   checkHeaders: checkHeaders,
-  applyErrorLogging: applyErrorLogging
+  applyErrorLogging: applyErrorLogging,
+  handle404: handle404
 };
