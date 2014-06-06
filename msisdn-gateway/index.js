@@ -27,7 +27,7 @@ var Hawk = require('hawk');
 var uuid = require('node-uuid');
 var errors = require("./errno");
 var jwcrypto = require('jwcrypto');
-var aes = require("./aes");
+var encrypt = require("./encrypt");
 
 // Make sure to load supported algorithms.
 require('jwcrypto/lib/algs/rs');
@@ -314,7 +314,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
     }
 
     storage.getMSISDN(req.hawkHmacId, function(err, cipherMsisdn) {
-      var storedMsisdn = aes.decrypt(req.hawk.id, cipherMsisdn);
+      var storedMsisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
 
       if (storedMsisdn !== null && storedMsisdn !== req.msisdn) {
         sendError(res, 400, errors.INVALID_PARAMETERS,
@@ -323,7 +323,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
       }
 
       if (cipherMsisdn === null) {
-        cipherMsisdn = aes.encrypt(req.hawk.id, req.msisdn);
+        cipherMsisdn = encrypt.encrypt(req.hawk.id, req.msisdn);
       }
 
       storage.storeMSISDN(req.hawkHmacId, cipherMsisdn, function(err) {
@@ -390,7 +390,7 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
         return;
       }
 
-      var storedMsisdn = aes.decrypt(hawkId, cipherMsisdn);
+      var storedMsisdn = encrypt.decrypt(hawkId, cipherMsisdn);
   
       if (storedMsisdn !== null && storedMsisdn !== msisdn) {
         logError(
@@ -406,7 +406,7 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
       }
 
       if (cipherMsisdn === null) {
-        cipherMsisdn = aes.encrypt(hawkId, msisdn);
+        cipherMsisdn = encrypt.encrypt(hawkId, msisdn);
       }
   
       storage.storeMSISDN(hawkHmacId, cipherMsisdn, function(err) {
@@ -514,7 +514,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
             return;
           }
 
-          var msisdn = aes.decrypt(req.hawk.id, cipherMsisdn);
+          var msisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
 
           res.json(200, {msisdn: msisdn});
         });

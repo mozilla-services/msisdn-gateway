@@ -5,15 +5,15 @@
 
 var expect = require("chai").expect;
 var crypto = require("crypto");
-var aes = require("../msisdn-gateway/aes");
+var encrypt = require("../msisdn-gateway/encrypt");
 
-describe("AES", function() {
+describe("ENCRYPT", function() {
   describe("#encrypt/#decrypt", function() {
     it("should be able to encrypt and decrypt a string", function() {
       var hawkHmacId = crypto.randomBytes(32).toString("hex");
       var text = "Bonjour les gens";
-      var encrypted = aes.encrypt(hawkHmacId, text);
-      var decrypted = aes.decrypt(hawkHmacId, encrypted);
+      var encrypted = encrypt.encrypt(hawkHmacId, text);
+      var decrypted = encrypt.decrypt(hawkHmacId, encrypted);
       expect(decrypted).to.eql(text);
     });
   });

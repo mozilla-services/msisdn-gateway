@@ -16,7 +16,7 @@ var smsGateway = require("../msisdn-gateway/sms-gateway");
 var Token = require("../msisdn-gateway/token").Token;
 var hmac = require("../msisdn-gateway/hmac");
 var errors = require("../msisdn-gateway/errno");
-var aes = require("../msisdn-gateway/aes");
+var encrypt = require("../msisdn-gateway/encrypt");
 var testKeyPair = require("./testKeyPair.json");
 var range = require("./utils").range;
 var fs = require('fs');
@@ -587,7 +587,7 @@ describe("HTTP API exposed by the server", function() {
              storage.getMSISDN(hawkHmacId, function(err, msisdn) {
                if (err) throw err;
                expect(
-                 aes.decrypt(hawkCredentials.id, msisdn)
+                 encrypt.decrypt(hawkCredentials.id, msisdn)
                ).to.eql("+33123456789");
                done();
              });
@@ -627,7 +627,8 @@ describe("HTTP API exposed by the server", function() {
       var msisdn = "+33123456789";
       storage.setCode(hawkHmacId, "123456", function(err) {
         if (err) throw err;
-        storage.storeMSISDN(hawkHmacId, aes.encrypt(hawkCredentials.id, msisdn),
+        storage.storeMSISDN(
+          hawkHmacId, encrypt.encrypt(hawkCredentials.id, msisdn),
           function(err) {
             if (err) throw err;
             jsonReq.send(validPayload).expect(200).end(function(err, res) {
@@ -690,13 +691,14 @@ describe("HTTP API exposed by the server", function() {
       var msisdn = "+33123456789";
       storage.setCode(hawkHmacId, "123456", function(err) {
         if (err) throw err;
-        storage.storeMSISDN(hawkHmacId, aes.encrypt(hawkCredentials.id, msisdn),
+        storage.storeMSISDN(
+          hawkHmacId, encrypt.encrypt(hawkCredentials.id, msisdn),
           function(err) {
             if (err) throw err;
             jsonReq.send(validPayload).expect(200).end(function(err, res) {
               storage.getValidation(hawkHmacId, function(err, cipherMsisdn) {
                 expect(
-                  aes.decrypt(hawkCredentials.id, cipherMsisdn)
+                  encrypt.decrypt(hawkCredentials.id, cipherMsisdn)
                 ).to.eql(msisdn);
                 done();
               });
