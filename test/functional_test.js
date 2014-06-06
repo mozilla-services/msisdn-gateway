@@ -18,6 +18,8 @@ var hmac = require("../msisdn-gateway/hmac");
 var errors = require("../msisdn-gateway/errno");
 var testKeyPair = require("./testKeyPair.json");
 var range = require("./utils").range;
+var fs = require('fs');
+
 
 function expectFormatedError(body, code, errno, error, message, info) {
   var errmap = {};
@@ -210,6 +212,33 @@ describe("HTTP API exposed by the server", function() {
 
     });
   });
+
+  describe("General request filtering", function() {
+    it("should reject requests that are too big", function(done) {
+      var res, res2;
+      // create a big JSON blob
+      fs.readFile( __dirname + '/DATA', function (err, data) {
+          if (err) {
+            throw err; 
+           }
+          res = data.toString();
+          res2 = data.toString();
+
+          supertest(app)
+           .post('/discover')
+           .type('json')
+           .send(JSON.stringify({somedata: res, somemore: res2}))
+           .expect(413)
+           .end(function(err, res) {
+            done();
+          });
+      });
+
+
+
+    });
+  });
+
 
   describe("POST /discover", function() {
     var jsonReq;

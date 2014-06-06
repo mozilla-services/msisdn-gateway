@@ -192,7 +192,7 @@ var conf = convict({
   requestMaxSize: {
     doc: "The maximum size of the request",
     format: String,
-    default: "1mb"
+    default: "25kb"
   }
 });
 
