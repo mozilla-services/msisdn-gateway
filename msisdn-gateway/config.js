@@ -42,7 +42,7 @@ function validateKeys(keys, empty) {
 function hexKeyOfSize(size) {
   return function check(val) {
     if (!new RegExp(format('^[a-fA-FA0-9]{%d}$', size * 2)).test(val)) {
-      throw new Error(format("Should be an %d bytes key encoded as " + 
+      throw new Error(format("Should be an %d bytes key encoded as " +
                              "hexadecimal", size));
     }
   };
@@ -188,6 +188,11 @@ var conf = convict({
     doc: "Nexmo SMS Gateway Credentials",
     format: validateKeys(["endpoint", "api_key", "api_secret"], true),
     default: ""
+  },
+  requestMaxSize: {
+    doc: "The maximum size of the request",
+    format: String,
+    default: "25kb"
   }
 });
 

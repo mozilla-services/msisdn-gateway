@@ -18,6 +18,9 @@ var hmac = require("../msisdn-gateway/hmac");
 var errors = require("../msisdn-gateway/errno");
 var testKeyPair = require("./testKeyPair.json");
 var range = require("./utils").range;
+var fs = require('fs');
+var mdl = require("../msisdn-gateway/middleware");
+var crypto = require("crypto");
 
 function expectFormatedError(body, code, errno, error, message, info) {
   var errmap = {};
@@ -198,6 +201,97 @@ describe("HTTP API exposed by the server", function() {
       });
   });
 
+  describe("General request filtering", function() {
+    it("should send back JSON, always", function(done) {
+      supertest(app)
+        .get('/unexistant')
+        .expect(404)
+        .end(function(err, res) {
+          expectFormatedError(res.body, 404);
+          done();
+        });
+    });
+
+    it("should reject requests that are too big", function(done) {
+      var res, res2;
+      // create a big JSON blob
+      fs.readFile( __dirname + '/DATA', function(err, data) {
+        if (err) {
+          throw err;
+        }
+        res = data.toString();
+        res2 = data.toString();
+
+        supertest(app)
+          .post('/discover')
+          .type('json')
+          .send(JSON.stringify({somedata: res, somemore: res2}))
+          .expect(413)
+          .end(function(err, res) {
+            done();
+          });
+      });
+    });
+
+    it("a 500 should send back JSON, always", function(done) {
+      var _error = function(req, res) {
+        /* jshint ignore:start */
+        res.json(200, {"boom": boom.tchak});
+        /* jshint ignore:end */
+      };
+
+      // plug an error on /error
+      app.get('/error', _error);
+      mdl.applyErrorLogging(app);
+
+      supertest(app)
+          .get('/error')
+          .expect(500)
+          .end(function(err, res) {
+            expectFormatedError(res.body, 500, 999, "boom is not defined");
+            done();
+          });
+    });
+  });
+
+  describe("HAWK Middleware wrong credentials handling.", function() {
+    it("should return an INVALID_REQUEST_SIG on invalid Hawk parameters.",
+      function(done) {
+        supertest(app)
+          .post('/sms/mt/verify')
+          .send({msisdn: "123456"})
+          .set("Authorization", "Hawk wrong-parameters")
+          .expect(401)
+          // .expect("WWW-Authenticate", "Hawk")
+          .end(function(err, res) {
+            if (err) throw err;
+            expectFormatedError(res.body, 401, errors.INVALID_REQUEST_SIG,
+                                "Bad header format");
+            done();
+          });
+      });
+
+    it("should return an INVALID_AUTH_TOKEN on invalid Hawk credentials.",
+      function(done) {
+        // Broke hawkCredentials
+        hawkCredentials.id = crypto.randomBytes(32).toString("hex");
+
+        supertest(app)
+          .post('/sms/mt/verify')
+          .send({msisdn: "123456"})
+          .hawk(hawkCredentials)
+          .expect(401)
+          // .expect("WWW-Authenticate", "Hawk")
+          .end(function(err, res) {
+            if (err) throw err;
+            expectFormatedError(res.body, 401, errors.INVALID_AUTH_TOKEN,
+                                "Unknown credentials");
+            done();
+          });
+      });
+  });
+
+
   describe("POST /discover", function() {
     var jsonReq;
 
@@ -216,7 +310,7 @@ describe("HTTP API exposed by the server", function() {
       jsonReq.send({msisdn: "0123456789", "mcc": "302"}).expect(400).end(
         function(err, res) {
           if (err) throw err;
-          expectFormatedError(res.body, 400, errors.INVALID_MSISDN, 
+          expectFormatedError(res.body, 400, errors.INVALID_PARAMETERS,
                               "Invalid MSISDN number.");
           done();
         });
@@ -421,7 +515,7 @@ describe("HTTP API exposed by the server", function() {
             buildJsonReq().send({
               msisdn: "+33214365879"
             }).expect(400).end(function(err, res) {
-              expectFormatedError(res.body, 400, errors.MSISDN_CONFLICT,
+              expectFormatedError(res.body, 400, errors.INVALID_PARAMETERS,
                 "You can validate only one MSISDN per session.");
               done(err);
             });
@@ -520,7 +614,7 @@ describe("HTTP API exposed by the server", function() {
       delete validPayload.code;
       jsonReq.send(validPayload).expect(400).end(function(err, res) {
         if (err) throw err;
-        expectFormatedError(res.body, 400, errors.MISSING, 
+        expectFormatedError(res.body, 400, errors.MISSING_PARAMETERS,
                             "Missing code");
         done();
       });
@@ -570,12 +664,12 @@ describe("HTTP API exposed by the server", function() {
       });
     });
 
-    it("should validate if the code is invalid.", function(done) {
-      sandbox.stub(storage, "verifyCode",
-        function(msisdn, code, cb) {
-          cb(null, false);
-        });
-      jsonReq.send(validPayload).expect(400).end(done);
+    it("should validate if the code format is invalid.", function(done) {
+      jsonReq.send({code: "123456789"}).expect(400).end(function(err, res) {
+        expectFormatedError(res.body, 400, errors.INVALID_PARAMETERS,
+          "Code should be short (6 characters) or long (32 characters).");
+        done();
+      });
     });
 
     it("should validate if the MSISDN expired.", function(done) {
@@ -629,7 +723,7 @@ describe("HTTP API exposed by the server", function() {
       delete validPayload.publicKey;
       jsonReq.send(validPayload).expect(400).end(function(err, res) {
         if (err) throw err;
-        expectFormatedError(res.body, 400, errors.MISSING, 
+        expectFormatedError(res.body, 400, errors.MISSING_PARAMETERS,
                             "Missing publicKey");
         done();
       });
@@ -639,7 +733,7 @@ describe("HTTP API exposed by the server", function() {
       delete validPayload.duration;
       jsonReq.send(validPayload).expect(400).end(function(err, res) {
         if (err) throw err;
-        expectFormatedError(res.body, 400, errors.MISSING, 
+        expectFormatedError(res.body, 400, errors.MISSING_PARAMETERS,
                             "Missing duration");
         done();
       });

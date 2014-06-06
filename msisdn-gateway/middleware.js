@@ -43,7 +43,44 @@ function validateMSISDN(req, res, next) {
   next();
 }
 
+
+function checkHeaders(req, res, next) {
+  if (req.body && !req.headers['content-length']) {
+    sendError(res, 411, errors.LENGTH_MISSING, "No content-length");
+    return;
+  }
+  next();
+}
+
+function logErrors(err, req, res, next) {
+  req.unhandledError = err;
+  var message = err.message;
+  var status = err.status || 500;
+
+  sendError(res, status, 999, message);
+}
+
+
+function applyErrorLogging(app) {
+  function patchRoute (route) {
+      route.callbacks.push(logErrors);
+  }
+  for (var verb in app.routes) {
+      var routes = app.routes[verb];
+      routes.forEach(patchRoute);
+  }
+}
+
+
+function handle404(req, res) {
+  sendError(res, 404);
+}
+
+
 module.exports = {
   validateMSISDN: validateMSISDN,
-  sendError: sendError
+  sendError: sendError,
+  checkHeaders: checkHeaders,
+  applyErrorLogging: applyErrorLogging,
+  handle404: handle404
 };

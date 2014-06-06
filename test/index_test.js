@@ -41,8 +41,8 @@ describe("index.js", function() {
             if (err) throw err;
             expect(res.body).eql({
               code: 400,
-              errno: errors.MISSING,
-              error: "Missing b", 
+              errno: errors.MISSING_PARAMETERS,
+              error: "Missing b"
             });
             done();
           });
@@ -57,7 +57,7 @@ describe("index.js", function() {
           if (err) throw err;
           expect(res.body).eql({
             code: 400,
-            errno: errors.MISSING,
+            errno: errors.MISSING_PARAMETERS,
             error: "Missing a,b", 
           });
           done();

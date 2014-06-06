@@ -18,6 +18,9 @@ var smsGateway = require("./sms-gateway");
 var hmac = require("./hmac");
 var validateMSISDN = require("./middleware").validateMSISDN;
 var sendError = require("./middleware").sendError;
+var checkHeaders = require("./middleware").checkHeaders;
+var handle404 = require("./middleware").handle404;
+var applyErrorLogging = require("./middleware").applyErrorLogging;
 var Token = require("./token").Token;
 var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
 var Hawk = require('hawk');
@@ -51,11 +54,20 @@ if (conf.get("env") === "development") {
 }
 app.use(headers);
 app.disable("x-powered-by");
-app.use(express.json());
-app.use(express.urlencoded());
+app.use(checkHeaders);
+var limit = conf.get("requestMaxSize");
+app.use(express.json({limit: limit}));
+app.use(express.urlencoded({limit: limit}));
+
 app.use(app.router);
 // Exception logging should come at the end of the list of middlewares.
 app.use(raven.middleware.express(conf.get("sentryDSN")));
+applyErrorLogging(app);
+
+// When we arrive here without having send the response it is a 404
+// Handle404 is the last route after the app.router and other error handling.
+app.use(handle404);
+
 
 var corsEnabled = cors({
   origin: function(origin, callback) {
@@ -82,7 +94,8 @@ function requireParams() {
     });
 
     if (missingParams.length > 0) {
-      sendError(res, 400, errors.MISSING, "Missing " + missingParams.join());
+      sendError(res, 400, errors.MISSING_PARAMETERS,
+                "Missing " + missingParams.join());
       return;
     }
     next();
@@ -104,7 +117,7 @@ function hawkMiddleware(req, res, next) {
     function(err, credentials, artifacts) {
       req.hawk = artifacts;
       if (err) {
-        if (!err.isMissing) {
+        if (!err.isMissing && !err.isBoom) {
           logError(err, artifacts);
         }
 
@@ -113,12 +126,24 @@ function hawkMiddleware(req, res, next) {
 
         res.setHeader("WWW-Authenticate",
                       err.output.headers["WWW-Authenticate"]);
-        res.json(401, err.output.payload);
-        return;
-      }
 
-      if (credentials === null) {
-        res.json(403, "Forbidden");
+        var errno = errors.INVALID_PARAMETERS;
+
+        if (err.isBoom) {
+          switch (err.output.payload.statusCode) {
+          case 400:
+            errno = errors.INVALID_REQUEST_SIG;
+            break;
+          case 401:
+            errno = errors.INVALID_AUTH_TOKEN;
+            break;
+          default:
+            errno = errors.INVALID_PARAMETERS;
+          }
+        }
+
+        sendError(res, 401, errno,
+                  err.output.payload.message);
         return;
       }
 
@@ -196,7 +221,7 @@ app.post("/discover", function(req, res) {
 
   if (!req.body.hasOwnProperty("mcc") || req.body.mcc.length !== 3) {
     sendError(res, 400,
-              errors.INVALID_MCC, "Invalid MCC.");
+              errors.INVALID_PARAMETERS, "Invalid MCC.");
     return;
   }
 
@@ -210,7 +235,7 @@ app.post("/discover", function(req, res) {
     var msisdn = phone(req.body.msisdn);
     if (msisdn === null) {
       sendError(res, 400,
-                errors.INVALID_MSISDN, "Invalid MSISDN number.");
+                errors.INVALID_PARAMETERS, "Invalid MSISDN number.");
       return;
     }
     // SMS/MT methods configuration
@@ -248,7 +273,7 @@ app.post("/register", function(req, res) {
     storage.setSession(hawkHmacId, authKey, function(err) {
       if (err) {
         logError(err);
-        res.json(503, "Service Unavailable");
+        sendError(res, 503, errors.BACKEND, "Service Unavailable");
         return;
       }
 
@@ -266,7 +291,7 @@ app.post("/unregister", hawkMiddleware, function(req, res) {
   storage.cleanSession(req.hawkHmacId, function(err) {
     if (err) {
       logError(err);
-      res.json(503, "Service Unavailable");
+      sendError(res, 503, errors.BACKEND, "Service Unavailable");
       return;
     }
     res.json(200, {});
@@ -290,7 +315,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
 
     storage.getMSISDN(req.hawkHmacId, function(err, msisdn) {
       if (msisdn !== null && msisdn !== req.msisdn) {
-        sendError(res, 400, errors.MSISDN_CONFLICT,
+        sendError(res, 400, errors.INVALID_PARAMETERS,
                   "You can validate only one MSISDN per session.");
         return;
       }
@@ -298,14 +323,14 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
       storage.storeMSISDN(req.hawkHmacId, req.msisdn, function(err) {
         if (err) {
           logError(err);
-          res.json(503, "Service Unavailable");
+          sendError(res, 503, errors.BACKEND, "Service Unavailable");
           return;
         }
 
         storage.setCode(req.hawkHmacId, code, function(err) {
           if (err) {
             logError(err);
-            res.json(503, "Service Unavailable");
+            sendError(res, 503, errors.BACKEND, "Service Unavailable");
             return;
           }
           /* Send SMS */
@@ -341,7 +366,7 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
   storage.getSession(hawkHmacId, function(err, result) {
     if (err) {
       logError(err);
-      res.json(503, "Service Unavailable");
+      sendError(res, 503, errors.BACKEND, "Service Unavailable");
       return;
     }
 
@@ -354,10 +379,10 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
     storage.getMSISDN(hawkHmacId, function(err, storedMsisdn) {
       if (err) {
         logError(err);
-        res.json(503, "Service Unavailable");
+        sendError(res, 503, errors.BACKEND, "Service Unavailable");
         return;
       }
-  
+
       if (storedMsisdn !== null && storedMsisdn !== msisdn) {
         logError(
           new Error("Attempt to very several MSISDN per session.", {
@@ -366,33 +391,33 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
             currentMsisdn: msisdn
           })
         );
-  
+
         res.json(200, {});
         return;
       }
-  
+
       storage.storeMSISDN(hawkHmacId, msisdn, function(err) {
         if (err) {
           logError(err);
-          res.json(503, "Service Unavailable");
+          sendError(res, 503, errors.BACKEND, "Service Unavailable");
           return;
         }
-  
+
         var code = crypto.randomBytes(conf.get("longCodeBytes"))
           .toString("hex");
 
         storage.setCode(hawkHmacId, code, function(err) {
           if (err) {
             logError(err);
-            res.json(503, "Service Unavailable");
+            sendError(res, 503, errors.BACKEND, "Service Unavailable");
             return;
           }
-  
+
           /* Send SMS */
           smsGateway.sendSMS(msisdn, code, function(err) {
             if (err) {
               logError(err);
-              res.json(503, "Service Unavailable");
+              sendError(res, 503, errors.BACKEND, "Service Unavailable");
               return;
             }
             res.json(200, {});
@@ -414,8 +439,8 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
     if (code.length !== conf.get("shortCodeLength") &&
         code.length !== conf.get("longCodeBytes") * 2) {
 
-      sendError(res, 400, errors.INVALID_CODE,
-                "Code should be short (" + conf.get("shortCodeLength") + 
+      sendError(res, 400, errors.INVALID_PARAMETERS,
+                "Code should be short (" + conf.get("shortCodeLength") +
                 " characters) or long (" + conf.get("longCodeBytes") * 2 +
                 " characters).");
       return;
@@ -424,12 +449,12 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
     storage.verifyCode(req.hawkHmacId, code, function(err, result) {
       if (err) {
         logError(err);
-        res.json(503, "Service Unavailable");
+        sendError(res, 503, errors.BACKEND, "Service Unavailable");
         return;
       }
 
       if (result === null) {
-        res.json(410, "Code has expired.");
+        sendError(res, 410, errors.EXPIRED, "Code has expired.");
         return;
       }
 
@@ -437,7 +462,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
         storage.setCodeWrongTry(req.hawkHmacId, function(err, tries) {
           if (err) {
             logError(err);
-            res.json(503, "Service Unavailable");
+            sendError(res, 503, errors.BACKEND, "Service Unavailable");
             return;
           }
 
@@ -445,14 +470,14 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
             storage.expireCode(req.hawkHmacId, function(err) {
               if (err) {
                 logError(err);
-                res.json(503, "Service Unavailable");
+                sendError(res, 503, errors.BACKEND, "Service Unavailable");
                 return;
               }
-              res.json(400, "Code error.");
+              sendError(res, 400, errors.INVALID_CODE, "Code error.");
             });
             return;
           }
-          res.json(400, "Code error.");
+          sendError(res, 400, errors.INVALID_CODE, "Code error.");
         });
         return;
       }
@@ -460,19 +485,19 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
 	  storage.getMSISDN(req.hawkHmacId, function(err, msisdn) {
         if (err) {
           logError(err);
-          res.json(503, "Service Unavailable");
+          sendError(res, 503, errors.BACKEND, "Service Unavailable");
           return;
         }
 
         if (msisdn === null) {
-          res.json(410, "Token has expired.");
+          sendError(res, 410, errors.EXPIRED, "Token has expired.");
           return;
         }
 
         storage.setValidation(req.hawkHmacId, msisdn, function(err) {
           if (err) {
             logError(err);
-            res.json(503, "Service Unavailable");
+            sendError(res, 503, errors.BACKEND, "Service Unavailable");
             return;
           }
 
@@ -502,14 +527,14 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
       validateJWCryptoKey(publicKey);
     } catch (err) {
       // not sending back the error for security
-      sendError(res, 400, errors.BADKEY);
+      sendError(res, 400, errors.INVALID_PARAMETERS, "Bad Public Key.");
       return;
     }
 
     // Validate duration.
     if (typeof duration !== "number" || duration < 1) {
-      sendError(res, 400, errors.DURATION, 
-                "Duration should be a number of seconds."); 
+      sendError(res, 400, errors.INVALID_PARAMETERS,
+                "Duration should be a number of seconds.");
       return;
     }
 
