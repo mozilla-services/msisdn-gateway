@@ -127,21 +127,22 @@ function hawkMiddleware(req, res, next) {
         res.setHeader("WWW-Authenticate",
                       err.output.headers["WWW-Authenticate"]);
 
-        if (err.isBoom) {
-          if (err.output.payload.statusCode === 400) {
-            sendError(res, 401, errors.INVALID_REQUEST_SIG,
-                      err.output.payload.message);
-            return;
-          }
+        var errno = errors.INVALID_PARAMETERS;
 
-          if (err.output.payload.statusCode === 401) {
-            sendError(res, 401, errors.INVALID_AUTH_TOKEN,
-                      err.output.payload.message);
-            return;
+        if (err.isBoom) {
+          switch (err.output.payload.statusCode) {
+          case 400:
+            errno = errors.INVALID_REQUEST_SIG;
+            break;
+          case 401:
+            errno = errors.INVALID_AUTH_TOKEN;
+            break;
+          default:
+            errno = errors.INVALID_PARAMETERS;
           }
         }
 
-        sendError(res, 401, errors.INVALID_PARAMETERS,
+        sendError(res, 401, errno,
                   err.output.payload.message);
         return;
       }
