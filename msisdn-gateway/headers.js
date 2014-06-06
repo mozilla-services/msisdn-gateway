@@ -11,7 +11,7 @@ module.exports = function headersMiddleware(req, res, next) {
       res.setHeader('Timestamp', new Date().getTime());
     }
 
-    if (res.statusCode === 503) {
+    if (res.statusCode === 503 || res.statusCode === 429) {
       res.setHeader('Retry-After', conf.get('retryAfter'));
     }
   });

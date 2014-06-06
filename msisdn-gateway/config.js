@@ -42,7 +42,7 @@ function validateKeys(keys, empty) {
 function hexKeyOfSize(size) {
   return function check(val) {
     if (!new RegExp(format('^[a-fA-FA0-9]{%d}$', size * 2)).test(val)) {
-      throw new Error(format("Should be an %d bytes key encoded as " + 
+      throw new Error(format("Should be an %d bytes key encoded as " +
                              "hexadecimal", size));
     }
   };
