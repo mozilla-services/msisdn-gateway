@@ -64,7 +64,8 @@ app.use(app.router);
 app.use(raven.middleware.express(conf.get("sentryDSN")));
 applyErrorLogging(app);
 
-// last route = 404
+// When we arrive here without having send the response it is a 404
+// Handle404 is the last route after the app.router and other error handling.
 app.use(handle404);
 
 
