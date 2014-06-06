@@ -548,10 +548,30 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
           sendError(res, 503, errors.BACKEND, "Service Unavailable");
           return;
         }
-        res.json(200, {cert: cert, publicKey: _publicKey.serialize()});
+        res.json(200, {cert: cert});
       });
     });
   });
+
+/***********************
+ * BrowserId IdP views *
+ ***********************/
+
+/**
+ * Well known BrowserId
+ */
+app.get("/.well-known/browserid", function(req, res) {
+  res.json(200, {
+    "public-key": _publicKey.serialize(),
+    "authentication": "/.well-known/browserid/warning.html",
+    "provisioning": "/.well-known/browserid/warning.html"
+  });
+});
+
+app.get("/.well-known/browserid/warning.html", function(req, res) {
+  res.sendfile(__dirname + "/templates/idp-warning.html");
+});
+
 
 
 app.listen(conf.get("port"), conf.get("host"), function(){

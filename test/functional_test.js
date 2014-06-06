@@ -665,9 +665,34 @@ describe("HTTP API exposed by the server", function() {
           throw err;
         }
         expect(res.body.hasOwnProperty("cert")).to.eql(true);
-        expect(res.body.hasOwnProperty("publicKey")).to.eql(true);
         done();
       });
     });
+  });
+  describe("GET /.well-known/browserid", function(done) {
+    it("should return the publickey and mandatory metadata.", function(done) {
+      supertest(app)
+        .get('/.well-known/browserid')
+        .type('json')
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          if (err) throw err;
+          expect(res.body.hasOwnProperty("public-key")).to.eql(true);
+          expect(res.body.authentication).to.equal(
+            "/.well-known/browserid/warning.html");
+          expect(res.body.provisioning).to.equal(
+            "/.well-known/browserid/warning.html");
+          done();
+        });
+    });
+
+    it("should answer an error on /.well-known/browserid/warning.html",
+      function(done) {
+        supertest(app)
+          .get('/.well-known/browserid/warning.html')
+          .expect('Content-Type', /html/)
+          .expect(200).end(done);
+      });
   });
 });
