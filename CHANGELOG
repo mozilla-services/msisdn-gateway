@@ -1,16 +1,24 @@
 CHANGELOG
 =========
 
-0.2.0 (unreleased)
+0.2.0 (2014-06-06)
 ------------------
 
 - Add the SMS MOMT protocol
-- Separate MT and MOMT protocols
-    - /register
-    - /unregister
-    - /sms/mt/verify
-    - /sms/momt/verify
-    - /sms/code/verify
+- Rewrite the API flows
+  - POST /discover
+  - POST /register
+  - POST /unregister
+  - POST /sms/mt/verify
+  - SMS /sms/momt/verify
+  - POST /sms/verify_code
+  - POST /certificat/sign
+- Use the FxA error format
+- Use Hawk Session
+- Implement BrowserID IdP well-known info.
+- Allow a limited number of retries for a verification code
+- Return the right moVerifier wrt the MCC/MNC code
+- Manage Hawk session expiration
 
 
 0.1.0 (2014-05-06)
