@@ -65,19 +65,16 @@ function applyErrorLogging(app) {
   function patchRoute (route) {
       route.callbacks.push(logErrors);
   }
-
   for (var verb in app.routes) {
       var routes = app.routes[verb];
       routes.forEach(patchRoute);
   }
-
 }
 
 
-function handle404(req, res, next) {
-  sendError(res, 404, -1);
+function handle404(req, res) {
+  sendError(res, 404);
 }
-
 
 
 module.exports = {

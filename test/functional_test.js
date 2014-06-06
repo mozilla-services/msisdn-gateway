@@ -206,7 +206,7 @@ describe("HTTP API exposed by the server", function() {
           .get('/unexistant')
           .expect(404)
           .end(function(err, res) {
-            expectFormatedError(res.body, 404, -1);
+            expectFormatedError(res.body, 404);
             done();
           });
 
