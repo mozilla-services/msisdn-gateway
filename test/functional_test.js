@@ -19,7 +19,7 @@ var errors = require("../msisdn-gateway/errno");
 var testKeyPair = require("./testKeyPair.json");
 var range = require("./utils").range;
 var fs = require('fs');
-
+var mdl = require("../msisdn-gateway/middleware");
 
 function expectFormatedError(body, code, errno, error, message, info) {
   var errmap = {};
@@ -233,11 +233,33 @@ describe("HTTP API exposed by the server", function() {
             done();
           });
       });
+    });
+  });
 
+  describe("General request filtering", function() {
+    it("a 500 should send back JSON, always", function(done) {
 
+      var _error = function(req, res) {
+        /* jshint ignore:start */
+        res.json(200, {"boom": boom.tchak});
+        /* jshint ignore:end */
+      };
+
+     // plug an error on /error
+     app.get('/error', _error);
+     mdl.applyErrorLogging(app);
+
+      supertest(app)
+          .get('/error')
+          .expect(500)
+          .end(function(err, res) {
+            expectFormatedError(res.body, 500, 999, "boom is not defined");
+            done();
+          });
 
     });
   });
+
 
 
   describe("POST /discover", function() {

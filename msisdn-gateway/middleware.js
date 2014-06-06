@@ -55,10 +55,9 @@ function checkHeaders(req, res, next) {
 function logErrors(err, req, res, next) {
   req.unhandledError = err;
   var message = err.message;
-  var error = err.error || err;
   var status = err.status || 500;
 
-  sendError(res, status, -1, message, error);
+  sendError(res, status, 999, message);
 }
 
 
