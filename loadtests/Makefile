@@ -1,4 +1,4 @@
-SERVER_URL = http://localhost:5000
+SERVER_URL = http://127.0.0.1:5000
 
 # Hackety-hack around OSX system python bustage.
 # The need for this should go away with a future osx/xcode update.
