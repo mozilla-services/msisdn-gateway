@@ -231,7 +231,7 @@ app.post("/discover", function(req, res) {
 
   mcc = req.body.mcc;
 
-  if (req.body.hasOwnProperty("mcc") || req.body.mcc.length === 3) {
+  if (req.body.hasOwnProperty("mnc") && req.body.mnc.length === 3) {
     mnc = req.body.mnc;
   }
 
