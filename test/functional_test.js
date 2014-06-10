@@ -16,7 +16,11 @@ var smsGateway = require("../msisdn-gateway/sms-gateway");
 var Token = require("../msisdn-gateway/token").Token;
 var hmac = require("../msisdn-gateway/hmac");
 var errors = require("../msisdn-gateway/errno");
-var encrypt = require("../msisdn-gateway/encrypt");
+if (conf.get("fakeEncrypt")) {
+  var encrypt = require("../msisdn-gateway/fake-encrypt");
+} else {
+  var encrypt = require("../msisdn-gateway/encrypt");
+}
 var testKeyPair = require("./testKeyPair.json");
 var range = require("./utils").range;
 var fs = require('fs');

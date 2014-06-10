@@ -193,6 +193,11 @@ var conf = convict({
     doc: "The maximum size of the request",
     format: String,
     default: "25kb"
+  },
+  fakeEncrypt: {
+    doc: "Mock sodium encrypt/decrypt calls",
+    format: Boolean,
+    default: false
   }
 });
 

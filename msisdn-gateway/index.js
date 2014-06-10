@@ -27,7 +27,11 @@ var Hawk = require('hawk');
 var uuid = require('node-uuid');
 var errors = require("./errno");
 var jwcrypto = require('jwcrypto');
-var encrypt = require("./encrypt");
+if (conf.get("fakeEncrypt")) {
+  var encrypt = require("./fake-encrypt");
+} else {
+  var encrypt = require("./encrypt");
+}
 
 // Make sure to load supported algorithms.
 require('jwcrypto/lib/algs/rs');
