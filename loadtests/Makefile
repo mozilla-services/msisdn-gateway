@@ -1,4 +1,4 @@
-SERVER_URL = https://msisdn.stage.mozaws.net:443
+SERVER_URL = http://localhost:5000
 
 # Hackety-hack around OSX system python bustage.
 # The need for this should go away with a future osx/xcode update.
@@ -15,6 +15,8 @@ build:
 	$(INSTALL) git+git://github.com/mozilla-services/loads.git
 	$(INSTALL) mohawk
 
+install: build
+
 # Clean all the things installed by `make build`.
 clean:
 	rm -rf ./venv *.pyc
@@ -23,7 +25,7 @@ clean:
 test:
 	./venv/bin/loads-runner --config=./config/test.ini --server-url=$(SERVER_URL) loadtest.TestMSISDN.test_all
 
-# Run a bench of 20 concurrent users.
+# Run a bench of 20 concurrent users from the local machine
 bench:
 	./venv/bin/loads-runner --config=./config/bench.ini --server-url=$(SERVER_URL) loadtest.TestMSISDN.test_all
 

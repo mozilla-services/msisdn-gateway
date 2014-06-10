@@ -1,9 +1,9 @@
-from urlparse import urlparse
-import random
-import json
-import hmac
 import hashlib
+import hmac
+import json
 import math
+import random
+from urlparse import urlparse
 
 import mohawk
 from requests.auth import AuthBase
@@ -12,19 +12,18 @@ from loads.case import TestCase
 
 
 class TestMSISDN(TestCase):
+    omxen_url = "http://ec2-54-203-73-122.us-west-2.compute.amazonaws.com"
 
     def test_all(self):
         # Create a token
         self.register()
 
-        # Once over two use MO or MT to ask for MSISDN validation
+        # Use the MO flow 50% of the time and the MT flow the remaining
         if random.choice([True, False]):
-            self.incr_counter("mt-flow")
             # 1. Ask MSISDN validation
             resp = self.start_mt_flow()
             self.assertEqual(resp.status_code, 200)
         else:
-            self.incr_counter("momt-flow")
             # 2. Send SMS /sms/momt/verify hawkId
             resp = self.start_momt_flow()
             self.assertEqual(resp.status_code, 200)
@@ -34,36 +33,50 @@ class TestMSISDN(TestCase):
 
         # Get the message code
         if random.choice([True, False, True]):
-            self.incr_counter("try-good-code")
-            # 1. Try to validate a wrong code
+            # 1. Try to validate a valid code
+            self.incr_counter("try-right-code")
             resp = self.verify_code(message)
-        else:
-            self.incr_counter("try-wrong-code")
-            # 2. Try to validate a valid code
-            resp = self.verify_code()
 
-        if resp.status_code == 200:
-            self.incr_counter("ask-for-certificate")
-            # If it did validate generate a certificate
-            self.sign_certificate()
+            if resp.status_code == 200:
+                # If it was a valid code generate a certificate
+                self.incr_counter("ask-for-certificate")
+                self.sign_certificate()
+            else:
+                # If we didn't validate the code from the oxmen
+                # message it is probably because two test where using
+                # the same MSISDN at the same time
+                self.incr_counter("oxmen-message-collision")
+        else:
+            # 2. Try to validate a wrong code
+            self.incr_counter("try-wrong-code")
+            resp = self.verify_code()
+            self.assertEquals(resp.status_code, 400)
 
         # Unregister
         self.unregister()
 
+    def __get_random_msisdn(self):
+        code = "%d" % random.randint(0, 999999999)
+        code = code.zfill(9)
+        return "+33%s" % code
+
     def register(self):
         resp = self.session.post(self.server_url + '/register')
-
         try:
-            self.hawk_auth = HawkAuth(
-                self.server_url,
-                resp.json()['msisdnSessionToken'])
-        except ValueError:
+            sessionToken = resp.json()['msisdnSessionToken']
+            print sessionToken
+        except:
             print resp.body
             raise
 
+        self.hawk_auth = HawkAuth(self.server_url, sessionToken)
+
     def start_mt_flow(self):
-        self.msisdn = self.get_random_msisdn()
+        self.msisdn = self.__get_random_msisdn()
         self.shortVerificationCode = random.choice([True, False])
+
+        self.incr_counter("mt-flow")
+
         return self.session.post(
             self.server_url + '/sms/mt/verify',
             data=json.dumps({
@@ -74,10 +87,13 @@ class TestMSISDN(TestCase):
             auth=self.hawk_auth)
 
     def start_momt_flow(self):
-        # You don't need to be authenticated to revoke a token.
-        self.msisdn = self.get_random_msisdn()
+        self.msisdn = self.__get_random_msisdn()
         self.shortVerificationCode = False
-        return self.get(
+
+        self.incr_counter("momt-flow")
+
+        # You don't need to be authenticated to revoke a token.
+        return self.session.get(
             self.server_url + '/sms/momt/nexmo_callback',
             params={"msisdn": self.msisdn.lstrip("+"),
                     "text": "/sms/momt/verify %s" % self.hawk_auth.hawk_id})
@@ -87,6 +103,7 @@ class TestMSISDN(TestCase):
                                 params={"to": self.msisdn})
         try:
             messages = resp.json()
+            self.assertIsInstance(messages, list)
         except ValueError:
             print resp.body
             raise
@@ -94,6 +111,7 @@ class TestMSISDN(TestCase):
         while len(messages) < 1:
             try:
                 messages = resp.json()
+                self.assertIsInstance(messages, list)
             except ValueError:
                 print resp.body
                 raise
@@ -111,15 +129,18 @@ class TestMSISDN(TestCase):
                 code = message.split()[-1]
         return self.session.post(self.server_url + "/sms/verify_code",
                                  {"code": code},
+                                 headers={'Content-type': 'application/json'},
                                  auth=self.hawk_auth)
 
     def sign_certificate(self):
         resp = self.session.post(self.server_url + '/certificate/sign',
+                                 headers={'Content-type': 'application/json'},
                                  auth=self.hawk_auth)
         self.assertEqual(resp.status_code, 200)
 
     def unregister(self):
         resp = self.session.post(self.server_url + '/unregister',
+                                 headers={'Content-type': 'application/json'},
                                  auth=self.hawk_auth)
         self.assertEqual(resp.status_code, 200)
 
