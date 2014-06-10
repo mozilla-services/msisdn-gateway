@@ -27,6 +27,11 @@ var Hawk = require('hawk');
 var uuid = require('node-uuid');
 var errors = require("./errno");
 var jwcrypto = require('jwcrypto');
+if (conf.get("fakeEncrypt")) {
+  var encrypt = require("./fake-encrypt");
+} else {
+  var encrypt = require("./encrypt");
+}
 
 // Make sure to load supported algorithms.
 require('jwcrypto/lib/algs/rs');
@@ -312,14 +317,20 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
       message = "Your verification code is: " + code;
     }
 
-    storage.getMSISDN(req.hawkHmacId, function(err, msisdn) {
-      if (msisdn !== null && msisdn !== req.msisdn) {
+    storage.getMSISDN(req.hawkHmacId, function(err, cipherMsisdn) {
+      var storedMsisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
+
+      if (storedMsisdn !== null && storedMsisdn !== req.msisdn) {
         sendError(res, 400, errors.INVALID_PARAMETERS,
                   "You can validate only one MSISDN per session.");
         return;
       }
 
-      storage.storeMSISDN(req.hawkHmacId, req.msisdn, function(err) {
+      if (cipherMsisdn === null) {
+        cipherMsisdn = encrypt.encrypt(req.hawk.id, req.msisdn);
+      }
+
+      storage.storeMSISDN(req.hawkHmacId, cipherMsisdn, function(err) {
         if (err) {
           logError(err);
           sendError(res, 503, errors.BACKEND, "Service Unavailable");
@@ -360,7 +371,8 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
     res.json(200, {});
     return;
   }
-  var hawkHmacId = hmac(text[1], conf.get("hawkIdSecret"));
+  var hawkId = text[1];
+  var hawkHmacId = hmac(hawkId, conf.get("hawkIdSecret"));
 
   storage.getSession(hawkHmacId, function(err, result) {
     if (err) {
@@ -375,13 +387,15 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
       return;
     }
 
-    storage.getMSISDN(hawkHmacId, function(err, storedMsisdn) {
+    storage.getMSISDN(hawkHmacId, function(err, cipherMsisdn) {
       if (err) {
         logError(err);
         sendError(res, 503, errors.BACKEND, "Service Unavailable");
         return;
       }
 
+      var storedMsisdn = encrypt.decrypt(hawkId, cipherMsisdn);
+  
       if (storedMsisdn !== null && storedMsisdn !== msisdn) {
         logError(
           new Error("Attempt to very several MSISDN per session.", {
@@ -395,7 +409,11 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
         return;
       }
 
-      storage.storeMSISDN(hawkHmacId, msisdn, function(err) {
+      if (cipherMsisdn === null) {
+        cipherMsisdn = encrypt.encrypt(hawkId, msisdn);
+      }
+  
+      storage.storeMSISDN(hawkHmacId, cipherMsisdn, function(err) {
         if (err) {
           logError(err);
           sendError(res, 503, errors.BACKEND, "Service Unavailable");
@@ -481,24 +499,26 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
         return;
       }
 
-	  storage.getMSISDN(req.hawkHmacId, function(err, msisdn) {
+	  storage.getMSISDN(req.hawkHmacId, function(err, cipherMsisdn) {
         if (err) {
           logError(err);
           sendError(res, 503, errors.BACKEND, "Service Unavailable");
           return;
         }
 
-        if (msisdn === null) {
+        if (cipherMsisdn === null) {
           sendError(res, 410, errors.EXPIRED, "Token has expired.");
           return;
         }
 
-        storage.setValidation(req.hawkHmacId, msisdn, function(err) {
+        storage.setValidation(req.hawkHmacId, cipherMsisdn, function(err) {
           if (err) {
             logError(err);
             sendError(res, 503, errors.BACKEND, "Service Unavailable");
             return;
           }
+
+          var msisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
 
           res.json(200, {msisdn: msisdn});
         });
