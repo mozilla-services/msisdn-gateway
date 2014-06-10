@@ -149,6 +149,7 @@ RedisStorage.prototype = {
     var msisdnKey = MSISDN_KEY_PREFIX + hawkHmacId;
     var codeKey = CODE_KEY_PREFIX + hawkHmacId;
     var counterKey = CODE_COUNTER_PREFIX + hawkHmacId;
+    var codeValidated = VALIDATED_KEY_PREFIX + hawkHmacId;
     self._client.del(sessionKey, function(err) {
       if (err) {
         callback(err);
@@ -165,7 +166,13 @@ RedisStorage.prototype = {
             return;
           }
           self._client.del(counterKey, function(err) {
-            callback(err);
+            if (err) {
+              callback(err);
+              return;
+            }
+            self._client.del(codeValidated, function(err) {
+              callback(err);
+            });
           });
         });
       });
