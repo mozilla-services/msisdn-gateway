@@ -3,6 +3,7 @@ import hmac
 import json
 import math
 import random
+import time
 from urlparse import urlparse
 
 import mohawk
@@ -13,6 +14,7 @@ from loads.case import TestCase
 PERCENTAGE_OF_MT_FLOW = 50  # Remining are MOMT flows
 PERCENTAGE_OF_WRONG_CODES = 34  # Remining are valid ones.
 PERCENTAGE_OF_SHORT_CODES = 50  # Remining are right ones.
+MAX_OXMEN_TIMEOUT = 10  # Seconds to poll from oxmen.
 
 
 class TestMSISDN(TestCase):
@@ -113,7 +115,11 @@ class TestMSISDN(TestCase):
             print resp.body
             raise
 
-        while len(messages) < 1:
+        start_time = time.time()
+
+        #  Poll on the omxen message list for this number
+        while len(messages) < 1 and \
+                time.time() - start_time < MAX_OXMEN_TIMEOUT:
             try:
                 messages = resp.json()
                 self.assertIsInstance(messages, list)
