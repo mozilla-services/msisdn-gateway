@@ -14,59 +14,112 @@ from loads.case import TestCase
 class TestMSISDN(TestCase):
 
     def test_all(self):
+        # Create a token
         self.register()
-        token = self.generate_token()
-        call_id, session, caller_token, api_key = self.initiate_call(token)
-        calls = self.list_pending_calls()
-        for call in calls:
-            # We want to reject 30% of the calls.
-            status = 200
-            if random.randint(0, 100) <= 30:
-                self.discard_call(call['callId'])
-                status = 404
-            self.get_call_status(call['callId'], status)
+
+        # Once over two use MO or MT to ask for MSISDN validation
+        if random.choice([True, False]):
+            self.incr_counter("mt-flow")
+            # 1. Ask MSISDN validation
+            self.start_mt_flow()
+        else:
+            self.incr_counter("momt-flow")
+            # 2. Send SMS /sms/momt/verify hawkId
+            self.start_momt_flow()
+
+        # Poll omxen for the message
+        message = self.read_message()
+
+        # Get the message code
+        if random.choice([True, False, True]):
+            self.incr_counter("try-good-code")
+            # 1. Try to validate a wrong code
+            resp = self.verify_code(message)
+        else:
+            self.incr_counter("try-wrong-code")
+            # 2. Try to validate a valid code
+            resp = self.verify_code()
+
+        if resp.status_code == 200:
+            self.incr_counter("ask-for-certificate")
+            # If it did validate generate a certificate
+            self.sign_certificate()
+
+        # Unregister
+        self.unregister()
 
     def register(self):
-        resp = self.session.post(
-            self.server_url + '/registration',
-            data={'simple_push_url': 'http://localhost/push'})
+        resp = self.session.post(self.server_url + '/register')
 
-        self.hawk_auth = HawkAuth(
-            self.server_url,
-            resp.headers['hawk-session-token'])
+        try:
+            self.hawk_auth = HawkAuth(
+                self.server_url,
+                resp.json()['msisdnSessionToken'])
+        except:
+            print resp.body
+            raise
 
-    def generate_token(self):
-        resp = self.session.post(
-            self.server_url + '/call-url',
-            data=json.dumps({'callerId': 'alexis@mozilla.com'}),
+    def start_mt_flow(self):
+        self.msisdn = self.get_random_msisdn()
+        self.shortVerificationCode = random.choice([True, False])
+        return self.session.post(
+            self.server_url + '/sms/mt/verify',
+            data=json.dumps({
+                "msisdn": self.msisdn,
+                "shortVerification": self.shortVerificationCode
+            }),
             headers={'Content-type': 'application/json'},
-            auth=self.hawk_auth
-        )
-        call_url = resp.json()['call_url']
-        return urlparse(call_url).path.split('/')[-1]
-
-    def initiate_call(self, token):
-        # This happens when not authenticated.
-        res = self.session.post(self.server_url + '/calls/%s' % token).json()
-        return (res['callId'], res['sessionId'], res['sessionToken'],
-                res['apiKey'])
-
-    def list_pending_calls(self):
-        resp = self.session.get(
-            self.server_url + '/calls?version=200',
             auth=self.hawk_auth)
-        return resp.json()['calls']
 
-    def revoke_token(self, token):
+    def start_momt_flow(self):
         # You don't need to be authenticated to revoke a token.
-        self.session.delete(self.server_url + '/call-url/%s' % token)
+        self.msisdn = self.get_random_msisdn()
+        self.shortVerificationCode = False
+        return self.get(
+            self.server_url + '/sms/momt/nexmo_callback',
+            params={"msisdn": self.msisdn.lstrip("+"),
+                    "text": "/sms/momt/verify %s" % self.hawk_auth.hawk_id})
 
-    def discard_call(self, call_id):
-        self.session.delete(self.server_url + '/calls/id/%s' % call_id)
+    def read_message(self):
+        resp = self.session.get(self.omxen_url + '/receive',
+                                params={"to": self.msisdn})
+        try:
+            messages = resp.json()
+        except:
+            print resp.body
+            raise
 
-    def get_call_status(self, call_id, status):
-        resp = self.session.get(self.server_url + '/calls/id/%s' % call_id)
-        self.assertEqual(resp.status_code, status)
+        while len(messages) < 1:
+            try:
+                messages = resp.json()
+            except:
+                print resp.body
+                raise
+
+        return messages[0]["text"]
+
+    def verify_code(self, message=None):
+        if message is None:
+            code = "%d" % random.randint(0, 999999)
+            code = code.zfill(6)
+        else:
+            if len(message) == 64:
+                code = message
+            else:
+                code = message.split()[-1]
+        return self.session.post(self.server_url + "/sms/verify_code",
+                                 {"code": code},
+                                 auth=self.hawk_auth)
+
+    def sign_certificate(self):
+        resp = self.session.post(self.server_url + '/certificate/sign',
+                                 auth=self.hawk_auth)
+        self.assertEqual(resp.status_code, 200)
+
+    def unregister(self):
+        resp = self.session.post(self.server_url + '/unregister',
+                                 auth=self.hawk_auth)
+        self.assertEqual(resp.status_code, 200)
 
 
 def HKDF_extract(salt, IKM, hashmod=hashlib.sha256):
@@ -102,9 +155,11 @@ class HawkAuth(AuthBase):
         self.server_url = server_url
         keyInfo = 'identity.mozilla.com/picl/v1/sessionToken'
         keyMaterial = HKDF(hawk_session, "", keyInfo, 32*3)
+        self.hawk_id = keyMaterial[:32].encode("hex")
+        self.auth_key = keyMaterial[32:64].encode("hex")
         self.credentials = {
-            'id': keyMaterial[:32].encode("hex"),
-            'key': keyMaterial[32:64].encode("hex"),
+            'id': self.hawk_id,
+            'key': self.auth_key,
             'algorithm': 'sha256'
         }
 
