@@ -10,6 +10,10 @@ from requests.auth import AuthBase
 
 from loads.case import TestCase
 
+PERCENTAGE_OF_MT_FLOW = 50  # Remining are MOMT flows
+PERCENTAGE_OF_WRONG_CODES = 34  # Remining are valid ones.
+PERCENTAGE_OF_SHORT_CODES = 50  # Remining are right ones.
+
 
 class TestMSISDN(TestCase):
     omxen_url = "http://ec2-54-203-73-122.us-west-2.compute.amazonaws.com"
@@ -19,7 +23,7 @@ class TestMSISDN(TestCase):
         self.register()
 
         # Use the MO flow 50% of the time and the MT flow the remaining
-        if random.choice([True, False]):
+        if random.randint(0, 100) < PERCENTAGE_OF_MT_FLOW:
             # 1. Ask MSISDN validation
             resp = self.start_mt_flow()
             self.assertEqual(resp.status_code, 200)
@@ -32,7 +36,7 @@ class TestMSISDN(TestCase):
         message = self.read_message()
 
         # Get the message code
-        if random.choice([True, False, True]):
+        if random.randint(0, 100) > PERCENTAGE_OF_WRONG_CODES:
             # 1. Try to validate a valid code
             self.incr_counter("try-right-code")
             resp = self.verify_code(message)
@@ -73,7 +77,8 @@ class TestMSISDN(TestCase):
 
     def start_mt_flow(self):
         self.msisdn = self.__get_random_msisdn()
-        self.shortVerificationCode = random.choice([True, False])
+        self.shortVerificationCode = \
+            random.randint(0, 100) < PERCENTAGE_OF_SHORT_CODES
 
         self.incr_counter("mt-flow")
 
