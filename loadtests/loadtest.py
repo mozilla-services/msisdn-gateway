@@ -21,11 +21,13 @@ class TestMSISDN(TestCase):
         if random.choice([True, False]):
             self.incr_counter("mt-flow")
             # 1. Ask MSISDN validation
-            self.start_mt_flow()
+            resp = self.start_mt_flow()
+            self.assertEqual(resp.status_code, 200)
         else:
             self.incr_counter("momt-flow")
             # 2. Send SMS /sms/momt/verify hawkId
-            self.start_momt_flow()
+            resp = self.start_momt_flow()
+            self.assertEqual(resp.status_code, 200)
 
         # Poll omxen for the message
         message = self.read_message()
