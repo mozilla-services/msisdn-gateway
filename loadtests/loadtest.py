@@ -130,13 +130,18 @@ class TestMSISDN(TestCase):
         return messages[0]["text"]
 
     def verify_code(self, message=None):
+        # Extract the code from the message
         if message is None:
+            # No message, build a fake code
             code = "%d" % random.randint(0, 999999)
             code = code.zfill(6)
         else:
             if len(message) == 64:
+                # Long Verification code
+                # The message is the code
                 code = message
             else:
+                # Short verification code, the code is the last word.
                 code = message.split()[-1]
         return self.session.post(self.server_url + "/sms/verify_code",
                                  {"code": code},
