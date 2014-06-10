@@ -105,6 +105,14 @@ we want to handle more that 60M users we will probably want to do some
 sharding to have one redis for MSISDN validation and another one for
 hawkSession management.
 
+ - 600000 bytes is the size of an empty redis-server.
+ - 1216 bytes is the fixed size of a given user including:
+    - It's hawkSessionToken
+    - It's code validation related data
+    - It's MSISDN related data
+
+The /unregister endpoint drops everything about a user.
+
 
 Where to report bugs?
 ---------------------
