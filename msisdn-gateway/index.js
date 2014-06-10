@@ -110,9 +110,8 @@ function requireParams() {
  */
 function hawkMiddleware(req, res, next) {
   Hawk.server.authenticate(req, function(id, callback) {
-    var client = getStorage(conf.get("storage"));
     var hawkHmacId = hmac(id, conf.get("hawkIdSecret"));
-    client.getSession(hawkHmacId, callback);
+    storage.getSession(hawkHmacId, callback);
   }, {},
     function(err, credentials, artifacts) {
       req.hawk = artifacts;
