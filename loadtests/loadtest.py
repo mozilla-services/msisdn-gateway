@@ -55,7 +55,7 @@ class TestMSISDN(TestCase):
             self.hawk_auth = HawkAuth(
                 self.server_url,
                 resp.json()['msisdnSessionToken'])
-        except:
+        except ValueError:
             print resp.body
             raise
 
@@ -85,14 +85,14 @@ class TestMSISDN(TestCase):
                                 params={"to": self.msisdn})
         try:
             messages = resp.json()
-        except:
+        except ValueError:
             print resp.body
             raise
 
         while len(messages) < 1:
             try:
                 messages = resp.json()
-            except:
+            except ValueError:
                 print resp.body
                 raise
 
