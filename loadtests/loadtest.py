@@ -107,7 +107,7 @@ class TestMSISDN(TestCase):
 
     def read_message(self):
         resp = self.session.get(self.omxen_url + '/receive',
-                                params={"to": self.msisdn})
+                                params={"to": self.msisdn.lstrip("+")})
         try:
             messages = resp.json()
             self.assertIsInstance(messages, list)
