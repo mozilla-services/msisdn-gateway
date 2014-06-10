@@ -12,7 +12,7 @@ var providers = {default: new Nexmo()};
 try {
   providers["+33"] = new Leonix();
 } catch (err) {
-  console.log("Leonix is not configured - " + err);
+  console.log("Leonix is not configured.");
 }
 
 function sendSMS(msisdn, message, callback) {
