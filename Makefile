@@ -36,6 +36,16 @@ runserver:
 		node msisdn-gateway/index.js
 
 .PHONY: messages
-messages: locale/templates/LC_MESSAGES/messages.pot
-locale/templates/LC_MESSAGES/messages.pot: msisdn-gateway/index.js
-	./node_modules/i18n-abide/node_modules/.bin/jsxgettext --join-existing -L javascript --output-dir=./locale/templates/LC_MESSAGES --from-code=utf-8 --output=messages.pot $^
+messages:
+	./node_modules/i18n-abide/node_modules/.bin/jsxgettext \
+	    --join-existing \
+	    -L javascript \
+	    --output-dir=./locale/templates/LC_MESSAGES \
+	    --from-code=utf-8 \
+	    --output=messages.pot msisdn-gateway/index.js
+	for l in `ls ./locale | grep -v templates | grep -v README.md`; do \
+        mkdir -p locale/$$l/LC_MESSAGES/; \
+        msginit --input=./locale/templates/LC_MESSAGES/messages.pot \
+            --output-file=./locale/$$l/LC_MESSAGES/messages.po \
+            -l $$l; \
+    done
