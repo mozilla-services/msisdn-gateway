@@ -28,6 +28,7 @@ var uuid = require('node-uuid');
 var errors = require("./errno");
 var jwcrypto = require('jwcrypto');
 var i18n = require('./i18n')(conf.get('i18n'));
+var format = require('util').format;
 
 if (conf.get("fakeEncrypt")) {
   var encrypt = require("./fake-encrypt");
@@ -323,9 +324,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
       message = code;
     } else {
       code = digitsCode(conf.get("shortCodeLength"));
-      message = req.gettext("Your verification code is: %(code)", {
-        code: code
-      });
+      message = format(req.gettext("Your verification code is: %s"), code);
     }
 
     storage.getMSISDN(req.hawkHmacId, function(err, cipherMsisdn) {
