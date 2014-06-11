@@ -34,3 +34,8 @@ mocha:
 runserver:
 	@env NODE_ENV=${NODE_ENV} PORT=5000 \
 		node msisdn-gateway/index.js
+
+.PHONY: messages
+messages: locale/templates/LC_MESSAGES/messages.pot
+locale/templates/LC_MESSAGES/messages.pot: msisdn-gateway/index.js
+	./node_modules/i18n-abide/node_modules/.bin/jsxgettext --join-existing -L javascript --output-dir=./locale/templates/LC_MESSAGES --from-code=utf-8 --output=messages.pot $^
