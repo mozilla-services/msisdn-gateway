@@ -49,3 +49,7 @@ messages:
             --output-file=./locale/$$l/LC_MESSAGES/messages.po \
             -l $$l; \
     done
+
+.PHONY: compile-messages
+compile-messages:
+	./node_modules/.bin/compile-json locale app/i18n
