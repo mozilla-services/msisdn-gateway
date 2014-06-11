@@ -27,6 +27,8 @@ var Hawk = require('hawk');
 var uuid = require('node-uuid');
 var errors = require("./errno");
 var jwcrypto = require('jwcrypto');
+var i18n = require('./i18n')(conf.get('i18n'));
+
 if (conf.get("fakeEncrypt")) {
   var encrypt = require("./fake-encrypt");
 } else {
@@ -63,6 +65,7 @@ var app = express();
 if (conf.get("env") === "development") {
   app.use(logging(conf.get("consoleDateFormat")));
 }
+app.use(i18n);
 app.use(headers);
 app.disable("x-powered-by");
 app.use(checkHeaders);
@@ -320,7 +323,9 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
       message = code;
     } else {
       code = digitsCode(conf.get("shortCodeLength"));
-      message = "Your verification code is: " + code;
+      message = req.gettext("Your verification code is: %(code)", {
+        code: code
+      });
     }
 
     storage.getMSISDN(req.hawkHmacId, function(err, cipherMsisdn) {
