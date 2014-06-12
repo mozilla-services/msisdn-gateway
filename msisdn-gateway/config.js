@@ -79,9 +79,26 @@ var conf = convict({
     format: Boolean
   },
   storage: {
-    doc: "storage config",
-    format: validateKeys(["engine", "settings"]),
-    default: {engine: "redis", settings: {}}
+    engine: {
+      doc: "engine type",
+      format: String,
+      default: "redis"
+    },
+    host: {
+      doc: "hostname / ip address to server",
+      format: String,
+      default: "127.0.0.1"
+    },
+    port: {
+      doc: "storage engine port",
+      format: "port",
+      default: 6379,
+    },
+    settings: {
+      doc: "js object of options to pass to the storage engine",
+      format: Object,
+      default: {}
+    }
   },
   sentryDSN: {
     doc: "Sentry DSN",
@@ -157,11 +174,11 @@ var conf = convict({
     env: "MSISDN_MAC_ALGORITHM"
   },
   BIDPublicKey: {
-    doc: "The Browser ID Public Key",
+    doc: "The Browser ID Public Key, see config/test.json for example",
     format: validateJWCryptoKey
   },
   BIDSecretKey: {
-    doc: "The Browser ID Private Key",
+    doc: "The Browser ID Private Key, see config/test.json for example",
     format: validateJWCryptoKey
   },
   mtSender: {
@@ -175,19 +192,48 @@ var conf = convict({
     default: ""
   },
   moVerifierList: {
-    doc: "List of moVerifierNumber with regards to MCC/MNC",
-    format: validateKeys([], false),
+    doc: 'List of moVerifierNumber w/ regards to MCC/MNC, see config/test.json',
+    format: Object,
     default: {}
   },
   leonixCredentials: {
-    doc: "Leonix SMS Gateway Credentials",
-    format: validateKeys(["endpoint", "service", "login", "pwd"], true),
-    default: ""
+    endpoint: {
+      doc: 'hostname to service',
+      format: String,
+      default: ''
+    },
+    service: {
+      doc: '??? WHAT IS THIS ???',
+      format: String,
+      default: ''
+    },
+    login: {
+      doc: 'login name to auth to service',
+      format: String,
+      default: ''
+    },
+    pwd: {
+      doc: 'password to auth to service',
+      format: String,
+      default: ''
+    }
   },
   nexmoCredentials: {
-    doc: "Nexmo SMS Gateway Credentials",
-    format: validateKeys(["endpoint", "api_key", "api_secret"], true),
-    default: ""
+    endpoint: {
+      doc: 'hostname to service',
+      format: String,
+      default: ''
+    },
+    api_key: {
+      doc: 'api key',
+      format: String,
+      default: ''
+    },
+    api_secret: {
+      doc: 'api secret',
+      format: String,
+      default: ''
+    }
   },
   requestMaxSize: {
     doc: "The maximum size of the request",
