@@ -18,12 +18,14 @@ function StorageProxy(volatileStorageConf, persistentStorageConf, options) {
     "setCodeWrongTry", "expireCode",
     "storeMSISDN", "getMSISDN",
     "setValidation", "getValidation",
-    "setSession", "getSession",
-    "cleanSession", "drop", "ping"
+    "setSession", "getSession"
   ];
 
   var persistentStorageMethods = [
-    "setCertificateData", "getCertificateData",
+    "setCertificateData", "getCertificateData"
+  ];
+
+  var proxyMethods = [
     "cleanSession", "drop", "ping"
   ];
 
@@ -43,38 +45,37 @@ function StorageProxy(volatileStorageConf, persistentStorageConf, options) {
     });
   }
 
+  function setProxyMethods(volatileS, persistentS, methods) {
+    methods.forEach(function(method) {
+      var type;
+      if (typeof volatileS[method] !== "function") {
+        type = volatileS.constructor.name;
+        throw new Error(type + " need a " + method +
+                        " to be used as volatile storage.");
+      }
+      if (typeof persistentS[method] !== "function") {
+        type = volatileS.constructor.name;
+        throw new Error(type + " need a " + method +
+                        " to be used as volatile storage.");
+      }
+      self[method] = function() {
+        var args = Array.prototype.slice.call(arguments);
+        var callback = args.pop();
+        volatileS[method].apply(volatileS, args.concat([function() {
+          var cbArgs = Array.prototype.slice.call(arguments);
+          if (cbArgs[0]) {
+            callback(cbArgs[0]);
+            return;
+          }
+          persistentS[method].apply(persistentS, args.concat(callback));
+        }]));
+      };
+    });
+  }
+
   setupMethods("volatile", volatileStorage, volatileStorageMethods);
   setupMethods("persistent", persistentStorage, persistentStorageMethods);
-
-  this.drop = function(callback) {
-    volatileStorage.drop(function(err) {
-      if (err) {
-        callback(err);
-        return;
-      }
-      persistentStorage.drop(callback);
-    });
-  };
-
-  this.ping = function(callback) {
-    volatileStorage.ping(function(err) {
-      if (err) {
-        callback(err);
-        return;
-      }
-      persistentStorage.ping(callback);
-    });
-  };
-
-  this.cleanSession = function(hawkHmacId, callback) {
-    volatileStorage.cleanSession(hawkHmacId, function(err) {
-      if (err) {
-        callback(err);
-        return;
-      }
-      persistentStorage.cleanSession(hawkHmacId, callback);
-    });
-  };
+  setProxyMethods(volatileStorage, persistentStorage, proxyMethods);
 }
 
 module.exports = StorageProxy;
