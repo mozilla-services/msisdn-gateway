@@ -146,7 +146,7 @@ RedisStorage.prototype = {
 
   setCertificateData: function(hawkHmacId, data, callback) {
     var key = CERTIFICATE_KEY_PREFIX + hawkHmacId;
-    this._client.set(key, data, callback);
+    this._client.set(key, JSON.stringify(data), callback);
   },
 
   getCertificateData: function(hawkHmacId, callback) {
@@ -157,7 +157,12 @@ RedisStorage.prototype = {
         return;
       }
 
-      callback(null, result);
+      if (result === null) {
+        callback(null, null);
+        return;
+      }
+
+      callback(null, JSON.parse(result));
     });
   },
 

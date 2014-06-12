@@ -238,13 +238,13 @@ describe("Storage", function() {
 
       describe("#setCertificateData", function() {
         it("should set the MSISDN.", function(done) {
-          storage.setCertificateData(hawkHmacId, authKey,
+          storage.setCertificateData(hawkHmacId, {foo: "bar"},
             function(err) {
               if (err)  {
                 throw err;
               }
               storage.getCertificateData(hawkHmacId, function(err, value){
-                expect(value).to.eql(authKey);
+                expect(value).to.eql({foo: "bar"});
                 done();
               });
             });
