@@ -7,7 +7,7 @@
       "db": 5
     }
   },
-  "persistantStorage": {
+  "persistentStorage": {
     "engine": "redis",
     "settings": {
       "db": 4
