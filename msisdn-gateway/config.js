@@ -198,6 +198,11 @@ var conf = convict({
     doc: "Mock sodium encrypt/decrypt calls",
     format: Boolean,
     default: false
+  },
+  maxHTTPSockets: {
+    doc: "The maximum of HTTP sockets to use when doing requests",
+    format: Number,
+    default: 5
   }
 });
 
