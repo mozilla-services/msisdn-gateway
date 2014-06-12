@@ -699,13 +699,19 @@ describe("HTTP API exposed by the server", function() {
           hawkHmacId, encrypt.encrypt(hawkCredentials.id, msisdn),
           function(err) {
             if (err) throw err;
+            var now = Date.now();
             jsonReq.send(validPayload).expect(200).end(function(err, res) {
-              storage.getValidation(hawkHmacId, function(err, cipherMsisdn) {
-                expect(
-                  encrypt.decrypt(hawkCredentials.id, cipherMsisdn)
-                ).to.eql(msisdn);
-                done();
-              });
+              expect(res.body.msisdn).to.equal(msisdn);
+              storage.getCertificateData(hawkHmacId,
+                function(err, certificateData) {
+                  expect(
+                    encrypt.decrypt(hawkCredentials.id,
+                                    certificateData.cipherMsisdn)
+                  ).to.eql(msisdn);
+                  expect(certificateData.createdAt).to.be.at.least(now);
+                  expect(certificateData.lastUpdatedAt).to.be.at.least(now);
+                  done();
+                });
             });
           });
       });
@@ -758,17 +764,28 @@ describe("HTTP API exposed by the server", function() {
 
     it("should success with a registered MSISDN.", function(done) {
       var msisdn = "+33123456789";
-      sandbox.stub(storage, "getValidation",
-        function(key, cb) {
-          cb(null, msisdn);
+      var now = Date.now();
+      storage.setCertificateData(hawkHmacId, {
+        cipherMsisdn: encrypt.encrypt(hawkCredentials.id, msisdn),
+        createdAt: now,
+        lastUpdatedAt: now,
+        key: "fakeHmacKey"
+      }, function(err) {
+        if (err) throw err;
+        jsonReq.send(validPayload).expect(200).end(function(err, res) {
+          if (err) {
+            console.log(res.body);
+            throw err;
+          }
+          expect(res.body.hasOwnProperty("cert")).to.eql(true);
+          storage.getCertificateData(hawkHmacId,
+            function(err, certificateData) {
+              if (err) throw err;
+              expect(certificateData.createdAt).to.equal(now);
+              expect(certificateData.lastUpdatedAt).to.not.equal(now);
+              done();
+            });
         });
-      jsonReq.send(validPayload).expect(200).end(function(err, res) {
-        if (err) {
-          console.log(res);
-          throw err;
-        }
-        expect(res.body.hasOwnProperty("cert")).to.eql(true);
-        done();
       });
     });
   });

@@ -126,10 +126,34 @@ function requireParams() {
 function hawkMiddleware(req, res, next) {
   Hawk.server.authenticate(req, function(id, callback) {
     var hawkHmacId = hmac(id, conf.get("hawkIdSecret"));
-    storage.getSession(hawkHmacId, callback);
+    storage.getSession(hawkHmacId, function(err, result) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      if (result === null) {
+        storage.getCertificateData(hawkHmacId, function(err, result) {
+          if (err) {
+            callback(err);
+            return;
+          }
+          if (result === null) {
+            callback(null, null);
+            return;
+          }
+          callback(null, {
+            key: result.hawkKey,
+            algorithm: "sha256"
+          });
+        });
+        return;
+      }
+      callback(null, result);
+    });
   }, {},
     function(err, credentials, artifacts) {
       req.hawk = artifacts;
+
       if (err) {
         if (!err.isMissing && !err.isBoom) {
           logError(err, artifacts);
@@ -162,6 +186,8 @@ function hawkMiddleware(req, res, next) {
       }
 
       req.hawkHmacId = hmac(req.hawk.id, conf.get("hawkIdSecret"));
+      req.hawk.key = credentials.key;
+
 
       /* Make sure we don't decorate the writeHead more than one time. */
       if (res._hawkEnabled) {
@@ -523,7 +549,14 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
           return;
         }
 
-        storage.setValidation(req.hawkHmacId, cipherMsisdn, function(err) {
+        var now = Date.now();
+
+        storage.setCertificateData(req.hawkHmacId, {
+          cipherMsisdn: cipherMsisdn,
+          createdAt: now,
+          lastUpdatedAt: now,
+          hawkKey: req.hawk.key
+        }, function(err) {
           if (err) {
             logError(err);
             sendError(res, 503, errors.BACKEND, "Service Unavailable");
@@ -569,17 +602,22 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
       return;
     }
 
-    storage.getValidation(req.hawkHmacId, function(err, msisdn) {
+    storage.getCertificateData(req.hawkHmacId, function(err, certificateData) {
       if (err) {
         logError(err);
         sendError(res, 503, errors.BACKEND, "Service Unavailable");
         return;
       }
 
-      if (msisdn === null) {
+      if (certificateData === null) {
         sendError(res, 410, errors.EXPIRED, "Validation has expired.");
         return;
       }
+
+      var msisdn = encrypt.decrypt(
+        req.hawk.id,
+        certificateData.cipherMsisdn
+      );
 
       // Generate a certificate
       var now = Date.now();
@@ -604,7 +642,17 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
           sendError(res, 503, errors.BACKEND, "Service Unavailable");
           return;
         }
-        res.json(200, {cert: cert});
+
+        certificateData.lastUpdatedAt = now;
+        storage.setCertificateData(
+          req.hawkHmacId, certificateData, function(err) {
+            if (err) {
+              logError(err);
+              sendError(res, 503, errors.BACKEND, "Service Unavailable");
+              return;
+            }
+            res.json(200, {cert: cert});
+          });
       });
     });
   });
