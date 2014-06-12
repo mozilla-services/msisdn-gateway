@@ -33,6 +33,12 @@ if (conf.get("fakeEncrypt")) {
   var encrypt = require("./encrypt");
 }
 
+// Configure http and https globalAgent
+var http = require('http');
+var https = require('https');
+https.globalAgent.maxSockets = conf.get('maxHTTPSockets');
+http.globalAgent.maxSockets = conf.get('maxHTTPSockets');
+
 // Make sure to load supported algorithms.
 require('jwcrypto/lib/algs/rs');
 require('jwcrypto/lib/algs/ds');
