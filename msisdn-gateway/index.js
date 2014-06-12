@@ -126,29 +126,30 @@ function requireParams() {
 function hawkMiddleware(req, res, next) {
   Hawk.server.authenticate(req, function(id, callback) {
     var hawkHmacId = hmac(id, conf.get("hawkIdSecret"));
-    storage.getSession(hawkHmacId, function(err, result) {
+    storage.getSession(hawkHmacId, function(err, sessionKey) {
       if (err) {
         callback(err);
         return;
       }
-      if (result === null) {
-        storage.getCertificateData(hawkHmacId, function(err, result) {
-          if (err) {
-            callback(err);
-            return;
-          }
-          if (result === null) {
-            callback(null, null);
-            return;
-          }
-          callback(null, {
-            key: result.hawkKey,
-            algorithm: "sha256"
+      if (sessionKey === null) {
+        storage.getCertificateData(hawkHmacId,
+          function(err, certificateData) {
+            if (err) {
+              callback(err);
+              return;
+            }
+            if (certificateData === null) {
+              callback(null, null);
+              return;
+            }
+            callback(null, {
+              key: certificateData.hawkKey,
+              algorithm: "sha256"
+            });
           });
-        });
         return;
       }
-      callback(null, result);
+      callback(null, sessionKey);
     });
   }, {},
     function(err, credentials, artifacts) {
