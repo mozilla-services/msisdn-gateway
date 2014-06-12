@@ -2,10 +2,16 @@
   "host": "localhost",
   "port": 5000,
   "apiPrefix": "/v1/msisdn",
-  "storage": {
+  "volatileStorage": {
     "engine": "redis",
     "settings": {
       "db": 5
+    }
+  },
+  "persistantStorage": {
+    "engine": "redis",
+    "settings": {
+      "db": 4
     }
   },
   "allowedOrigins": ["http://localhost:3000"],

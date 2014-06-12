@@ -4,7 +4,7 @@
 
 "use strict";
 var expect = require("chai").expect;
-var ProxyStorage = require("../msisdn-gateway/storage");
+var StorageProxy = require("../msisdn-gateway/storage");
 var conf = require("../msisdn-gateway").conf;
 var hmac = require("../msisdn-gateway/hmac");
 
@@ -41,6 +41,10 @@ describe("Storage", function() {
 
       describe("#setCode", function() {
         it("should store the code.", function(done) {
+          if (storage.longTermOnly) {
+            done();
+            return;
+          }
           storage.setCode(msisdnMac, code,
             function(err) {
               if (err)  {
@@ -56,6 +60,10 @@ describe("Storage", function() {
 
       describe("#verifyCode", function() {
         it("should return false on invalid code.", function(done) {
+          if (storage.longTermOnly) {
+            done();
+            return;
+          }
           storage.setCode(msisdnMac, code,
             function(err) {
               if (err)  {
@@ -69,6 +77,10 @@ describe("Storage", function() {
         });
 
         it("should return null on inexisting code.", function(done) {
+          if (storage.longTermOnly) {
+            done();
+            return;
+          }
           storage.setCode(msisdnMac, code,
             function(err) {
               if (err)  {
@@ -84,6 +96,10 @@ describe("Storage", function() {
 
       describe("#setCodeWrongTry", function() {
         it("should increment the number starting at one.", function(done) {
+          if (storage.longTermOnly) {
+            done();
+            return;
+          }
           storage.setCodeWrongTry(hawkHmacId, function(err, tries) {
             expect(tries).to.eql(1);
             storage.setCodeWrongTry(hawkHmacId, function(err, tries) {
@@ -96,6 +112,10 @@ describe("Storage", function() {
 
       describe("#expireCode", function() {
         it("should drop the code.", function(done) {
+          if (storage.longTermOnly) {
+            done();
+            return;
+          }
           storage.setCode(hawkHmacId, "123", function(err) {
             if (err) throw err;
             storage.setCodeWrongTry(hawkHmacId, function(err, tries) {
@@ -119,6 +139,10 @@ describe("Storage", function() {
 
       describe("#storeMSISDN", function() {
         it("should store the MSISDN.", function(done) {
+          if (storage.longTermOnly) {
+            done();
+            return;
+          }
           storage.storeMSISDN(hawkHmacId, authKey,
             function(err) {
               if (err)  {
@@ -134,6 +158,10 @@ describe("Storage", function() {
 
       describe("#getMSISDN", function() {
         it("should return null on invalid hawkHmacId.", function(done) {
+          if (storage.longTermOnly) {
+            done();
+            return;
+          }
           storage.getMSISDN("wrong-hawkHmacId", function(err, value){
             expect(value).to.equal(null);
             done();
@@ -143,6 +171,10 @@ describe("Storage", function() {
 
       describe("#setValidation", function() {
         it("should set the MSISDN.", function(done) {
+          if (storage.longTermOnly) {
+            done();
+            return;
+          }
           storage.setValidation(hawkHmacId, authKey,
             function(err) {
               if (err)  {
@@ -158,6 +190,10 @@ describe("Storage", function() {
 
       describe("#getValidation", function() {
         it("should return null on invalid hawkHmacId.", function(done) {
+          if (storage.longTermOnly) {
+            done();
+            return;
+          }
           storage.getValidation("wrong-hawkHmacId", function(err, value){
             expect(value).to.equal(null);
             done();
@@ -167,6 +203,10 @@ describe("Storage", function() {
 
       describe("#setSession", function() {
         it("should store the session.", function(done) {
+          if (storage.longTermOnly) {
+            done();
+            return;
+          }
           storage.setSession(hawkHmacId, authKey,
             function(err) {
               if (err)  {
@@ -185,6 +225,10 @@ describe("Storage", function() {
 
       describe("#getSession", function() {
         it("should return null on invalid hawkHmacId.", function(done) {
+          if (storage.longTermOnly) {
+            done();
+            return;
+          }
           storage.getSession("wrong-hawkHmacId", function(err, value){
             expect(value).to.equal(null);
             done();
@@ -207,9 +251,9 @@ describe("Storage", function() {
         });
       });
 
-      describe("#getValidation", function() {
+      describe("#getCertificateData", function() {
         it("should return null on invalid hawkHmacId.", function(done) {
-          storage.getValidation("wrong-hawkHmacId", function(err, value){
+          storage.getCertificateData("wrong-hawkHmacId", function(err, value){
             expect(value).to.equal(null);
             done();
           });
@@ -276,11 +320,11 @@ describe("Storage", function() {
 
   // Test all the storages implementation.
   testStorage("Default", function createDefaultStorage(options) {
-    return new ProxyStorage({}, {}, options);
+    return new StorageProxy({}, {}, options);
   });
 
   testStorage("Redis", function createRedisStorage(options) {
-    return new ProxyStorage({engine: "redis", settings: {"db": 5}},
+    return new StorageProxy({engine: "redis", settings: {"db": 5}},
                             {engine: "redis", settings: {"db": 4}}, options);
   });
 });
