@@ -45,30 +45,33 @@ function StorageProxy(volatileStorageConf, persistentStorageConf, options) {
     });
   }
 
-  function setProxyMethods(volatileS, persistentS, methods) {
+  function setProxyMethods(_volatileStorage, _persistentStorage, methods) {
     methods.forEach(function(method) {
       var type;
-      if (typeof volatileS[method] !== "function") {
-        type = volatileS.constructor.name;
+      if (typeof _volatileStorage[method] !== "function") {
+        type = _volatileStorage.constructor.name;
         throw new Error(type + " need a " + method +
                         " to be used as volatile storage.");
       }
-      if (typeof persistentS[method] !== "function") {
-        type = volatileS.constructor.name;
+      if (typeof _persistentStorage[method] !== "function") {
+        type = _volatileStorage.constructor.name;
         throw new Error(type + " need a " + method +
                         " to be used as volatile storage.");
       }
       self[method] = function() {
         var args = Array.prototype.slice.call(arguments);
         var callback = args.pop();
-        volatileS[method].apply(volatileS, args.concat([function() {
-          var cbArgs = Array.prototype.slice.call(arguments);
-          if (cbArgs[0]) {
-            callback(cbArgs[0]);
-            return;
+        _volatileStorage[method].apply(_volatileStorage, args.concat([
+          function() {
+            var cbArgs = Array.prototype.slice.call(arguments);
+            if (cbArgs[0]) {
+              callback(cbArgs[0]);
+              return;
+            }
+            _persistentStorage[method].apply(_persistentStorage,
+                                             args.concat(callback));
           }
-          persistentS[method].apply(persistentS, args.concat(callback));
-        }]));
+        ]));
       };
     });
   }
