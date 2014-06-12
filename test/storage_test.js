@@ -4,7 +4,7 @@
 
 "use strict";
 var expect = require("chai").expect;
-var StorageProxy = require("../msisdn-gateway/storage");
+var getStorage = require("../msisdn-gateway/storage");
 var conf = require("../msisdn-gateway").conf;
 var hmac = require("../msisdn-gateway/hmac");
 
@@ -253,7 +253,59 @@ describe("Storage", function() {
                             function(err, value) {
                               if (err) throw err;
                               expect(value).to.equal(null);
-                              done();
+                              storage.getCertificateData(hawkHmacId,
+                                function(err, value) {
+                                  expect(value).to.equal(null);
+                                  done();
+                              });
+                            });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+
+
+      describe("#cleanVolatileData", function() {
+        it("should remove all volatile data", function(done) {
+          if (storage.longTermOnly) {
+            done();
+            return;
+          }
+
+          storage.setCode(hawkHmacId, code, function(err) {
+            if (err) throw err;
+            storage.storeMSISDN(hawkHmacId, msisdn, function(err) {
+              if (err) throw err;
+              storage.setSession(hawkHmacId, authKey, function(err) {
+                if (err) throw err;
+                storage.setCertificateData(hawkHmacId, authKey, function(err) {
+                  if (err) throw err;
+                  storage.cleanVolatileData(hawkHmacId, function(err) {
+                    if (err) throw err;
+                    storage.getSession(hawkHmacId, function(err, value) {
+                      if (err) throw err;
+                      expect(value).to.equal(null);
+                      storage.getSession(hawkHmacId, function(err, value) {
+                        if (err) throw err;
+                        expect(value).to.equal(null);
+                        storage.getMSISDN(hawkHmacId, function(err, value) {
+                          if (err) throw err;
+                          expect(value).to.equal(null);
+                          storage.verifyCode(hawkHmacId, code,
+                            function(err, value) {
+                              if (err) throw err;
+                              expect(value).to.equal(null);
+                              storage.getCertificateData(hawkHmacId,
+                                function(err, value) {
+                                  expect(value).to.equal(authKey);
+                                  done();
+                              });
                             });
                         });
                       });
@@ -279,11 +331,27 @@ describe("Storage", function() {
 
   // Test all the storages implementation.
   testStorage("Default", function createDefaultStorage(options) {
-    return new StorageProxy({}, {}, options);
+    return getStorage({}, options);
   });
 
   testStorage("Redis", function createRedisStorage(options) {
-    return new StorageProxy({engine: "redis", settings: {"db": 5}},
-                            {engine: "redis", settings: {"db": 4}}, options);
+    return getStorage({engine: "redis", settings: {"db": 4}}, options);
   });
+
+  testStorage("StorageProxy", function createProxyStorage(options) {
+    return getStorage({
+      engine: "proxy",
+      settings: {
+        volatileStorageConf: {
+          engine: "redis",
+          settings: {"db": 4}
+        },
+        persistentStorageConf: {
+          engine: "redis",
+          settings: {"db": 5}
+        }
+      }
+    }, options);
+  });
+
 });

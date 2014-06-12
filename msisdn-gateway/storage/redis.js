@@ -12,7 +12,6 @@ var CODE_COUNTER_PREFIX = "code_count_";
 var MSISDN_KEY_PREFIX = "msisdn_sms_";
 var SESSION_KEY_PREFIX = "msisdn_session_";
 var CERTIFICATE_KEY_PREFIX = "msisdn_certificate_";
-var VALIDATED_KEY_PREFIX = "code_validated_";
 
 function RedisStorage(options, settings) {
   this._settings = settings;
@@ -156,7 +155,7 @@ RedisStorage.prototype = {
     var msisdnKey = MSISDN_KEY_PREFIX + hawkHmacId;
     var codeKey = CODE_KEY_PREFIX + hawkHmacId;
     var counterKey = CODE_COUNTER_PREFIX + hawkHmacId;
-    var codeValidated = VALIDATED_KEY_PREFIX + hawkHmacId;
+
     self._client.del(sessionKey, function(err) {
       if (err) {
         callback(err);
@@ -178,14 +177,38 @@ RedisStorage.prototype = {
               return;
             }
             self._client.del(counterKey, function(err) {
-              if (err) {
-                callback(err);
-                return;
-              }
-              self._client.del(codeValidated, function(err) {
-                callback(err);
-              });
+              callback(err);
             });
+          });
+        });
+      });
+    });
+  },
+
+  cleanVolatileData: function(hawkHmacId, callback) {
+    var self = this;
+    var sessionKey = SESSION_KEY_PREFIX + hawkHmacId;
+    var msisdnKey = MSISDN_KEY_PREFIX + hawkHmacId;
+    var codeKey = CODE_KEY_PREFIX + hawkHmacId;
+    var counterKey = CODE_COUNTER_PREFIX + hawkHmacId;
+
+    self._client.del(sessionKey, function(err) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      self._client.del(msisdnKey, function(err) {
+        if (err) {
+          callback(err);
+          return;
+        }
+        self._client.del(codeKey, function(err) {
+          if (err) {
+            callback(err);
+            return;
+          }
+          self._client.del(counterKey, function(err) {
+            callback(err);
           });
         });
       });
