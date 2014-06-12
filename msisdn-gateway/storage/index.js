@@ -30,8 +30,8 @@ function StorageProxy(volatileStorageConf, persistentStorageConf, options) {
 
   // Let them available for direct access such as
   // `volatileStorage.cleanSession()`
-  this.volatileStorage = getStorage(volatileStorageConf, options);
-  this.persistentStorage = getStorage(persistentStorageConf, options);
+  var volatileStorage = getStorage(volatileStorageConf, options);
+  var persistentStorage = getStorage(persistentStorageConf, options);
 
   var self = this;
 
@@ -77,9 +77,11 @@ function StorageProxy(volatileStorageConf, persistentStorageConf, options) {
     });
   }
 
-  setupMethods("volatile", this.volatileStorage, volatileStorageMethods);
-  setupMethods("persistent", this.persistentStorage, persistentStorageMethods);
-  setProxyMethods(this.volatileStorage, this.persistentStorage, proxyMethods);
+  setupMethods("volatile", volatileStorage, volatileStorageMethods);
+  setupMethods("persistent", persistentStorage, persistentStorageMethods);
+  setProxyMethods(volatileStorage, persistentStorage, proxyMethods);
+
+  this.cleanVolatileData = volatileStorage.cleanSession.bind(volatileStorage);
 }
 
 module.exports = StorageProxy;

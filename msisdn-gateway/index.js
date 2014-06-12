@@ -564,7 +564,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
             return;
           }
 
-          storage.volatileStorage.cleanSession(req.hawkHmacId, function(err) {
+          storage.cleanVolatileData(req.hawkHmacId, function(err) {
             if (err) {
               logError(err);
               sendError(res, 503, errors.BACKEND, "Service Unavailable");
