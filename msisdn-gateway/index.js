@@ -33,7 +33,7 @@ if (conf.get("fakeEncrypt")) {
   var encrypt = require("./encrypt");
 }
 
-// Configure http and https singletons
+// Configure http and https globalAgent
 var http = require('http');
 var https = require('https');
 https.globalAgent.maxSockets = conf.get('maxHTTPSockets');
