@@ -17,7 +17,6 @@ function StorageProxy(volatileStorageConf, persistentStorageConf, options) {
     "setCode", "verifyCode",
     "setCodeWrongTry", "expireCode",
     "storeMSISDN", "getMSISDN",
-    "setValidation", "getValidation",
     "setSession", "getSession"
   ];
 

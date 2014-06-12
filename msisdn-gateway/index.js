@@ -563,9 +563,16 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
             return;
           }
 
-          var msisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
+          storage.volatileStorage.cleanSession(req.hawkHmacId, function(err) {
+            if (err) {
+              logError(err);
+              sendError(res, 503, errors.BACKEND, "Service Unavailable");
+              return;
+            }
 
-          res.json(200, {msisdn: msisdn});
+            var msisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
+            res.json(200, {msisdn: msisdn});
+          });
         });
       });
     });

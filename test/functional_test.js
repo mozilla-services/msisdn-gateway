@@ -691,7 +691,7 @@ describe("HTTP API exposed by the server", function() {
       jsonReq.send(validPayload).expect(410).end(done);
     });
 
-    it("should set validation.", function(done) {
+    it("should setCertificateData.", function(done) {
       var msisdn = "+33123456789";
       storage.setCode(hawkHmacId, "123456", function(err) {
         if (err) throw err;
@@ -716,6 +716,27 @@ describe("HTTP API exposed by the server", function() {
           });
       });
     });
+
+    it("should prune volatileData when setting persistent ones.",
+      function(done) {
+        var msisdn = "+33123456789";
+        storage.setCode(hawkHmacId, "123456", function(err) {
+          if (err) throw err;
+          storage.storeMSISDN(
+            hawkHmacId, encrypt.encrypt(hawkCredentials.id, msisdn),
+            function(err) {
+              if (err) throw err;
+              jsonReq.send(validPayload).expect(200).end(function(err, res) {
+                expect(res.body.msisdn).to.equal(msisdn);
+                storage.getSession(hawkHmacId, function(err, result) {
+                  if(err) throw err;
+                  expect(result).to.eql(null);
+                  done();
+                });
+              });
+            });
+        });
+      });
   });
 
   describe("POST /certificate/sign", function() {
@@ -755,10 +776,6 @@ describe("HTTP API exposed by the server", function() {
     });
 
     it("should fail with an unregister MSISDN.", function(done) {
-      sandbox.stub(storage, "getValidation",
-        function(key, cb) {
-          cb(null, null);
-        });
       jsonReq.send(validPayload).expect(410).end(done);
     });
 
@@ -789,6 +806,7 @@ describe("HTTP API exposed by the server", function() {
       });
     });
   });
+
   describe("GET /.well-known/browserid", function(done) {
     it("should return the publickey and mandatory metadata.", function(done) {
       supertest(app)

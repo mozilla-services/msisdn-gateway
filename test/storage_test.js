@@ -169,38 +169,6 @@ describe("Storage", function() {
         });
       });
 
-      describe("#setValidation", function() {
-        it("should set the MSISDN.", function(done) {
-          if (storage.longTermOnly) {
-            done();
-            return;
-          }
-          storage.setValidation(hawkHmacId, authKey,
-            function(err) {
-              if (err)  {
-                throw err;
-              }
-              storage.getValidation(hawkHmacId, function(err, value){
-                expect(value).to.eql(authKey);
-                done();
-              });
-            });
-        });
-      });
-
-      describe("#getValidation", function() {
-        it("should return null on invalid hawkHmacId.", function(done) {
-          if (storage.longTermOnly) {
-            done();
-            return;
-          }
-          storage.getValidation("wrong-hawkHmacId", function(err, value){
-            expect(value).to.equal(null);
-            done();
-            });
-        });
-      });
-
       describe("#setSession", function() {
         it("should store the session.", function(done) {
           if (storage.longTermOnly) {
@@ -266,40 +234,31 @@ describe("Storage", function() {
             if (err) throw err;
             storage.storeMSISDN(hawkHmacId, msisdn, function(err) {
               if (err) throw err;
-              storage.setValidation(hawkHmacId, msisdn, function(err) {
+              storage.setSession(hawkHmacId, authKey, function(err) {
                 if (err) throw err;
-                storage.setSession(hawkHmacId, authKey, function(err) {
+                storage.setCertificateData(hawkHmacId, authKey, function(err) {
                   if (err) throw err;
-                  storage.setCertificateData(hawkHmacId, authKey,
-                    function(err) {
+                  storage.cleanSession(hawkHmacId, function(err) {
+                    if (err) throw err;
+                    storage.getSession(hawkHmacId, function(err, value) {
                       if (err) throw err;
-                      storage.cleanSession(hawkHmacId, function(err) {
+                      expect(value).to.equal(null);
+                      storage.getSession(hawkHmacId, function(err, value) {
                         if (err) throw err;
-                        storage.getSession(hawkHmacId, function(err, value) {
+                        expect(value).to.equal(null);
+                        storage.getMSISDN(hawkHmacId, function(err, value) {
                           if (err) throw err;
                           expect(value).to.equal(null);
-                          storage.getSession(hawkHmacId, function(err, value) {
-                            if (err) throw err;
-                            expect(value).to.equal(null);
-                            storage.getMSISDN(hawkHmacId, function(err, value) {
+                          storage.verifyCode(hawkHmacId, code,
+                            function(err, value) {
                               if (err) throw err;
                               expect(value).to.equal(null);
-                              storage.verifyCode(hawkHmacId, code,
-                                function(err, value) {
-                                  if (err) throw err;
-                                  expect(value).to.equal(null);
-                                  storage.getValidation(hawkHmacId,
-                                    function(err, value) {
-                                      if (err) throw err;
-                                      expect(value).to.equal(null);
-                                      done();
-                                    });
-                                });
+                              done();
                             });
-                          });
                         });
                       });
                     });
+                  });
                 });
               });
             });

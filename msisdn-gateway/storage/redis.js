@@ -101,23 +101,6 @@ RedisStorage.prototype = {
     });
   },
 
-  setValidation: function(hawkHmacId, msisdn, callback) {
-    var key = VALIDATED_KEY_PREFIX + hawkHmacId;
-    this._client.setex(key, ONE_DAY_SEC, msisdn, callback);
-  },
-
-  getValidation: function(hawkHmacId, callback) {
-    var key = VALIDATED_KEY_PREFIX + hawkHmacId;
-    this._client.get(key, function(err, result) {
-      if (err) {
-        callback(err);
-        return;
-      }
-
-      callback(null, result);
-    });
-  },
-
   setSession: function(hawkHmacId, authKey, callback) {
     var key = SESSION_KEY_PREFIX + hawkHmacId;
     this._client.setex(key, this._settings.hawkSessionDuration,
