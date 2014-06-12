@@ -4,7 +4,7 @@
 
 "use strict";
 var expect = require("chai").expect;
-var getStorage = require("../msisdn-gateway/storage");
+var ProxyStorage = require("../msisdn-gateway/storage");
 var conf = require("../msisdn-gateway").conf;
 var hmac = require("../msisdn-gateway/hmac");
 
@@ -276,10 +276,11 @@ describe("Storage", function() {
 
   // Test all the storages implementation.
   testStorage("Default", function createDefaultStorage(options) {
-    return getStorage({}, options);
+    return new ProxyStorage({}, {}, options);
   });
 
   testStorage("Redis", function createRedisStorage(options) {
-    return getStorage({engine: "redis", settings: {"db": 5}}, options);
+    return new ProxyStorage({engine: "redis", settings: {"db": 5}},
+                            {engine: "redis", settings: {"db": 4}}, options);
   });
 });

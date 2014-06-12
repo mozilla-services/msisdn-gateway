@@ -12,4 +12,69 @@ function getStorage(conf, options) {
   return new Storage(settings, options);
 }
 
-module.exports = getStorage;
+function ProxyStorage(storageConf, longTermStorageConf, options) {
+  var storageMethods = ["setCode", "verifyCode",
+                        "setCodeWrongTry", "expireCode",
+                        "storeMSISDN", "getMSISDN",
+                        "setValidation", "getValidation",
+                        "setSession", "getSession",
+                        "cleanSession", "drop", "ping"];
+
+  var longTermStorageMethods = ["setCertificateData", "getCertificateData",
+                                "cleanSession", "drop", "ping"];
+
+  var storage = getStorage(storageConf, options);
+  var longTermStorage = getStorage(longTermStorageConf, options);
+
+  var self = this;
+
+  storageMethods.forEach(function(method) {
+    if (typeof storage[method] !== "function") {
+      var type = storage.constructor.name;
+      throw new Error(type + " need a " + method +
+                      " to be used as temporary storage.");
+    }
+    self[method] = storage[method].bind(storage);
+  });
+
+  longTermStorageMethods.forEach(function(method) {
+    if (typeof longTermStorage[method] !== "function") {
+      var type = typeof storage;
+      throw new Error(type + " need a " + method +
+                      " to be used as long term storage.");
+    }
+    self[method] = longTermStorage[method].bind(longTermStorage);
+  });
+
+  this.drop = function(callback) {
+    storage.drop(function(err) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      longTermStorage.drop(callback);
+    });
+  };
+
+  this.ping = function(callback) {
+    storage.ping(function(err) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      longTermStorage.ping(callback);
+    });
+  };
+
+  this.cleanSession = function(hawkHmacId, callback) {
+    storage.cleanSession(hawkHmacId, function(err) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      longTermStorage.cleanSession(hawkHmacId, callback);
+    });
+  };
+}
+
+module.exports = ProxyStorage;

@@ -50,8 +50,9 @@ var _privKey = jwcrypto.loadSecretKeyFromObject(conf.get('BIDSecretKey'));
 
 var ravenClient = new raven.Client(conf.get("sentryDSN"));
 
-var getStorage = require("./storage");
-var storage = getStorage(conf.get("storage"), {
+var ProxyStorage = require("./storage");
+var storage = new ProxyStorage(
+  conf.get("storage"), conf.get("longTermStorage"), {
   hawkSessionDuration: conf.get("hawkSessionDuration")
 });
 
