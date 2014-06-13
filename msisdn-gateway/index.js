@@ -401,7 +401,7 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
       }
 
       var storedMsisdn = encrypt.decrypt(hawkId, cipherMsisdn);
-  
+
       if (storedMsisdn !== null && storedMsisdn !== msisdn) {
         logError(
           new Error("Attempt to very several MSISDN per session.", {
@@ -418,7 +418,7 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
       if (cipherMsisdn === null) {
         cipherMsisdn = encrypt.encrypt(hawkId, msisdn);
       }
-  
+
       storage.storeMSISDN(hawkHmacId, cipherMsisdn, function(err) {
         if (err) {
           logError(err);

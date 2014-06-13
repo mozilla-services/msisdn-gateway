@@ -79,9 +79,16 @@ var conf = convict({
     format: Boolean
   },
   storage: {
-    doc: "storage config",
-    format: validateKeys(["engine", "settings"]),
-    default: {engine: "redis", settings: {}}
+    engine: {
+      doc: "engine type",
+      format: String,
+      default: "redis"
+    },
+    settings: {
+      doc: "js object of options to pass to the storage engine",
+      format: Object,
+      default: {}
+    }
   },
   sentryDSN: {
     doc: "Sentry DSN",
@@ -157,11 +164,11 @@ var conf = convict({
     env: "MSISDN_MAC_ALGORITHM"
   },
   BIDPublicKey: {
-    doc: "The Browser ID Public Key",
+    doc: "The Browser ID Public Key, run bin/generate-keypair to get them",
     format: validateJWCryptoKey
   },
   BIDSecretKey: {
-    doc: "The Browser ID Private Key",
+    doc: "The Browser ID Private Key, run bin/generate-keypair to get them",
     format: validateJWCryptoKey
   },
   mtSender: {
@@ -175,19 +182,48 @@ var conf = convict({
     default: ""
   },
   moVerifierList: {
-    doc: "List of moVerifierNumber with regards to MCC/MNC",
-    format: validateKeys([], false),
+    doc: 'List of moVerifierNumber w/ regards to MCC/MNC, see config/test.json',
+    format: Object,
     default: {}
   },
   leonixCredentials: {
-    doc: "Leonix SMS Gateway Credentials",
-    format: validateKeys(["endpoint", "service", "login", "pwd"], true),
-    default: ""
+    endpoint: {
+      doc: 'URL to the SMS outbound API endpoint',
+      format: String,
+      default: 'https://extranet.leonix.fr/smpp/SMS.php'
+    },
+    service: {
+      doc: 'Client service number',
+      format: String,
+      default: ''
+    },
+    login: {
+      doc: 'login name to auth to service',
+      format: String,
+      default: ''
+    },
+    pwd: {
+      doc: 'password to auth to service',
+      format: String,
+      default: ''
+    }
   },
   nexmoCredentials: {
-    doc: "Nexmo SMS Gateway Credentials",
-    format: validateKeys(["endpoint", "api_key", "api_secret"], true),
-    default: ""
+    endpoint: {
+      doc: 'URL to the SMS outbound API endpoint',
+      format: String,
+      default: ''
+    },
+    api_key: {
+      doc: 'api key',
+      format: String,
+      default: ''
+    },
+    api_secret: {
+      doc: 'api secret',
+      format: String,
+      default: ''
+    }
   },
   requestMaxSize: {
     doc: "The maximum size of the request",

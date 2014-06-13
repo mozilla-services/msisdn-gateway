@@ -30,7 +30,7 @@ describe("Storage", function() {
           hawkSessionDuration: conf.get("hawkSessionDuration")
         });
       });
-  
+
       afterEach(function(done) {
         storage.drop(function(err) {
           // Remove the storage reference so tests blow up in an explicit way.
