@@ -239,6 +239,47 @@ var conf = convict({
     doc: "The maximum of HTTP sockets to use when doing requests",
     format: Number,
     default: 5
+  },
+  i18n: {
+    defaultLang: {
+      format: String,
+      default: 'en-US'
+    },
+    debugLang: {
+      format: String,
+      default: 'it-CH'
+    },
+    supportedLanguages: {
+      doc: 'List of languages this deployment should detect and ' +
+        'display localized strings.',
+      format: Array,
+      // the big list of locales is specified so the production build script
+      // can build all the locales before config/production.json is written.
+      default: ['af', 'an', 'ar', 'as', 'ast', 'be', 'bg', 'bn-BD', 'bn-IN',
+          'br', 'bs', 'ca', 'cs', 'cy', 'da', 'de', 'el', 'en', 'en-GB',
+          'en-US', 'en-ZA', 'eo', 'es', 'es-AR', 'es-CL', 'es-MX', 'et', 'eu',
+          'fa', 'ff', 'fi', 'fr', 'fy', 'fy-NL', 'ga', 'ga-IE', 'gd', 'gl',
+          'gu', 'gu-IN', 'he', 'hi-IN', 'hr', 'ht', 'hu', 'hy-AM', 'id', 'is',
+          'it', 'it-CH', 'ja', 'kk', 'km', 'kn', 'ko', 'ku', 'lij', 'lt', 'lv',
+          'mai', 'mk', 'ml', 'mr', 'ms', 'nb-NO', 'ne-NP', 'nl', 'nn-NO', 'or',
+          'pa', 'pa-IN', 'pl', 'pt', 'pt-BR', 'pt-PT', 'rm', 'ro', 'ru', 'si',
+          'sk', 'sl', 'son', 'sq', 'sr', 'sr-LATN', 'sv', 'sv-SE', 'ta', 'te',
+          'th', 'tr', 'uk', 'ur', 'vi', 'xh', 'zh-CN', 'zh-TW', 'zu'],
+      env: 'I18N_SUPPORTED_LANGUAGES'
+    },
+    translationDirectory: {
+      doc: 'The directory where per-locale .json files containing ' +
+        'translations reside',
+      format: String,
+      default: 'app/i18n/',
+      env: 'I18N_TRANSLATION_DIR'
+    },
+    translationType: {
+      doc: 'The file format used for the translations',
+      format: String,
+      default: 'key-value-json',
+      env: 'I18N_TRANSLATION_TYPE'
+    }
   }
 });
 

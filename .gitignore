@@ -6,3 +6,7 @@ config/development.json
 config/production.json
 loadtests/*.pyc
 loadtests/venv/
+locale/
+!locale/README.md
+!locale/templates/
+app/
