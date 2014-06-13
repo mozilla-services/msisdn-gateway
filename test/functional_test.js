@@ -446,7 +446,7 @@ describe("HTTP API exposed by the server", function() {
       jsonReq.send({msisdn: "0123456789"}).expect(400).end(
         function(err, res) {
           if (err) throw err;
-          expectFormatedError(res.body, 400, errors.INVALID_MSISDN, 
+          expectFormatedError(res.body, 400, errors.INVALID_MSISDN,
                               "Invalid MSISDN number.");
           done();
         });
@@ -640,7 +640,7 @@ describe("HTTP API exposed by the server", function() {
                 console.log(res);
                 throw err;
               }
-        
+
               expect(res.body.hasOwnProperty('msisdn')).to.equal(true);
               done();
             });
