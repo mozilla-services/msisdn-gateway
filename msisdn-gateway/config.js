@@ -84,16 +84,6 @@ var conf = convict({
       format: String,
       default: "redis"
     },
-    host: {
-      doc: "hostname / ip address to server",
-      format: String,
-      default: "127.0.0.1"
-    },
-    port: {
-      doc: "storage engine port",
-      format: "port",
-      default: 6379,
-    },
     settings: {
       doc: "js object of options to pass to the storage engine",
       format: Object,
@@ -174,11 +164,11 @@ var conf = convict({
     env: "MSISDN_MAC_ALGORITHM"
   },
   BIDPublicKey: {
-    doc: "The Browser ID Public Key, see config/test.json for example",
+    doc: "The Browser ID Public Key, run bin/generate-keypair to get them",
     format: validateJWCryptoKey
   },
   BIDSecretKey: {
-    doc: "The Browser ID Private Key, see config/test.json for example",
+    doc: "The Browser ID Private Key, run bin/generate-keypair to get them",
     format: validateJWCryptoKey
   },
   mtSender: {
@@ -220,7 +210,7 @@ var conf = convict({
   },
   nexmoCredentials: {
     endpoint: {
-      doc: 'hostname to service',
+      doc: 'URL to the SMS outbound API endpoint',
       format: String,
       default: ''
     },
