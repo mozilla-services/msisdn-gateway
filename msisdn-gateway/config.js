@@ -188,12 +188,12 @@ var conf = convict({
   },
   leonixCredentials: {
     endpoint: {
-      doc: 'hostname to service',
+      doc: 'URL to the SMS outbound API endpoint',
       format: String,
-      default: ''
+      default: 'https://extranet.leonix.fr/smpp/SMS.php'
     },
     service: {
-      doc: '??? WHAT IS THIS ???',
+      doc: 'Client service number',
       format: String,
       default: ''
     },
