@@ -4,26 +4,6 @@ This directory contains translated strings for all supported
 locales. Strings are extracted using a gettext compatible extractor,
 generating `PO` template files.
 
-## How to use
-
-This folder can be used locally, but the default behavior is to update
-through `bower.json`.  If you do not follow those steps you might lose
-your work without understanding.
-
-Here are a few things to know:
-
-* Do `git add` the file you are working on as often as
-  possible. Otherwise you might just run `grunt` and it’ll overwrite
-  all your work.
-* The files that the default behavior uses to generate the content is
-  from `app/bower_components/msisdn-gateway-l10n`, that is handled by
-  bower.
-* To work locally —and not get your work overwritten by bower— use
-  those two commands:
-
-        grunt po2json
-        grunt serverproc:test
-
 * Once you are done with the content you worked on, you can copy the
   files over to a separate repository
   (i.e. [msisdn-gateway-i10n](https://github.com/mozilla-services/msisdn-gateway-l10n))
@@ -62,9 +42,9 @@ that will look like `{{#t}}My new string{{/t}}` and in a JavaScript it
 will look like `t("My new string")` (`t` is an alias for `gettext`).
 
 After you've added new strings to source, you'll need to extract them
-and update the `.pot` files, using grunt:
+and update the `.pot` files, using the Makefile:
 
-    grunt l10n-extract
+    $ make messages
 
 
 ## Updating the l10n repo
@@ -95,7 +75,7 @@ Translators will update the `.po` files in the l10n repo, which are
 downloaded as a bower dependency. To convert the new translations into
 JSON for the app to use, run:
 
-    grunt l10n-create-json
+    make compile-messages
 
 The JSON is not included under version control– they're regenerated on
 each deployment.
