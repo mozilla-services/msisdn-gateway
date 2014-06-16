@@ -691,7 +691,7 @@ describe("HTTP API exposed by the server", function() {
       jsonReq.send(validPayload).expect(410).end(done);
     });
 
-    it("should set validation.", function(done) {
+    it("should setCertificateData.", function(done) {
       var msisdn = "+33123456789";
       storage.setCode(hawkHmacId, "123456", function(err) {
         if (err) throw err;
@@ -699,17 +699,44 @@ describe("HTTP API exposed by the server", function() {
           hawkHmacId, encrypt.encrypt(hawkCredentials.id, msisdn),
           function(err) {
             if (err) throw err;
+            var now = Date.now();
             jsonReq.send(validPayload).expect(200).end(function(err, res) {
-              storage.getValidation(hawkHmacId, function(err, cipherMsisdn) {
-                expect(
-                  encrypt.decrypt(hawkCredentials.id, cipherMsisdn)
-                ).to.eql(msisdn);
-                done();
-              });
+              expect(res.body.msisdn).to.equal(msisdn);
+              storage.getCertificateData(hawkHmacId,
+                function(err, certificateData) {
+                  expect(
+                    encrypt.decrypt(hawkCredentials.id,
+                                    certificateData.cipherMsisdn)
+                  ).to.eql(msisdn);
+                  expect(certificateData.createdAt).to.be.at.least(now);
+                  expect(certificateData.lastUpdatedAt).to.be.at.least(now);
+                  done();
+                });
             });
           });
       });
     });
+
+    it("should prune volatileData when setting persistent ones.",
+      function(done) {
+        var msisdn = "+33123456789";
+        storage.setCode(hawkHmacId, "123456", function(err) {
+          if (err) throw err;
+          storage.storeMSISDN(
+            hawkHmacId, encrypt.encrypt(hawkCredentials.id, msisdn),
+            function(err) {
+              if (err) throw err;
+              jsonReq.send(validPayload).expect(200).end(function(err, res) {
+                expect(res.body.msisdn).to.equal(msisdn);
+                storage.getSession(hawkHmacId, function(err, result) {
+                  if(err) throw err;
+                  expect(result).to.eql(null);
+                  done();
+                });
+              });
+            });
+        });
+      });
   });
 
   describe("POST /certificate/sign", function() {
@@ -749,29 +776,37 @@ describe("HTTP API exposed by the server", function() {
     });
 
     it("should fail with an unregister MSISDN.", function(done) {
-      sandbox.stub(storage, "getValidation",
-        function(key, cb) {
-          cb(null, null);
-        });
       jsonReq.send(validPayload).expect(410).end(done);
     });
 
     it("should success with a registered MSISDN.", function(done) {
       var msisdn = "+33123456789";
-      sandbox.stub(storage, "getValidation",
-        function(key, cb) {
-          cb(null, msisdn);
+      var now = Date.now();
+      storage.setCertificateData(hawkHmacId, {
+        cipherMsisdn: encrypt.encrypt(hawkCredentials.id, msisdn),
+        createdAt: now,
+        lastUpdatedAt: now,
+        key: "fakeHmacKey"
+      }, function(err) {
+        if (err) throw err;
+        jsonReq.send(validPayload).expect(200).end(function(err, res) {
+          if (err) {
+            console.log(res.body);
+            throw err;
+          }
+          expect(res.body.hasOwnProperty("cert")).to.eql(true);
+          storage.getCertificateData(hawkHmacId,
+            function(err, certificateData) {
+              if (err) throw err;
+              expect(certificateData.createdAt).to.equal(now);
+              expect(certificateData.lastUpdatedAt).to.not.equal(now);
+              done();
+            });
         });
-      jsonReq.send(validPayload).expect(200).end(function(err, res) {
-        if (err) {
-          console.log(res);
-          throw err;
-        }
-        expect(res.body.hasOwnProperty("cert")).to.eql(true);
-        done();
       });
     });
   });
+
   describe("GET /.well-known/browserid", function(done) {
     it("should return the publickey and mandatory metadata.", function(done) {
       supertest(app)

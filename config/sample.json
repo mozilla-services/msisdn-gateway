@@ -2,9 +2,20 @@
   "host": "localhost",
   "port": 5000,
   "storage": {
-    "engine": "redis",
+    "engine": "proxy",
     "settings": {
-      "db": 5
+      "volatileStorageConf": {
+        "engine": "redis",
+        "settings": {
+          "db": 5
+        }
+      },
+      "persistentStorageConf": {
+        "engine": "redis",
+        "settings": {
+          "db": 4
+        }
+      }
     }
   },
   "allowedOrigins": ["http://localhost:3000"],

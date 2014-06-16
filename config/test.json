@@ -3,9 +3,20 @@
   "port": 5000,
   "apiPrefix": "/v1/msisdn",
   "storage": {
-    "engine": "redis",
+    "engine": "proxy",
     "settings": {
-      "db": 5
+      "volatileStorageConf": {
+        "engine": "redis",
+        "settings": {
+          "db": 5
+        }
+      },
+      "persistentStorageConf": {
+        "engine": "redis",
+        "settings": {
+          "db": 4
+        }
+      }
     }
   },
   "allowedOrigins": ["http://localhost:3000"],
