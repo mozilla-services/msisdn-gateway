@@ -4,3 +4,7 @@ node_js:
   - "0.10"
 
 services: redis-server
+
+before_script:
+  - gem install fake_dynamo
+  - fake_dynamo --db fake_dynamo.db &
