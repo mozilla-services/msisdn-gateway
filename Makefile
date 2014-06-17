@@ -8,6 +8,7 @@ NODE_LOCAL_BIN=./node_modules/.bin
 test: lint cover-mocha spaceleft
 
 install:
+	gem install fake_dynamo
 	@npm install
 
 .PHONY: lint
@@ -18,8 +19,12 @@ clean:
 
 .PHONY: cover-mocha
 cover-mocha:
+	@fake_dynamo --db /tmp/fake_dynamo.db --pid /tmp/fake_dynamo.pid -D > /dev/null
 	@env NODE_ENV=test $(NODE_LOCAL_BIN)/istanbul cover \
 			 $(NODE_LOCAL_BIN)/_mocha -- --reporter spec test/*
+	@-kill `cat /tmp/fake_dynamo.pid`
+	@-rm -f /tmp/fake_dynamo.db /tmp/fake_dynamo.pid
+	@sleep 2
 	@echo aim your browser at coverage/lcov-report/index.html for details
 
 .PHONY: jshint
@@ -28,7 +33,11 @@ jshint:
 
 .PHONY: mocha
 mocha:
+	@fake_dynamo --db /tmp/fake_dynamo.db --pid /tmp/fake_dynamo.pid -D > /dev/null
 	@env NODE_ENV=test ./node_modules/mocha/bin/mocha test/* --reporter spec
+	@-kill `cat /tmp/fake_dynamo.pid`
+	@-rm -f /tmp/fake_dynamo.db /tmp/fake_dynamo.pid
+	@sleep 2
 
 .PHONY: spaceleft
 spaceleft:
