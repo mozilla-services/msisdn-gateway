@@ -11,9 +11,11 @@
         }
       },
       "persistentStorageConf": {
-        "engine": "redis",
+        "engine": "dynamodb",
         "settings": {
-          "db": 4
+          "host": "localhost",
+          "port": 4567,
+          "tableName": "CertificateDataTable"
         }
       }
     }

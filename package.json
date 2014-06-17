@@ -28,6 +28,7 @@
     "express-logging": "git://github.com/mozilla-services/express-logging.git",
     "node-uuid": "1.4.1",
     "sodium": "1.0.11",
+    "dynamo-client": "1.1.5",
     "i18n-abide": "0.0.20",
     "jsxgettext-recursive": "0.0.4"
   },
