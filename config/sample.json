@@ -1,6 +1,7 @@
 {
   "host": "localhost",
   "port": 5000,
+  "protocol": "https",
   "storage": {
     "engine": "proxy",
     "settings": {

@@ -55,6 +55,12 @@ var conf = convict({
     default: "development",
     env: "NODE_ENV"
   },
+  protocol: {
+    doc: "The server protocol. http by default.",
+    format: String,
+    default: "http",
+    env: "PROTOCOL"
+  },
   ip: {
     doc: "The IP address to bind.",
     format: "ipaddress",

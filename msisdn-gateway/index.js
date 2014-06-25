@@ -242,7 +242,7 @@ app.get("/", function(req, res) {
     description: pjson.description,
     version: pjson.version,
     homepage: pjson.homepage,
-    endpoint: req.protocol + "://" + req.get("host")
+    endpoint: conf.get("protocol") + "://" + req.get("host")
   };
 
   if (!conf.get("displayVersion")) {
@@ -279,7 +279,7 @@ app.post("/discover", function(req, res) {
       return;
     }
     // SMS/MT methods configuration
-    url = req.protocol + "://" + req.get("host") +
+    url = conf.get("protocol") + "://" + req.get("host") +
           conf.get("apiPrefix") + "/sms/mt/verify";
 
     verificationMethods.push("sms/mt");
