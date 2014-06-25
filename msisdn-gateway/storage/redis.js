@@ -16,8 +16,8 @@ var CERTIFICATE_KEY_PREFIX = "msisdn_certificate_";
 function RedisStorage(options, settings) {
   this._settings = settings;
   this._client = redis.createClient(
-    options.host,
     options.port,
+    options.host,
     options.options
   );
   if (options.db) {
