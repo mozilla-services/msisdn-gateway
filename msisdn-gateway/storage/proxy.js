@@ -19,7 +19,7 @@ function StorageProxy(conf, options) {
   ];
 
   var proxyMethods = [
-    "cleanSession", "drop", "ping"
+    "cleanSession", "drop", "ping", "setup"
   ];
 
   var volatileStorage = getStorage(conf.volatileStorageConf, options);

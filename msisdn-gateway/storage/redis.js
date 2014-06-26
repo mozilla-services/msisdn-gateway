@@ -219,6 +219,11 @@ RedisStorage.prototype = {
     this._client.flushdb(callback);
   },
 
+  setup: function(callback) {
+    // Redis setup don't need anything.
+    callback(null);
+  },
+
   ping: function(callback) {
     this._client.ping(function(err, value) {
       callback((err === null && value === "PONG"));
