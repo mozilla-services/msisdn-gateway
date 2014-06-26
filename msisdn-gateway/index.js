@@ -685,9 +685,9 @@ app.get("/.well-known/browserid/warning.html", function(req, res) {
 
 
 
-app.listen(conf.get("port"), conf.get("host"), function(){
+app.listen(conf.get("port"), conf.get("ip"), function(){
   console.log("Server listening on http://" +
-              conf.get("host") + ":" + conf.get("port"));
+              conf.get("ip") + ":" + conf.get("port"));
 });
 
 module.exports = {
