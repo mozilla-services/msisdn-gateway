@@ -150,7 +150,7 @@ function hawkMiddleware(req, res, next) {
       }
       callback(null, sessionKey);
     });
-  }, {},
+  }, {port: conf.get("protocol") === "https" ? 443 : undefined},
     function(err, credentials, artifacts) {
       req.hawk = artifacts;
 
