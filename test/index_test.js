@@ -5,10 +5,13 @@
 
 var expect = require("chai").expect;
 var supertest = require("supertest");
+var sinon = require("sinon");
 
 var errors = require("../msisdn-gateway/errno");
 var app = require("../msisdn-gateway").app;
 var requireParams = require("../msisdn-gateway").requireParams;
+var server = require("../msisdn-gateway").server;
+var shutdown = require("../msisdn-gateway").shutdown;
 
 describe("index.js", function() {
   var jsonReq;
@@ -70,6 +73,35 @@ describe("index.js", function() {
         .send({a: "Ok", b: "Ok"})
         .expect(200)
         .end(done);
+    });
+  });
+
+  describe("#shutdown", function () {
+    var sandbox;
+
+    beforeEach(function() {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(process, "exit");
+      sandbox.stub(server, "close", function(cb) { cb(); });
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it("should call #close on the server object", function(done) {
+      shutdown(function() {
+        sinon.assert.calledOnce(server.close);
+        done();
+      });
+    });
+
+    it("should call exit(0) on the process object", function(done) {
+      shutdown(function() {
+        sinon.assert.calledOnce(process.exit);
+        sinon.assert.calledWithExactly(process.exit, 0);
+        done();
+      });
     });
   });
 });

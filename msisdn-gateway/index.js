@@ -685,14 +685,27 @@ app.get("/.well-known/browserid/warning.html", function(req, res) {
 
 
 
-app.listen(conf.get("port"), conf.get("ip"), function(){
+var server = app.listen(conf.get("port"), conf.get("ip"), function() {
   console.log("Server listening on http://" +
               conf.get("ip") + ":" + conf.get("port"));
 });
 
+function shutdown(cb) {
+  server.close(function() {
+    process.exit(0);
+    if (cb !== undefined) {
+      cb();
+    }
+  });
+}
+
+process.on('SIGTERM', shutdown);
+
 module.exports = {
   app: app,
+  server: server,
   conf: conf,
   storage: storage,
-  requireParams: requireParams
+  requireParams: requireParams,
+  shutdown: shutdown
 };
