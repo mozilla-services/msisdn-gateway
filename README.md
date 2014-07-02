@@ -91,6 +91,15 @@ How to run the tests?
 
     make test
 
+How to update translation?
+--------------------------
+
+    make update-l10n
+
+And for automated scripts:
+
+    make update-l10n NOVERIFY=yes
+
 
 Estimate Redis Memory Usage
 ---------------------------

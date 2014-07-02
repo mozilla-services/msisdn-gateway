@@ -4,7 +4,7 @@
 
 NODE_LOCAL_BIN=./node_modules/.bin
 
-TMPDIR ?= "/tmp"
+TMPDIR ?= /tmp
 
 .PHONY: test
 test: lint cover-mocha spaceleft
@@ -70,4 +70,28 @@ messages:
 
 .PHONY: compile-messages
 compile-messages:
+	mkdir -p app/i18n
 	./node_modules/.bin/compile-json locale app/i18n
+
+.PHONY: update-l10n
+update-l10n: update-l10n-git compile-messages
+
+.PHONY: update-l10n-git
+update-l10n-git:
+	@if [ '$(NOVERIFY)' = '' ]; then \
+	    echo "WARNING all update made in locale/* will be overridden by this command. CTRL-C to quit"; \
+	    read toot; \
+	fi
+	@if [ ! -d $(TMPDIR)/msisdn-gateway-l10n ]; then \
+	    echo "Cloning https://github.com/mozilla-services/msisdn-gateway-l10n.git"; \
+	    git clone https://github.com/mozilla-services/msisdn-gateway-l10n.git $(TMPDIR)/msisdn-gateway-l10n; \
+	else \
+	    echo "Updating https://github.com/mozilla-services/msisdn-gateway-l10n.git"; \
+	    cd $(TMPDIR)/msisdn-gateway-l10n; \
+	      git checkout master; \
+	      git pull origin master; \
+	fi
+	@mv ./locale/README.md /tmp/README.save
+	@echo "Sync locales"
+	cp -fr $(TMPDIR)/msisdn-gateway-l10n/locale/ .
+	@mv /tmp/README.save locale/README.md
