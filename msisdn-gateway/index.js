@@ -673,7 +673,7 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
  */
 app.get("/.well-known/browserid", function(req, res) {
   res.json(200, {
-    "public-key": _publicKey.serialize(),
+    "public-key": JSON.parse(_publicKey.serialize()),
     "authentication": "/.well-known/browserid/warning.html",
     "provisioning": "/.well-known/browserid/warning.html"
   });
@@ -682,7 +682,6 @@ app.get("/.well-known/browserid", function(req, res) {
 app.get("/.well-known/browserid/warning.html", function(req, res) {
   res.sendfile(__dirname + "/templates/idp-warning.html");
 });
-
 
 
 var server = app.listen(conf.get("port"), conf.get("ip"), function() {
