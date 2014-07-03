@@ -404,12 +404,12 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
 
   var msisdn = phone('+' + req.query.msisdn);
   var text = req.query.text.split(" ");
-  if (text.length !== 2) {
+  var hawkId = text[1];
+  if (hawkId === undefined) {
     logError(text + " is not in the right format.");
     res.json(200, {});
     return;
   }
-  var hawkId = text[1];
   var hawkHmacId = hmac(hawkId, conf.get("hawkIdSecret"));
 
   storage.getSession(hawkHmacId, function(err, result) {

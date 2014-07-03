@@ -95,8 +95,7 @@ class TestMSISDN(TestCase):
         try:
             sessionToken = resp.json()['msisdnSessionToken']
         except:
-            print resp.content
-            raise
+            self.fail("No JSON has been returned: %s" % resp.content)
 
         self.hawk_auth = HawkAuth(self.server_url, sessionToken)
 
