@@ -1,4 +1,4 @@
-SERVER_URL = http://127.0.0.1:5000
+SERVER_URL = https://msisdn.stage.mozaws.net
 OMXEN_URL = http://omxen.dev.mozaws.net
 
 # Hackety-hack around OSX system python bustage.
