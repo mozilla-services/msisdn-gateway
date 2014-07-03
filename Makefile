@@ -43,7 +43,7 @@ mocha:
 
 .PHONY: spaceleft
 spaceleft:
-	if which grin 2>&1 >/dev/null; \
+	@if which grin 2>&1 >/dev/null; \
 	then \
 	  grin " $$" msisdn-gateway/ test/ config/; \
 	fi

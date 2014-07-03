@@ -10,7 +10,7 @@ var querystring = require("querystring");
 
 function Leonix() {
   this._conf = conf.get("leonixCredentials");
-  if (!this._conf) {
+  if (this._conf.service === "") {
     throw new Error("You should configure Leonix credentials first.");
   }
 }

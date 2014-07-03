@@ -146,7 +146,8 @@ class TestMSISDN(TestCase):
                 print resp.content
                 raise
 
-        return messages[0]["text"]
+        if len(messages) >= 1:
+            return messages[0]["text"]
 
     def verify_code(self, message=None):
         # Extract the code from the message

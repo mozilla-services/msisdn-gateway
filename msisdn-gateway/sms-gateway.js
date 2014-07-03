@@ -11,9 +11,7 @@ var providers = {default: new Nexmo()};
 
 try {
   providers["+33"] = new Leonix();
-} catch (err) {
-  console.log("Leonix is not configured.");
-}
+} catch (err) {}
 
 function sendSMS(msisdn, message, callback) {
   var areaCode = msisdn.substr(0, 3), provider;
