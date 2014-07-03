@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import math
+import os
 import random
 import time
 from urlparse import urlparse
@@ -11,10 +12,7 @@ from requests.auth import AuthBase
 
 from loads.case import TestCase
 
-try:
-    from config import OMXEN_URL
-except ImportError:
-    OMXEN_URL = "http://localhost:8080"
+OMXEN_URL = os.getenv("OMXEN_URL", "http://localhost:8080")
 
 print "USING %s OMXEN endpoint" % OMXEN_URL
 
