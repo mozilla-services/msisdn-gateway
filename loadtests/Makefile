@@ -1,4 +1,5 @@
 SERVER_URL = http://127.0.0.1:5000
+OMXEN_URL = http://omxen.dev.mozaws.net
 
 # Hackety-hack around OSX system python bustage.
 # The need for this should go away with a future osx/xcode update.
@@ -23,15 +24,15 @@ clean:
 
 # Run a single test from the venv machine, for sanity-checking.
 test:
-	./venv/bin/loads-runner --config=./config/test.ini --server-url=$(SERVER_URL) loadtest.TestMSISDN.test_all
+	OMXEN_URL=$(OMXEN_URL) ./venv/bin/loads-runner --config=./config/test.ini --server-url=$(SERVER_URL) loadtest.TestMSISDN.test_all
 
 # Run a bench of 20 concurrent users from the local machine
 bench:
-	./venv/bin/loads-runner --config=./config/bench.ini --server-url=$(SERVER_URL) loadtest.TestMSISDN.test_all
+	OMXEN_URL=$(OMXEN_URL) ./venv/bin/loads-runner --config=./config/bench.ini --server-url=$(SERVER_URL) loadtest.TestMSISDN.test_all
 
 # Run a much bigger bench, by submitting to broker in AWS.
 megabench:
-	./venv/bin/loads-runner --config=./config/megabench.ini --user-id=$(USER) --server-url=$(SERVER_URL) loadtest.TestMSISDN.test_all
+	OMXEN_URL=$(OMXEN_URL) ./venv/bin/loads-runner --config=./config/megabench.ini --user-id=$(USER) --server-url=$(SERVER_URL) loadtest.TestMSISDN.test_all
 
 # Purge any currently-running loadtest runs.
 purge:

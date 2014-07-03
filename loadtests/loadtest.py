@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import math
+import os
 import random
 import time
 from urlparse import urlparse
@@ -10,6 +11,10 @@ import mohawk
 from requests.auth import AuthBase
 
 from loads.case import TestCase
+
+OMXEN_URL = os.getenv("OMXEN_URL", "http://localhost:8080")
+
+print "USING %s OMXEN endpoint" % OMXEN_URL
 
 PERCENTAGE_OF_MT_FLOW = 50  # Remining are MOMT flows
 PERCENTAGE_OF_WRONG_CODES = 34  # Remining are valid ones.
@@ -20,7 +25,7 @@ PUBLIC_KEY = '{"algorithm":"DS","y":"2bb69e89652d97315f156852c5d1a36c7ebf0fb991a
 
 
 class TestMSISDN(TestCase):
-    omxen_url = "http://ec2-54-203-73-122.us-west-2.compute.amazonaws.com"
+    omxen_url = OMXEN_URL
 
     def test_all(self):
         # Discover
