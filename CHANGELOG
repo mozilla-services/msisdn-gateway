@@ -1,8 +1,17 @@
 CHANGELOG
 =========
 
-0.3.0 (unreleased)
+0.3.0 (2014-07-03)
 ------------------
+
+- Add loadtests
+- Remove res.on("header") deprecation
+- Graceful shutdown of the server ok SIGTERM
+- Manage l10n translation
+- Handle Hawk auth behind and HTTPS ELB
+- Add a DynamoDB persistent storage backend
+- Handle https and http agents configuration
+- Store encrypted MSISDN number into the database
 
 
 0.2.0 (2014-06-06)
