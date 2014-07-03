@@ -56,7 +56,7 @@ var conf = convict({
     env: "NODE_ENV"
   },
   protocol: {
-    doc: "The server protocol. http by default.",
+    doc: "The protocol the server is behind. Should be https behind an ELB.",
     format: String,
     default: "http",
     env: "PROTOCOL"
