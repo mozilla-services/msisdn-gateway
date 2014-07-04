@@ -15,23 +15,12 @@ privateKey = jwcrypto.loadSecretKeyFromObject(privateKey);
 
 var publicKey = require('./keys.json').providedPublicKey;
 
-var cert;
 var msisdn = 'xxx';
 var duration = 3600;
 var audience = "http://loop.dev.mozaws.net";
 var audiences = ["http://loop.dev.mozaws.net", "app://loop.dev.mozaws.net"];
 var trustedIssuers = ["api.accounts.firefox.com", "msisdn-dev.stage.mozaws.net"];
 
-
-/* generate the cert */
-gen(msisdn, 'host', publicKey, privateKey, duration, function (err, cert) {
-  if (err) {
-    console.log(err);
-    return
-  } else {
-    cert = cert;
-  }
-});
 
 // generate an assertion (and keypair and signed cert if required)
 function createAssertion(cert, cb) {
@@ -75,14 +64,20 @@ function verifyAssertion(assertion, callback) {
   });
 }
 
-
-createAssertion(cert, function(err, assertion) {
-  verifyAssertion(assertion, function (err, data) {
-    if (err) {
-      console.log(err);
-      return;
-    }
-    console.log(data);
-   }
-  );
+/* generate the cert */
+gen(msisdn, 'host', publicKey, privateKey, duration, function (err, cert) {
+  if (err) {
+    console.log(err);
+    return;
+  } else {
+    createAssertion(cert, function(err, assertion) {
+      verifyAssertion(assertion, function (err, data) {
+        if (err) {
+          console.log(err);
+          return;
+        }
+        console.log(data);
+      });
+    });
+  }
 });
