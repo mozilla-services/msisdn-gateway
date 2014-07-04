@@ -18,6 +18,9 @@ var publicKey = require('./keys.json').providedPublicKey;
 var cert;
 var msisdn = 'xxx';
 var duration = 3600;
+var audience = "http://loop.dev.mozaws.net";
+var audiences = ["http://loop.dev.mozaws.net", "app://loop.dev.mozaws.net"];
+var fxaTrustedIssuers = ["api.accounts.firefox.com", "msisdn-dev.stage.mozaws.net"];
 
 
 /* generate the cert */
@@ -31,35 +34,20 @@ gen(msisdn, 'host', publicKey, privateKey, duration, function (err, cert) {
 });
 
 // generate an assertion (and keypair and signed cert if required)
-function createAssertion(args, cb) {
+function createAssertion(cert, cb) {
   var self = this;
-  self.certificate(function(err) {
-    if (err) return cb(err);
+  var issuedAt = new Date().getTime();
+  var expiresAt = (issuedAt + (2 * 60 * 1000));
 
-    // NOTE: historically assertions have not contained issuedAt, but jwcrypto
-    // will check it if provided. we hope it becomes part of the spec and test
-    // here.
-    var issuedAt = (args.issueTime * 1000) || new Date().getTime();
-    var expiresAt = (issuedAt + (2 * 60 * 1000));
-    jwcrypto.assertion.sign(
-      {}, { audience: args.audience, expiresAt: expiresAt, issuedAt: issuedAt },
-      self._secretKey,
+  jwcrypto.assertion.sign(
+      {}, {audience: audience, expiresAt: expiresAt, issuedAt: issuedAt},
+      privateKey,
       function(err, signedContents) {
         if (err) return cb(err);
-        var assertion = jwcrypto.cert.bundle([self._certificate], signedContents);
+        var assertion = jwcrypto.cert.bundle([cert], signedContents);
         cb(null, assertion);
       });
-  });
 };
-
-/* verify */
-
-// we need to generate the assertion from the cert
-//var assertion = createAssertion(cert);
-
-
-var audiences = ["http://loop.dev.mozaws.net", "app://loop.dev.mozaws.net"];
-var fxaTrustedIssuers = ["api.accounts.firefox.com", "msisdn-dev.stage.mozaws.net"];
 
 
 function verifyAssertion(assertion, callback) {
@@ -88,13 +76,15 @@ function verifyAssertion(assertion, callback) {
 }
 
 
-
-verifyAssertion(cert, function (err, data) {
+createAssertion(cert, function(err, assertion) {
+  verifyAssertion(assertion, function (err, data) {
     if (err) {
       console.log(err);
       return;
     }
     console.log(data);
-  }
-);
+   }
+  );
+});
+
 
