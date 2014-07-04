@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 "use strict";
 
-var browserid = require('browserid-local-verify');
 var gen = require("../msisdn-gateway/utils").generateCertificate;
 var jwcrypto = require('jwcrypto');
 // Make sure to load supported algorithms.
@@ -10,10 +9,13 @@ require('jwcrypto/lib/algs/ds');
 
 var request = require('request');
 
-var privateKey = require('./keys.json').BIDSecretKey;
-privateKey = jwcrypto.loadSecretKeyFromObject(privateKey);
+var serverPrivateKey = require('./keys.json').BIDSecretKey;
+serverPrivateKey = jwcrypto.loadSecretKeyFromObject(serverPrivateKey);
 
-var publicKey = require('./keys.json').providedPublicKey;
+var clientPublicKey = require('./keys.json').providedPublicKey;
+
+var clientPrivateKey = require('./keys.json').providedSecretKey;
+clientPrivateKey = jwcrypto.loadSecretKeyFromObject(clientPrivateKey);
 
 var msisdn = 'xxx';
 var duration = 3600;
@@ -21,7 +23,6 @@ var audience = "http://loop.dev.mozaws.net";
 var audiences = ["http://loop.dev.mozaws.net", "app://loop.dev.mozaws.net"];
 var trustedIssuers = ["api.accounts.firefox.com", "msisdn-dev.stage.mozaws.net"];
 var host = 'msisdn-dev.stage.mozaws.net';
-
 
 // generate an assertion (and keypair and signed cert if required)
 function createAssertion(cert, cb) {
@@ -31,7 +32,7 @@ function createAssertion(cert, cb) {
 
   jwcrypto.assertion.sign(
       {}, {audience: audience, expiresAt: expiresAt, issuedAt: issuedAt},
-      privateKey,
+      clientPrivateKey,
       function(err, signedContents) {
         if (err) return cb(err);
         var assertion = jwcrypto.cert.bundle([cert], signedContents);
@@ -66,7 +67,7 @@ function verifyAssertion(assertion, callback) {
 }
 
 /* generate the cert */
-gen(msisdn, host, publicKey, privateKey, duration, function (err, cert) {
+gen(msisdn, host, clientPublicKey, serverPrivateKey, duration, function (err, cert) {
   if (err) {
     console.log(err);
     return;
