@@ -92,6 +92,7 @@ class TestMSISDN(TestCase):
 
     def register(self):
         resp = self.session.post(self.server_url + '/register')
+        self.incr_counter("register")
         try:
             sessionToken = resp.json()['msisdnSessionToken']
         except ValueError:
@@ -195,6 +196,7 @@ class TestMSISDN(TestCase):
         resp = self.session.post(self.server_url + '/unregister',
                                  headers={'Content-type': 'application/json'},
                                  auth=self.hawk_auth)
+        self.incr_counter("unregister")
         self.assertEqual(resp.status_code, 200,
                          "Unregister failed: %s" % resp.content)
 
