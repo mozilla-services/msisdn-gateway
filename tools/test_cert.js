@@ -20,6 +20,7 @@ var duration = 3600;
 var audience = "http://loop.dev.mozaws.net";
 var audiences = ["http://loop.dev.mozaws.net", "app://loop.dev.mozaws.net"];
 var trustedIssuers = ["api.accounts.firefox.com", "msisdn-dev.stage.mozaws.net"];
+var host = 'msisdn-dev.stage.mozaws.net';
 
 
 // generate an assertion (and keypair and signed cert if required)
@@ -65,7 +66,7 @@ function verifyAssertion(assertion, callback) {
 }
 
 /* generate the cert */
-gen(msisdn, 'host', publicKey, privateKey, duration, function (err, cert) {
+gen(msisdn, host, publicKey, privateKey, duration, function (err, cert) {
   if (err) {
     console.log(err);
     return;
