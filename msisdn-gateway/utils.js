@@ -5,6 +5,9 @@
 "use strict";
 
 var crypto = require("crypto");
+var uuid = require('node-uuid');
+var jwcrypto = require('jwcrypto');
+
 
 /**
  * Build a digits code
@@ -48,8 +51,42 @@ function validateJWCryptoKey(keyObj) {
   return keyObj;
 }
 
+
+/**
+ * Generate a BID certificate
+ */
+function generateCertificate(msisdn, host, publicKey, privateKey, duration,
+                             callback) {
+  var now = Date.now();
+  var md5sum = crypto.createHash("md5");
+  md5sum.update(msisdn);
+  var msisdn_uuid = uuid.unparse(md5sum.digest());
+
+  jwcrypto.cert.sign({
+    publicKey: jwcrypto.loadPublicKeyFromObject(publicKey),
+    principal: { email: msisdn_uuid + "@" + host}
+  }, {
+    issuer: host,
+    // Set issuedAt to 10 seconds ago. Pads for verifier clock skew
+    issuedAt: new Date(now - (10 * 1000)),
+    expiresAt: new Date(now + duration)
+  }, {
+    "lastAuthAt": now,
+    "verifiedMSISDN": msisdn
+  }, privateKey, function(err, cert) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, cert);
+  });
+}
+
+
+
 module.exports = {
   crypto: crypto,
   digitsCode: digitsCode,
-  validateJWCryptoKey: validateJWCryptoKey
+  validateJWCryptoKey: validateJWCryptoKey,
+  generateCertificate: generateCertificate
 };

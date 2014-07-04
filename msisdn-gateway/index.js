@@ -23,8 +23,8 @@ var handle404 = require("./middleware").handle404;
 var applyErrorLogging = require("./middleware").applyErrorLogging;
 var Token = require("./token").Token;
 var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
+var generateCertificate = require("./utils").generateCertificate;
 var Hawk = require('hawk');
-var uuid = require('node-uuid');
 var errors = require("./errno");
 var jwcrypto = require('jwcrypto');
 var i18n = require('./i18n')(conf.get('i18n'));
@@ -627,40 +627,25 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
       );
 
       // Generate a certificate
-      var now = Date.now();
-      var md5sum = crypto.createHash("md5");
-      md5sum.update(msisdn);
-      var msisdn_uuid = uuid.unparse(md5sum.digest());
+      generateCertificate(msisdn, req.get("host"), publicKey, _privKey,
+        duration, function (err, cert) {
+          if (err) {
+            logError(err);
+            sendError(res, 503, errors.BACKEND, "Service Unavailable");
+            return;
+          }
 
-      jwcrypto.cert.sign({
-        publicKey: jwcrypto.loadPublicKeyFromObject(publicKey),
-        principal: msisdn_uuid + "@" + req.get("host")
-      }, {
-        issuer: req.get("host"),
-        // Set issuedAt to 10 seconds ago. Pads for verifier clock skew
-        issuedAt: new Date(now - (10 * 1000)),
-        expiresAt: new Date(now + duration)
-      }, {
-        "lastAuthAt": now,
-        "verifiedMSISDN": msisdn
-      }, _privKey, function(err, cert) {
-        if (err) {
-          logError(err);
-          sendError(res, 503, errors.BACKEND, "Service Unavailable");
-          return;
-        }
-
-        certificateData.lastUpdatedAt = now;
-        storage.setCertificateData(
-          req.hawkHmacId, certificateData, function(err) {
-            if (err) {
-              logError(err);
-              sendError(res, 503, errors.BACKEND, "Service Unavailable");
-              return;
-            }
-            res.json(200, {cert: cert});
-          });
-      });
+          certificateData.lastUpdatedAt = Date.now();
+          storage.setCertificateData(
+            req.hawkHmacId, certificateData, function(err) {
+              if (err) {
+                logError(err);
+                sendError(res, 503, errors.BACKEND, "Service Unavailable");
+                return;
+              }
+              res.json(200, {cert: cert});
+            });
+        });
     });
   });
 
