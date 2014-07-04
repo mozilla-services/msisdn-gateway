@@ -20,7 +20,7 @@ var msisdn = 'xxx';
 var duration = 3600;
 var audience = "http://loop.dev.mozaws.net";
 var audiences = ["http://loop.dev.mozaws.net", "app://loop.dev.mozaws.net"];
-var fxaTrustedIssuers = ["api.accounts.firefox.com", "msisdn-dev.stage.mozaws.net"];
+var trustedIssuers = ["api.accounts.firefox.com", "msisdn-dev.stage.mozaws.net"];
 
 
 /* generate the cert */
@@ -54,7 +54,7 @@ function verifyAssertion(assertion, callback) {
   request.post({
     uri: 'https://verifier.accounts.firefox.com/v2',
     json: {
-      audience: audiences,
+      audience: audience,
       assertion: assertion
     }
   }, function(err, message, data) {
@@ -86,5 +86,3 @@ createAssertion(cert, function(err, assertion) {
    }
   );
 });
-
-
