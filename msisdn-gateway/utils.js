@@ -78,7 +78,7 @@ function generateCertificate(msisdn, host, publicKey, privateKey, duration,
       callback(err);
       return;
     }
-    callback(null, cert);
+    callback(null, cert, now);
   });
 }
 

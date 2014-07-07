@@ -628,14 +628,14 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
 
       // Generate a certificate
       generateCertificate(msisdn, req.get("host"), publicKey, _privKey,
-        duration, function (err, cert) {
+        duration, function (err, cert, now) {
           if (err) {
             logError(err);
             sendError(res, 503, errors.BACKEND, "Service Unavailable");
             return;
           }
 
-          certificateData.lastUpdatedAt = Date.now();
+          certificateData.lastUpdatedAt = now;
           storage.setCertificateData(
             req.hawkHmacId, certificateData, function(err) {
               if (err) {
