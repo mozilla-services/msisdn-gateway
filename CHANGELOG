@@ -1,10 +1,12 @@
 CHANGELOG
 =========
 
-0.4.0 (unreleased)
+0.3.1 (2014-07-08)
 ------------------
 
-- No changes yet
+- Fix MSISDN certificate generation
+- Improve loadtests debugging
+- Change loadtests configuration from duration to hits
 
 
 0.3.0 (2014-07-03)

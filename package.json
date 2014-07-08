@@ -1,7 +1,7 @@
 {
   "name": "mozilla-msisdn-gateway",
   "description": "The Mozilla MSISDN Gateway",
-  "version": "0.4.0-DEV",
+  "version": "0.3.1",
   "author": "Mozilla (https://mozilla.org/)",
   "homepage": "https://github.com/mozilla-services/msisdn-gateway/",
   "bugs": "https://github.com/mozilla-services/msisdn-gateway/issues",
