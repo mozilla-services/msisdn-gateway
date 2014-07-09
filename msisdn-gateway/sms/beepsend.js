@@ -7,9 +7,9 @@ var conf = require("../config").conf;
 var request = require("request");
 
 
-function BeepSend() {
-  this._conf = conf.get("beepSendCredentials");
-  if (this._conf.api_token === "") {
+function BeepSend(options) {
+  this._conf = options;
+  if (this._conf.apiToken === "") {
     throw new Error("You should configure BeepSend credentials first.");
   }
 }
@@ -17,18 +17,17 @@ function BeepSend() {
 
 BeepSend.prototype = {
   sendSms: function sendSms(msisdn, message, callback) {
-    var options = {
-      url: this._conf.endpoint + "/" + this._conf.connection_id,
+    request.post({
+      url: this._conf.endpoint + "/" + this._conf.connectionId,
       headers: {
-        "Authorization": "Token " + this._conf.api_token
+        "Authorization": "Token " + this._conf.apiToken
       },
       form: {
         to: msisdn,
         message: message,
-        from: conf.get("mtSender").replace(/@$/g, "");
+        from: conf.get("mtSender").replace(/@$/g, "")
       }
-    };
-    request.post(options, function(err) {
+    }, function(err) {
       callback(err);
     });
   }

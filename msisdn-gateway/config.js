@@ -192,60 +192,62 @@ var conf = convict({
     format: Object,
     default: {}
   },
-  leonixCredentials: {
-    endpoint: {
-      doc: 'URL to the SMS outbound API endpoint',
-      format: String,
-      default: 'https://extranet.leonix.fr/smpp/SMS.php'
+  smsGateways: {
+    leonix: {
+      endpoint: {
+        doc: 'URL to the SMS outbound API endpoint',
+        format: String,
+        default: 'https://extranet.leonix.fr/smpp/SMS.php'
+      },
+      service: {
+        doc: 'Client service number',
+        format: String,
+        default: ''
+      },
+      login: {
+        doc: 'login name to auth to service',
+        format: String,
+        default: ''
+      },
+      pwd: {
+        doc: 'password to auth to service',
+        format: String,
+        default: ''
+      },
     },
-    service: {
-      doc: 'Client service number',
-      format: String,
-      default: ''
+    nexmo: {
+      endpoint: {
+        doc: 'URL to the SMS outbound API endpoint',
+        format: String,
+        default: ''
+      },
+      apiKey: {
+        doc: 'api key',
+        format: String,
+        default: ''
+      },
+      apiSecret: {
+        doc: 'api secret',
+        format: String,
+        default: ''
+      }
     },
-    login: {
-      doc: 'login name to auth to service',
-      format: String,
-      default: ''
-    },
-    pwd: {
-      doc: 'password to auth to service',
-      format: String,
-      default: ''
-    }
-  },
-  nexmoCredentials: {
-    endpoint: {
-      doc: 'URL to the SMS outbound API endpoint',
-      format: String,
-      default: ''
-    },
-    api_key: {
-      doc: 'api key',
-      format: String,
-      default: ''
-    },
-    api_secret: {
-      doc: 'api secret',
-      format: String,
-      default: ''
-    }
-  },
-  beepSendCredentials: {
-    endpoint: {
-      doc: 'URL to the SMS outbound API endpoint',
-      format: String,
-      default: 'https://api.beepsend.com/2/sms'
-    },
-    connection_id: {
-      doc: 'Connection ID',
-      format: String,
-      default: 'me'
-    },
-    api_token: {
-      doc: 'api token',
-      format: String,
-      default: ''
+    beepsend: {
+      endpoint: {
+        doc: 'URL to the SMS outbound API endpoint',
+        format: String,
+        default: 'https://api.beepsend.com/2/sms'
+      },
+      connectionId: {
+        doc: 'BeepSend connexion ID',
+        format: String,
+        default: 'me'
+      },
+      apiToken: {
+        doc: 'BeepSend api token',
+        format: String,
+        default: ''
+      }
     }
   },
   requestMaxSize: {

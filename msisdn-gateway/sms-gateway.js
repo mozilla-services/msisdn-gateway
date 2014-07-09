@@ -5,12 +5,27 @@
 
 var Leonix = require("./sms/leonix");
 var Nexmo = require("./sms/nexmo");
+var BeepSend = require("./sms/beepsend");
 var conf = require("./config").conf;
 
-var providers = {default: new Nexmo()};
+var smsGatewaysConf = conf.get("smsGateways");
+
+var providers = {};
 
 try {
-  providers["+33"] = new Leonix();
+  providers["default"] = new Nexmo(smsGatewaysConf.nexmo);
+} catch (err) {
+  try {
+    providers["default"] = new BeepSend(smsGatewaysConf.beepsend);
+  } catch (err1) {
+    console.log(err);
+    console.log(err1);
+    console.log("Please configure at least a default SMS Provider.");
+  }
+}
+
+try {
+  providers["+33"] = new Leonix(smsGatewaysConf.leonix);
 } catch (err) {}
 
 function sendSMS(msisdn, message, callback) {
