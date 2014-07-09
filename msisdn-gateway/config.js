@@ -180,7 +180,7 @@ var conf = convict({
   mtSender: {
     doc: "Number from which SMS are sent",
     format: String,
-    default: "Mozilla"
+    default: "Mozilla@"
   },
   moVerifier: {
     doc: "Number to SMS should be sent",
@@ -227,6 +227,23 @@ var conf = convict({
     },
     api_secret: {
       doc: 'api secret',
+      format: String,
+      default: ''
+    }
+  },
+  beepSendCredentials: {
+    endpoint: {
+      doc: 'URL to the SMS outbound API endpoint',
+      format: String,
+      default: 'https://api.beepsend.com/2/sms'
+    },
+    connection_id: {
+      doc: 'Connection ID',
+      format: String,
+      default: 'me'
+    },
+    api_token: {
+      doc: 'api token',
       format: String,
       default: ''
     }
