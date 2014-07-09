@@ -395,21 +395,17 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
 /**
  * Handle Mobile Originated SMS reception
  **/
-app.get("/sms/momt/nexmo_callback", function(req, res) {
-  if (!req.query.hasOwnProperty("msisdn")) {
-    // New number setup should answer 200
+
+function handleMobileOriginatedMessages(res, options) {
+  var hawkId = options.text.split(" ");
+  hawkId = hawkId[1];
+
+  if (hawkId === undefined) {
+    logError(options.text + " is not in the right format.");
     res.json(200, {});
     return;
   }
 
-  var msisdn = phone('+' + req.query.msisdn);
-  var text = req.query.text.split(" ");
-  var hawkId = text[1];
-  if (hawkId === undefined) {
-    logError(text + " is not in the right format.");
-    res.json(200, {});
-    return;
-  }
   var hawkHmacId = hmac(hawkId, conf.get("hawkIdSecret"));
 
   storage.getSession(hawkHmacId, function(err, result) {
@@ -434,12 +430,12 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
 
       var storedMsisdn = encrypt.decrypt(hawkId, cipherMsisdn);
 
-      if (storedMsisdn !== null && storedMsisdn !== msisdn) {
+      if (storedMsisdn !== null && storedMsisdn !== options.msisdn) {
         logError(
           new Error("Attempt to very several MSISDN per session.", {
             sessionId: hawkHmacId,
             previousMsisdn: storedMsisdn,
-            currentMsisdn: msisdn
+            currentMsisdn: options.msisdn
           })
         );
 
@@ -448,7 +444,7 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
       }
 
       if (cipherMsisdn === null) {
-        cipherMsisdn = encrypt.encrypt(hawkId, msisdn);
+        cipherMsisdn = encrypt.encrypt(hawkId, options.msisdn);
       }
 
       storage.storeMSISDN(hawkHmacId, cipherMsisdn, function(err) {
@@ -469,7 +465,7 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
           }
 
           /* Send SMS */
-          smsGateway.sendSMS(msisdn, code, function(err) {
+          smsGateway.sendSMS(options.msisdn, code, function(err) {
             if (err) {
               logError(err);
               sendError(res, 503, errors.BACKEND, "Service Unavailable");
@@ -481,7 +477,38 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
       });
     });
   });
+}
+
+app.get("/sms/momt/nexmo_callback", function(req, res) {
+  if (!req.query.hasOwnProperty("msisdn")) {
+    // New number setup should answer 200
+    res.json(200, {});
+    return;
+  }
+
+  var options = {
+    msisdn: phone('+' + req.query.msisdn),
+    text: req.query.text
+  };
+
+  handleMobileOriginatedMessages(res, options);
 });
+
+app.get("/sms/momt/beepsend_callback", function(req, res) {
+  if (!req.query.hasOwnProperty("from")) {
+    // New number setup should answer 200
+    res.json(200, {});
+    return;
+  }
+
+  var options = {
+    msisdn: phone('+' + req.query.from),
+    text: req.query.message
+  };
+
+  handleMobileOriginatedMessages(res, options);
+});
+
 
 /**
  * Verify code
