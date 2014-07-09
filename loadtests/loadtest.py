@@ -136,8 +136,8 @@ class TestMSISDN(TestCase):
                                 params={"to": self.msisdn.lstrip("+")})
         try:
             messages = resp.json()
-            self.assertIsInstance(messages, list,
-                                  "Wrong JSON from OMXEN: %s" % messages)
+            self.assertTrue(isinstance(messages, list),
+                            "Wrong JSON from OMXEN: %s" % messages)
         except ValueError:
             print resp.content
             raise
@@ -152,8 +152,8 @@ class TestMSISDN(TestCase):
                                     params={"to": self.msisdn.lstrip("+")})
             try:
                 messages = resp.json()
-                self.assertIsInstance(messages, list,
-                                      "Wrong JSON from OMXEN: %s" % messages)
+                self.assertTrue(isinstance(messages, list),
+                                "Wrong JSON from OMXEN: %s" % messages)
             except ValueError:
                 print resp.content
                 raise
