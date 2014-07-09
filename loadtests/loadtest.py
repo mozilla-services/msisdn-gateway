@@ -145,8 +145,8 @@ class TestMSISDN(TestCase):
         start_time = time.time()
 
         #  Poll on the omxen message list for this number
-        while len(messages) < 1 and \
-                time.time() - start_time < MAX_OMXEN_TIMEOUT:
+        while (len(messages) < 1 and
+               time.time() - start_time < MAX_OMXEN_TIMEOUT):
             time.sleep(1)
             resp = self.session.get(self.omxen_url + '/receive',
                                     params={"to": self.msisdn.lstrip("+")})
