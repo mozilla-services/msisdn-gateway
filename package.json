@@ -30,7 +30,8 @@
     "sodium": "1.0.11",
     "dynamo-client": "1.1.5",
     "i18n-abide": "0.0.20",
-    "jsxgettext-recursive": "0.0.4"
+    "jsxgettext-recursive": "0.0.4",
+    "aws-sdk": "2.0.5"
   },
   "devDependencies": {
     "chai": "1.5.x",
