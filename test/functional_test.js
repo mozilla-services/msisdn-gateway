@@ -330,12 +330,12 @@ describe("HTTP API exposed by the server", function() {
               "verificationMethods": ["sms/mt", "sms/momt"],
               "verificationDetails": {
                 "sms/mt": {
-                  "mtSender": "Mozilla",
+                  "mtSender": "Mozilla@",
                   "url": "http://" + res.req._headers.host +
                     "/v1/msisdn/sms/mt/verify"
                 },
                 "sms/momt": {
-                  "mtSender": "Mozilla",
+                  "mtSender": "Mozilla@",
                   "moVerifier": "456"
                 }
               }
@@ -352,7 +352,7 @@ describe("HTTP API exposed by the server", function() {
             "verificationMethods": ["sms/momt"],
             "verificationDetails": {
               "sms/momt": {
-                "mtSender": "Mozilla",
+                "mtSender": "Mozilla@",
                 "moVerifier": "456"
               }
             }
@@ -369,7 +369,7 @@ describe("HTTP API exposed by the server", function() {
             "verificationMethods": ["sms/momt"],
             "verificationDetails": {
               "sms/momt": {
-                "mtSender": "Mozilla",
+                "mtSender": "Mozilla@",
                 "moVerifier": "+1..."
               }
             }
