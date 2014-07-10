@@ -214,6 +214,12 @@ var conf = convict({
         format: String,
         default: ''
       },
+      priority: {
+        doc: 'the priority of this backend wrt others. ' +
+          '(Highest score = Highest priority)',
+        format: Number,
+        default: 0
+      }
     },
     nexmo: {
       endpoint: {
@@ -230,6 +236,12 @@ var conf = convict({
         doc: 'api secret',
         format: String,
         default: ''
+      },
+      priority: {
+        doc: 'the priority of this backend wrt others. ' +
+          '(Highest score = Highest priority)',
+        format: Number,
+        default: 0
       }
     },
     beepsend: {
@@ -247,6 +259,12 @@ var conf = convict({
         doc: 'BeepSend api token',
         format: String,
         default: ''
+      },
+      priority: {
+        doc: 'the priority of this backend wrt others. ' +
+          '(Highest score = Highest priority)',
+        format: Number,
+        default: 0
       }
     }
   },

@@ -3,38 +3,34 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-var Leonix = require("./sms/leonix");
-var Nexmo = require("./sms/nexmo");
-var BeepSend = require("./sms/beepsend");
 var conf = require("./config").conf;
 
 var smsGatewaysConf = conf.get("smsGateways");
 
-var providers = {};
+var providers = [];
 
-try {
-  providers["default"] = new Nexmo(smsGatewaysConf.nexmo);
-} catch (err) {
-  try {
-    providers["default"] = new BeepSend(smsGatewaysConf.beepsend);
-  } catch (err1) {
-    console.log(err);
-    console.log(err1);
-    console.log("Please configure at least a default SMS Provider.");
-  }
-}
-
-try {
-  providers["+33"] = new Leonix(smsGatewaysConf.leonix);
-} catch (err) {}
+/**
+ * Order provider by priority and load them.
+ **/
+Object
+  .keys(smsGatewaysConf)
+  .map(function (gateway) {
+    return [gateway, smsGatewaysConf[gateway].priority || 0];
+  })
+  .sort(function (a, b) {
+    if (a[1] < b[1]) return 1;
+    if (a[1] >= b[1]) return -1;
+    return 0;
+  })
+  .forEach(function (d) {
+    var Gateway = require("./sms/" + d[0]);
+    try {
+      providers.push(new Gateway(smsGatewaysConf[d[0]]));
+    } catch (err) {}
+  });
 
 function sendSMS(msisdn, message, callback) {
-  var areaCode = msisdn.substr(0, 3), provider;
-  if (providers.hasOwnProperty(areaCode)) {
-    provider = providers[areaCode];
-  } else {
-    provider = providers.default;
-  }
+  var provider = providers[0];
   console.log(msisdn, message);
   provider.sendSms(msisdn, message, callback);
 }
