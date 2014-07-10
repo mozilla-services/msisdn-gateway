@@ -323,6 +323,20 @@ conf.validate();
 if (conf.get('allowedOrigins') === "") {
   throw "Please defined the list of allowed origins for CORS.";
 }
+
+var smsGatewaysPrioritySet = false;
+var smsGateways = conf.get('smsGateways');
+
+Object.keys(smsGateways).forEach(function(gateway) {
+  if (smsGateways[gateway].priority) {
+    smsGatewaysPrioritySet = true;
+  }
+});
+
+if (!smsGatewaysPrioritySet) {
+  throw "Please defined at least a smsGateway's priority.";
+}
+
 module.exports = {
   conf: conf,
   hexKeyOfSize: hexKeyOfSize,
