@@ -28,24 +28,13 @@ function DynamoDBStorage(settings) {
     }
   }
 
-  if (this._settings.hasOwnProperty('secretAccessKey') &&
-      this._settings.hasOwnProperty('accessKeyId')) {
-    aws.config.secretAccessKey = this._settings.secretAccessKey;
-    aws.config.accessKeyId = this._settings.accessKeyId;
-  }
+  // Update the AWS config with the provided settings.
+  aws.config.update(this._settings);
 
-  if (this._settings.hasOwnProperty('region')) {
-    aws.config.region = this._settings.region;
-  } else {
-    // Used for local testing.
+  // Building the endpoint if not on AWS.
+  if (!this._settings.hasOwnProperty('region')) {
     var endpoint = this._settings.host + ':' + this._settings.port;
-    aws.config.update({apiVersion:      "2012-08-10",
-                       sslEnabled:      false,
-                       endpoint:        endpoint,
-                       accessKeyId:     "xxx",
-                       secretAccessKey: "xxx",
-                       region:          "xxx"});
-
+    aws.config.update({endpoint: endpoint, region: "xxx"});
   }
 
   this._db = new aws.DynamoDB();

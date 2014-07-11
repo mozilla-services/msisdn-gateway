@@ -375,6 +375,9 @@ describe("Storage", function() {
     return getStorage({engine: "dynamodb", settings: {
       host: "localhost",
       port: 4567,
+      sslEnabled: false,
+      accessKeyId: 'xxx',
+      secretAccessKey: 'xxx',
       tableName: "certificateData"
     }}, options);
   });
