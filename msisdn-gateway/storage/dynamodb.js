@@ -4,7 +4,7 @@
 
 "use strict";
 
-var dynamo = require("dynamo-client");
+var aws = require('aws-sdk');
 
 var schemas = require("./dynamo_schema");
 var SCHEMA_NAME = "persistentSchema";
@@ -25,37 +25,19 @@ function DynamoDBStorage(settings) {
     if (!(this._settings.hasOwnProperty('host') &&
           this._settings.hasOwnProperty('port'))) {
       throw new Error("Either a region or a host, port settings are required.");
-    } else {
-      var credentials = {
-        secretAccessKey: this._settings.secretAccessKey || "fakeAccessKey",
-        accessKeyId: this._settings.accessKeyId || "fakeAccessKeyID"
-      };
-
-      this._db = dynamo.createClient({
-        host: this._settings.host,
-        port: this._settings.port,
-        version: "20120810"
-      }, credentials);
     }
-  } else {
-    var region = this._settings.region;
-
-    // In that case _settings either contain secretAccessKey and accessKeyId
-    // Or they have been defined as environment variables
-    // - AWS_SECRET_ACCESS_KEY
-    // - AWS_ACCESS_KEY_ID
-    var kwargs = {};
-
-    if (this._settings.hasOwnProperty('secretAccessKey') &&
-        this._settings.hasOwnProperty('accessKeyId')) {
-      kwargs = {
-        secretAccessKey: this._settings.secretAccessKey,
-        accessKeyId: this._settings.accessKeyId
-      };
-    }
-
-    this._db = dynamo.createClient(region, kwargs);
   }
+
+  // Update the AWS config with the provided settings.
+  aws.config.update(this._settings);
+
+  // Building the endpoint if not on AWS.
+  if (!this._settings.hasOwnProperty('region')) {
+    var endpoint = this._settings.host + ':' + this._settings.port;
+    aws.config.update({endpoint: endpoint, region: "xxx"});
+  }
+
+  this._db = new aws.DynamoDB();
 }
 
 DynamoDBStorage.prototype = {
@@ -75,7 +57,7 @@ DynamoDBStorage.prototype = {
     }
 
     // Look for an existing Table
-    self._db.request("DescribeTable", {
+    self._db.describeTable({
       TableName: self._tableName
     }, function(err) {
       if (err) {
@@ -86,7 +68,7 @@ DynamoDBStorage.prototype = {
         }
 
         // Create the table if it doesn't exist.
-        self._db.request("CreateTable", self._tableSchema,
+        self._db.createTable(self._tableSchema,
           function(err, data) {
             if (err) {
               callback(err);
@@ -96,7 +78,7 @@ DynamoDBStorage.prototype = {
 
             // Wait for the Table to have ACTIVE status.
             function waitForCreation() {
-              self._db.request("DescribeTable", {
+              self._db.describeTable({
                 TableName: self._tableName
               }, function (err, data) {
                 if (err) {
@@ -207,7 +189,7 @@ DynamoDBStorage.prototype = {
         return;
       }
 
-      self._db.request("PutItem", {
+      self._db.putItem({
         Item: dynamoObj,
         TableName: self._tableName
       }, function (err) {
@@ -228,7 +210,7 @@ DynamoDBStorage.prototype = {
         return;
       }
 
-      self._db.request("GetItem", {
+      self._db.getItem({
         Key: {
           hawkHmacId: {
             S: hawkHmacId
@@ -262,7 +244,7 @@ DynamoDBStorage.prototype = {
         return;
       }
 
-      self._db.request("DeleteItem", {
+      self._db.deleteItem({
         Key: {
           hawkHmacId: {
             S: hawkHmacId
@@ -289,7 +271,7 @@ DynamoDBStorage.prototype = {
         return;
       }
 
-      self._db.request("DeleteTable", {
+      self._db.deleteTable({
         TableName: self._tableName
       }, function(err) {
         if (err) {
@@ -304,7 +286,7 @@ DynamoDBStorage.prototype = {
         var count = 0;
 
         function waitForDeletion() {
-          self._db.request("DescribeTable", {
+          self._db.describeTable({
             TableName: self._tableName
           }, function (err, data) {
             if (err) {
@@ -338,7 +320,7 @@ DynamoDBStorage.prototype = {
         return;
       }
 
-      self._db.request("ListTables", {
+      self._db.listTables({
         Limit: 1
       }, function(err) {
         callback(err === null);
