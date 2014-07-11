@@ -2,7 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-NODE_LOCAL_BIN=./node_modules/.bin
+NODE_LOCAL_BIN = ./node_modules/.bin
+FAKE_DYNAMO = $$(which ~/.gem/ruby/*/bin/fake_dynamo fake_dynamo)
 
 TMPDIR ?= /tmp
 
@@ -10,7 +11,7 @@ TMPDIR ?= /tmp
 test: lint cover-mocha spaceleft
 
 install:
-	gem install fake_dynamo
+	gem install --user-install fake_dynamo
 	@npm install
 
 .PHONY: lint
@@ -21,7 +22,7 @@ clean:
 
 .PHONY: cover-mocha
 cover-mocha:
-	@fake_dynamo --db $(TMPDIR)/fake_dynamo.db --pid $(TMPDIR)/fake_dynamo.pid -D > /dev/null
+	@$(FAKE_DYNAMO) --db $(TMPDIR)/fake_dynamo.db --pid $(TMPDIR)/fake_dynamo.pid -D > /dev/null
 	@env NODE_ENV=test $(NODE_LOCAL_BIN)/istanbul cover \
 			 $(NODE_LOCAL_BIN)/_mocha -- --reporter spec test/*
 	@-kill `cat $(TMPDIR)/fake_dynamo.pid`
