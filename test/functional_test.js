@@ -80,7 +80,6 @@ describe("HTTP API exposed by the server", function() {
       hawkHmacId = hmac(tokenId, conf.get("hawkIdSecret"));
       storage.setSession(hawkHmacId, authKey, done);
     });
-
   });
 
   afterEach(function(done) {

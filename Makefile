@@ -23,11 +23,11 @@ clean:
 .PHONY: cover-mocha
 cover-mocha:
 	@$(FAKE_DYNAMO) --db $(TMPDIR)/fake_dynamo.db --pid $(TMPDIR)/fake_dynamo.pid -D > /dev/null
-	@env NODE_ENV=test $(NODE_LOCAL_BIN)/istanbul cover \
-			 $(NODE_LOCAL_BIN)/_mocha -- --reporter spec test/*
-	@-kill `cat $(TMPDIR)/fake_dynamo.pid`
-	@-rm -f $(TMPDIR)/fake_dynamo.db $(TMPDIR)/fake_dynamo.pid
-	@sleep 2
+	@NODE_ENV=test $(NODE_LOCAL_BIN)/istanbul cover \
+		$(NODE_LOCAL_BIN)/_mocha -- --reporter spec test/*; \
+		EXIT_CODE=$$?; kill `cat $(TMPDIR)/fake_dynamo.pid`; \
+		rm -f $(TMPDIR)/fake_dynamo.db $(TMPDIR)/fake_dynamo.pid; \
+		sleep 2; exit $$EXIT_CODE
 	@echo aim your browser at coverage/lcov-report/index.html for details
 
 .PHONY: jshint
@@ -36,11 +36,11 @@ jshint:
 
 .PHONY: mocha
 mocha:
-	@fake_dynamo --db $(TMPDIR)/fake_dynamo.db --pid $(TMPDIR)/fake_dynamo.pid -D > /dev/null
-	@env NODE_ENV=test ./node_modules/mocha/bin/mocha test/* --reporter spec
-	@-kill `cat $(TMPDIR)/fake_dynamo.pid`
-	@-rm -f $(TMPDIR)/fake_dynamo.db $(TMPDIR)/fake_dynamo.pid
-	@sleep 2
+	@$(FAKE_DYNAMO) --db $(TMPDIR)/fake_dynamo.db --pid $(TMPDIR)/fake_dynamo.pid -D > /dev/null
+	@NODE_ENV=test ./node_modules/mocha/bin/mocha test/* --reporter spec; \
+		EXIT_CODE=$$?; kill `cat $(TMPDIR)/fake_dynamo.pid`; \
+		rm -f $(TMPDIR)/fake_dynamo.db $(TMPDIR)/fake_dynamo.pid; \
+		sleep 2; exit $$EXIT_CODE
 
 .PHONY: spaceleft
 spaceleft:
