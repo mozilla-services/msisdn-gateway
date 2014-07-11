@@ -29,10 +29,26 @@ Object
     } catch (err) {}
   });
 
-function sendSMS(msisdn, message, callback) {
+function sendSMS(msisdn, message, callback, counter) {
+  if (counter === undefined) {
+    counter = conf.get("nbSmsSendTries");
+  }
   var provider = providers[0];
-  console.log(msisdn, message);
-  provider.sendSms(msisdn, message, callback);
+  provider.sendSms(msisdn, message, function(err) {
+    if (err) {
+      // In case of error, try the next provider.
+      if (providers.length > 1) {
+        providers.push(providers.shift());
+      }
+      if (counter > 1) {
+        sendSMS(msisdn, message, callback, --counter);
+      } else {
+        callback(err);
+      }
+      return;
+    }
+    callback(null);
+  });
 }
 
 

@@ -30,7 +30,11 @@
 	  "endpoint": "https://rest.nexmo.com/sms/json",
 	  "apiKey": "",
 	  "apiSecret": "",
-      "priority": 1
+      "priority": 10
+    },
+    "beepsend": {
+      "apiToken": "456",
+      "priority": 5
     }
   },
   "mtSender": "Mozilla@",

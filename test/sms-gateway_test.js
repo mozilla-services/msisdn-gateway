@@ -32,6 +32,65 @@ describe("SMS Gateway", function() {
     sandbox.restore();
   });
 
+  it("should try the next SMS Provider if the first one fails.",
+    function(done) {
+      requestGetStub.restore();
+
+      // Make nexmo fails
+      requestGetStub = sandbox.stub(request, "get",
+        function(options, cb) {
+          cb(new Error("Service Unavailable."), {statusCode: 503});
+        });
+
+      var sendSMS = proxyquire("../msisdn-gateway/sms-gateway", {
+        request: {
+          get: requestGetStub,
+          post: requestPostStub
+        }
+      }).sendSMS;
+
+
+      sendSMS("+33123456789", "Body", function(err) {
+        expect(requests).to.length(1);
+        expect(requests[0].url).to.match(/beepsend/);
+        done(err);
+      });
+    });
+
+  it("should retry 3 times and finally fail.",
+    function(done) {
+      var numberOfTries = 0;
+      requestGetStub.restore();
+      requestPostStub.restore();
+
+      // Make both nexmo and beepsend fails
+      requestGetStub = sandbox.stub(request, "get",
+        function(options, cb) {
+          numberOfTries++;
+          cb(new Error("Service Unavailable."), {statusCode: 503});
+        });
+
+      requestPostStub = sandbox.stub(request, "post",
+        function(options, cb) {
+          numberOfTries++;
+          cb(new Error("Service Unavailable."), {statusCode: 503});
+        });
+
+      var sendSMS = proxyquire("../msisdn-gateway/sms-gateway", {
+        request: {
+          get: requestGetStub,
+          post: requestPostStub
+        }
+      }).sendSMS;
+
+
+      sendSMS("+33123456789", "Body", function(err) {
+        expect(numberOfTries).to.eql(3);
+        done();
+      });
+    });
+
+
   describe("Nexmo", function() {
     beforeEach(function() {
       Gateway = proxyquire("../msisdn-gateway/sms/nexmo", {
