@@ -197,6 +197,11 @@ var conf = convict({
     format: Object,
     default: {}
   },
+  smsGatewayResetTimer: {
+    doc: "When a gateway fails, reorder it by priority after this time (s).",
+    format: Number,
+    default: 3600
+  },
   smsGateways: {
     leonix: {
       endpoint: {

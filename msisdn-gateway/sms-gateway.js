@@ -7,27 +7,35 @@ var conf = require("./config").conf;
 
 var smsGatewaysConf = conf.get("smsGateways");
 
-var providers = [];
+var providers;
 
 /**
  * Order provider by priority and load them.
  **/
-Object
-  .keys(smsGatewaysConf)
-  .map(function (gateway) {
-    return [gateway, smsGatewaysConf[gateway].priority || 0];
-  })
-  .sort(function (a, b) {
-    if (a[1] < b[1]) return 1;
-    if (a[1] >= b[1]) return -1;
-    return 0;
-  })
-  .forEach(function (d) {
-    var Gateway = require("./sms/" + d[0]);
-    try {
-      providers.push(new Gateway(smsGatewaysConf[d[0]]));
-    } catch (err) {}
-  });
+function buildSmsGateway() {
+  providers = [];
+  Object
+    .keys(smsGatewaysConf)
+    .map(function (gateway) {
+      return [gateway, smsGatewaysConf[gateway].priority || 0];
+    })
+    .sort(function (a, b) {
+      if (a[1] < b[1]) return 1;
+      if (a[1] >= b[1]) return -1;
+      return 0;
+    })
+    .forEach(function (d) {
+      var Gateway = require("./sms/" + d[0]);
+      try {
+        providers.push(new Gateway(smsGatewaysConf[d[0]]));
+      } catch (err) {}
+    });
+
+  // Refresh the priority order every hour.
+  setTimeout(buildSmsGateway, conf.get("smsGatewayResetTimer") * 1000);
+}
+buildSmsGateway();
+
 
 function sendSMS(msisdn, message, callback, counter) {
   if (counter === undefined) {
