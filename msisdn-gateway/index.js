@@ -6,6 +6,7 @@
 
 var express = require("express");
 var crypto = require("crypto");
+var net = require("net");
 var conf = require("./config").conf;
 var pjson = require("../package.json");
 var raven = require("raven");
@@ -718,6 +719,8 @@ app.get("/.well-known/browserid/warning.html", function(req, res) {
   res.sendfile(__dirname + "/templates/idp-warning.html");
 });
 
+var argv = require('yargs').argv;
+var server;
 
 /*
  * Videur integration.
@@ -730,10 +733,21 @@ app.get("/api-specs", function(req, res) {
 });
 
 
-var server = app.listen(conf.get("port"), conf.get("ip"), function() {
-  console.log("Server listening on http://" +
-              conf.get("ip") + ":" + conf.get("port"));
-});
+if (argv.hasOwnProperty("fd")) {
+  var socket = new net.Socket({
+    fd: parseInt(argv.fd, 10),
+    readable: true,
+    writable: true
+  });
+  server = app.listen(socket, function() {
+    console.log("Server listening on fd://" + argv.fd);
+  });
+} else {
+  server = app.listen(conf.get("port"), conf.get("ip"), function() {
+    console.log("Server listening on http://" +
+                conf.get("ip") + ":" + conf.get("port"));
+  });
+}
 
 function shutdown(cb) {
   server.close(function() {
