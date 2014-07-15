@@ -1,0 +1,57 @@
+{
+  "service": {
+    "location": "http://127.0.0.1:8282",
+    "version": "1.1",
+    "videur_version": "0.1",
+    "resources": {
+      "/__heartbeat__": {
+        "GET": {}
+      },
+      "/": {
+        "GET": {}
+      },
+      "/discover": {
+        "POST": {
+          "max_body_size": "10k"
+        }
+      },
+      "/register": {
+        "POST": {
+          "max_body_size": "10k"
+        }
+      },
+      "/unregister": {
+        "POST": {
+          "max_body_size": "10k"
+        }
+      },
+      "/sms/mt/verify": {
+        "POST": {
+          "max_body_size": "10k"
+        }
+      },
+      "/sms/momt/nexmo_callback": {
+        "GET": {}
+      },
+      "/sms/momt/beepsend_callback": {
+        "GET": {}
+      },
+      "/sms/verify_code": {
+        "POST": {
+          "max_body_size": "10k"
+        }
+      },
+      "/certificate/sign": {
+        "POST": {
+          "max_body_size": "10k"
+        }
+      },
+      "/.well-known/browserid": {
+        "GET": {}
+      },
+      "/.well-known/browserid/warning.html": {
+        "GET": {}
+      }
+    }
+  }
+}
