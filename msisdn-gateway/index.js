@@ -56,7 +56,7 @@ var storage = getStorage(conf.get("storage"), {
 });
 
 function logError(err) {
-  console.log(err);
+  console.error(err);
   ravenClient.captureError(err);
 }
 
@@ -356,7 +356,14 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
     }
 
     storage.getMSISDN(req.hawkHmacId, function(err, cipherMsisdn) {
-      var storedMsisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
+      var storedMsisdn;
+      try {
+        storedMsisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
+      } catch (err) {
+        logError(err);
+        console.error("Unable to decrypt", req.hawk.id, cipherMsisdn);
+        storedMsisdn = null;
+      }
 
       if (storedMsisdn !== null && storedMsisdn !== req.msisdn) {
         sendError(res, 400, errors.INVALID_PARAMETERS,
@@ -428,7 +435,14 @@ function handleMobileOriginatedMessages(res, options) {
         return;
       }
 
-      var storedMsisdn = encrypt.decrypt(hawkId, cipherMsisdn);
+      var storedMsisdn;
+      try {
+        storedMsisdn = encrypt.decrypt(hawkId, cipherMsisdn);
+      } catch (err) {
+        logError(err);
+        console.error("Unable to decrypt", hawkId, cipherMsisdn);
+        storedMsisdn = null;
+      }
 
       if (storedMsisdn !== null && storedMsisdn !== options.msisdn) {
         logError(
@@ -516,7 +530,6 @@ app.get("/sms/momt/beepsend_callback", function(req, res) {
 app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
   function(req, res) {
     var code = req.body.code;
-    var hawkId = req.hawk.id;
 
     // Validate code.
     if (code.length !== conf.get("shortCodeLength") &&
@@ -598,13 +611,16 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
               return;
             }
 
-            if (hawkId === undefined) {
-              sendError(res, 400, errors.MISSING_PARAMETERS,
-                        "Invalid hawkId");
+            try {
+              var msisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
+              res.json(200, {msisdn: msisdn});
+            } catch (err) {
+              logError(err);
+              console.error("Unable to decrypt", req.hawk.id, cipherMsisdn);
+              sendError(res, 411, errors.EXPIRED,
+                        "Unable to decrypt stored MSISDN");
               return;
             }
-            var msisdn = encrypt.decrypt(hawkId, cipherMsisdn);
-            res.json(200, {msisdn: msisdn});
           });
         });
       });
