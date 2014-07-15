@@ -71,7 +71,9 @@ class TestMSISDN(TestCase):
             self.incr_counter("try-wrong-code")
             resp = self.verify_code()
             self.assertEquals(resp.status_code, 400,
-                              "Try wrong code failed: %s" % resp.content)
+                              "Try wrong code failed: %d - %s" % (
+                                  resp.status_code,
+                                  resp.content))
 
         # Unregister
         self.unregister()

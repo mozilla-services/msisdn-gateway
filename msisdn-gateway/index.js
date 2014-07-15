@@ -516,6 +516,7 @@ app.get("/sms/momt/beepsend_callback", function(req, res) {
 app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
   function(req, res) {
     var code = req.body.code;
+    var hawkId = req.hawk.id;
 
     // Validate code.
     if (code.length !== conf.get("shortCodeLength") &&
@@ -525,6 +526,12 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
                 "Code should be short (" + conf.get("shortCodeLength") +
                 " characters) or long (" + conf.get("longCodeBytes") * 2 +
                 " characters).");
+      return;
+    }
+
+    if (hawkId === undefined) {
+      sendError(res, 400, errors.MISSING_PARAMETERS,
+                "Invalid hawkId");
       return;
     }
 
@@ -597,7 +604,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
               return;
             }
 
-            var msisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
+            var msisdn = encrypt.decrypt(hawkId, cipherMsisdn);
             res.json(200, {msisdn: msisdn});
           });
         });
