@@ -8,9 +8,9 @@ var request = require("request");
 var querystring = require("querystring");
 
 
-function Nexmo() {
-  this._conf = conf.get("nexmoCredentials");
-  if (!this._conf) {
+function Nexmo(options) {
+  this._conf = options;
+  if (!this._conf.endpoint === '') {
     throw new Error("You should configure Nexmo credentials first.");
   }
 }
@@ -19,8 +19,8 @@ function Nexmo() {
 Nexmo.prototype = {
   sendSms: function sendSms(msisdn, message, callback) {
     var url = this._conf.endpoint + "?" + querystring.stringify({
-      api_key: this._conf.api_key,
-      api_secret: this._conf.api_secret,
+      api_key: this._conf.apiKey,
+      api_secret: this._conf.apiSecret,
       from: conf.get("mtSender"),
       to: msisdn.replace("+", ""),
       text: message

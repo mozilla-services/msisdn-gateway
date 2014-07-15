@@ -40,7 +40,8 @@
     "sinon": "1.9.x",
     "supertest": "0.10.x",
     "superagent-hawk": "git://github.com/CrowdProcess/superagent-hawk.git#69ee9c",
-    "async": "0.9.0"
+    "async": "0.9.0",
+    "proxyquire": "1.0.1"
   },
   "scripts": {
     "test": "make test",

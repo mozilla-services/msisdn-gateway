@@ -3,25 +3,60 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-var Leonix = require("./sms/leonix");
-var Nexmo = require("./sms/nexmo");
 var conf = require("./config").conf;
 
-var providers = {default: new Nexmo()};
+var smsGatewaysConf = conf.get("smsGateways");
 
-try {
-  providers["+33"] = new Leonix();
-} catch (err) {}
+var providers;
 
-function sendSMS(msisdn, message, callback) {
-  var areaCode = msisdn.substr(0, 3), provider;
-  if (providers.hasOwnProperty(areaCode)) {
-    provider = providers[areaCode];
-  } else {
-    provider = providers.default;
+/**
+ * Order provider by priority and load them.
+ **/
+function buildSmsGateway() {
+  providers = [];
+  Object
+    .keys(smsGatewaysConf)
+    .map(function (gateway) {
+      return [gateway, smsGatewaysConf[gateway].priority || 0];
+    })
+    .sort(function (a, b) {
+      if (a[1] < b[1]) return 1;
+      if (a[1] >= b[1]) return -1;
+      return 0;
+    })
+    .forEach(function (d) {
+      var Gateway = require("./sms/" + d[0]);
+      try {
+        providers.push(new Gateway(smsGatewaysConf[d[0]]));
+      } catch (err) {}
+    });
+
+  // Refresh the priority order every hour.
+  setTimeout(buildSmsGateway, conf.get("smsGatewayResetTimer") * 1000);
+}
+buildSmsGateway();
+
+
+function sendSMS(msisdn, message, callback, counter) {
+  if (counter === undefined) {
+    counter = conf.get("nbSmsSendTries");
   }
-  console.log(msisdn, message);
-  provider.sendSms(msisdn, message, callback);
+  var provider = providers[0];
+  provider.sendSms(msisdn, message, function(err) {
+    if (err) {
+      // In case of error, try the next provider.
+      if (providers.length > 1) {
+        providers.push(providers.shift());
+      }
+      if (counter > 1) {
+        sendSMS(msisdn, message, callback, --counter);
+      } else {
+        callback(err);
+      }
+      return;
+    }
+    callback(null);
+  });
 }
 
 

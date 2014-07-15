@@ -136,6 +136,11 @@ var conf = convict({
     format: Number,
     default: 3
   },
+  nbSmsSendTries: {
+    doc: "Number of tries to send a text message.",
+    format: Number,
+    default: 3
+  },
   hawkIdSecret: {
     doc: "The secret for hmac-ing hawk.id (16 bytes key encoded as hex)",
     format: hexKeyOfSize(16),
@@ -180,7 +185,7 @@ var conf = convict({
   mtSender: {
     doc: "Number from which SMS are sent",
     format: String,
-    default: "Mozilla"
+    default: "Mozilla@"
   },
   moVerifier: {
     doc: "Number to SMS should be sent",
@@ -192,43 +197,85 @@ var conf = convict({
     format: Object,
     default: {}
   },
-  leonixCredentials: {
-    endpoint: {
-      doc: 'URL to the SMS outbound API endpoint',
-      format: String,
-      default: 'https://extranet.leonix.fr/smpp/SMS.php'
-    },
-    service: {
-      doc: 'Client service number',
-      format: String,
-      default: ''
-    },
-    login: {
-      doc: 'login name to auth to service',
-      format: String,
-      default: ''
-    },
-    pwd: {
-      doc: 'password to auth to service',
-      format: String,
-      default: ''
-    }
+  smsGatewayResetTimer: {
+    doc: "When a gateway fails, reorder it by priority after this time (s).",
+    format: Number,
+    default: 3600
   },
-  nexmoCredentials: {
-    endpoint: {
-      doc: 'URL to the SMS outbound API endpoint',
-      format: String,
-      default: ''
+  smsGateways: {
+    leonix: {
+      endpoint: {
+        doc: 'URL to the SMS outbound API endpoint',
+        format: String,
+        default: 'https://extranet.leonix.fr/smpp/SMS.php'
+      },
+      service: {
+        doc: 'Client service number',
+        format: String,
+        default: ''
+      },
+      login: {
+        doc: 'login name to auth to service',
+        format: String,
+        default: ''
+      },
+      pwd: {
+        doc: 'password to auth to service',
+        format: String,
+        default: ''
+      },
+      priority: {
+        doc: 'the priority of this backend wrt others. ' +
+          '(Highest score = Highest priority)',
+        format: Number,
+        default: 0
+      }
     },
-    api_key: {
-      doc: 'api key',
-      format: String,
-      default: ''
+    nexmo: {
+      endpoint: {
+        doc: 'URL to the SMS outbound API endpoint',
+        format: String,
+        default: ''
+      },
+      apiKey: {
+        doc: 'api key',
+        format: String,
+        default: ''
+      },
+      apiSecret: {
+        doc: 'api secret',
+        format: String,
+        default: ''
+      },
+      priority: {
+        doc: 'the priority of this backend wrt others. ' +
+          '(Highest score = Highest priority)',
+        format: Number,
+        default: 0
+      }
     },
-    api_secret: {
-      doc: 'api secret',
-      format: String,
-      default: ''
+    beepsend: {
+      endpoint: {
+        doc: 'URL to the SMS outbound API endpoint',
+        format: String,
+        default: 'https://api.beepsend.com/2/sms'
+      },
+      connectionId: {
+        doc: 'BeepSend connexion ID',
+        format: String,
+        default: 'me'
+      },
+      apiToken: {
+        doc: 'BeepSend api token',
+        format: String,
+        default: ''
+      },
+      priority: {
+        doc: 'the priority of this backend wrt others. ' +
+          '(Highest score = Highest priority)',
+        format: Number,
+        default: 0
+      }
     }
   },
   requestMaxSize: {
@@ -304,6 +351,20 @@ conf.validate();
 if (conf.get('allowedOrigins') === "") {
   throw "Please defined the list of allowed origins for CORS.";
 }
+
+var smsGatewaysPrioritySet = false;
+var smsGateways = conf.get('smsGateways');
+
+Object.keys(smsGateways).forEach(function(gateway) {
+  if (smsGateways[gateway].priority) {
+    smsGatewaysPrioritySet = true;
+  }
+});
+
+if (!smsGatewaysPrioritySet) {
+  throw "Please defined at least a smsGateway's priority.";
+}
+
 module.exports = {
   conf: conf,
   hexKeyOfSize: hexKeyOfSize,
