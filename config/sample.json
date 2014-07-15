@@ -28,8 +28,8 @@
   "smsGateways": {
     "nexmo": {
       "endpoint": "https://rest.nexmo.com/sms/json",
-      "api_key": "Get it from your Nexmo account",
-      "api_secret": "Get it from your Nexmo account",
+      "apiKey": "Get it from your Nexmo account",
+      "apiSecret": "Get it from your Nexmo account",
       "priority": 10
     }
   },
