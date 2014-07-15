@@ -529,12 +529,6 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
       return;
     }
 
-    if (hawkId === undefined) {
-      sendError(res, 400, errors.MISSING_PARAMETERS,
-                "Invalid hawkId");
-      return;
-    }
-
     storage.verifyCode(req.hawkHmacId, code, function(err, result) {
       if (err) {
         logError(err);
@@ -571,7 +565,7 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
         return;
       }
 
-	  storage.getMSISDN(req.hawkHmacId, function(err, cipherMsisdn) {
+      storage.getMSISDN(req.hawkHmacId, function(err, cipherMsisdn) {
         if (err) {
           logError(err);
           sendError(res, 503, errors.BACKEND, "Service Unavailable");
@@ -604,6 +598,11 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
               return;
             }
 
+            if (hawkId === undefined) {
+              sendError(res, 400, errors.MISSING_PARAMETERS,
+                        "Invalid hawkId");
+              return;
+            }
             var msisdn = encrypt.decrypt(hawkId, cipherMsisdn);
             res.json(200, {msisdn: msisdn});
           });
