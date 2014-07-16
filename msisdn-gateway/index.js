@@ -739,6 +739,7 @@ if (argv.hasOwnProperty("fd")) {
     readable: true,
     writable: true
   });
+  socket.setNoDelay(true);
   server = app.listen(socket, function() {
     console.log("Server listening on fd://" + argv.fd);
   });
