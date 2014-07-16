@@ -65,13 +65,21 @@ function sendSMS(msisdn, message, callback, retries) {
  */
 function getMoVerifierFor(mcc, mnc) {
   var moVerifierList = conf.get("moVerifierList");
-  if (moVerifierList.hasOwnProperty(mcc + mnc)) {
-    return moVerifierList[mcc + mnc];
+  var defaultMoVerifier = conf.get("moVerifier");
+
+  var mccMnc = mcc + "" + mnc;
+  if (moVerifierList.hasOwnProperty(mccMnc)) {
+    return moVerifierList[mccMnc];
   }
   if (moVerifierList.hasOwnProperty(mcc)) {
     return moVerifierList[mcc];
   }
-  return conf.get("moVerifier");
+  // If the defaultMoVerifier is not set, return null.
+  if (defaultMoVerifier) {
+    return defaultMoVerifier;
+  } else {
+    return null;
+  }
 }
 
 

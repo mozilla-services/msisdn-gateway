@@ -8,6 +8,10 @@ var expect = require("chai").expect;
 var sinon = require("sinon");
 var request = require("request");
 var proxyquire = require('proxyquire');
+var conf = require("../msisdn-gateway").conf;
+
+var getMoVerifier = require("../msisdn-gateway/sms-gateway").getMoVerifierFor;
+
 
 describe("SMS Gateway", function() {
   var sandbox, requests, Gateway, requestGetStub, requestPostStub;
@@ -90,6 +94,42 @@ describe("SMS Gateway", function() {
       });
     });
 
+  describe("#getMoVerifierFor", function() {
+    var previousList, previousDefault;
+
+    beforeEach(function() {
+      previousList = conf.get("moVerifierList");
+      previousDefault = conf.get("moVerifier");
+    });
+
+    afterEach(function() {
+      conf.set("moVerifierList", previousList);
+      conf.set("moVerifier", previousDefault);
+    });
+
+    it("should return the (MCC, MNC) specific number.", function() {
+      var list = conf.get("moVerifierList");
+      list["208110"] = "1234";
+      conf.set("moVerifierList", list);
+      expect(getMoVerifier(208, 110)).to.eql("1234");
+    });
+
+    it("should return the (MCC, _) specific number.", function() {
+      var list = conf.get("moVerifierList");
+      list["208"] = "1234";
+      conf.set("moVerifierList", list);
+      expect(getMoVerifier(208, 111)).to.eql("1234");
+    });
+
+    it("should return the default number.", function() {
+      expect(getMoVerifier(514, 111)).to.eql("456");
+    });
+
+    it("should return null if no default number.", function() {
+      conf.set("moVerifier", "");
+      expect(getMoVerifier(514, 111)).to.eql(null);
+    });
+  });
 
   describe("Nexmo", function() {
     beforeEach(function() {

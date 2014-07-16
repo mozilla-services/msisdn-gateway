@@ -298,13 +298,18 @@ describe("HTTP API exposed by the server", function() {
 
 
   describe("POST /discover", function() {
-    var jsonReq;
+    var jsonReq, previousDefault;
 
     beforeEach(function() {
+      previousDefault = conf.get("moVerifier");
       jsonReq = supertest(app)
         .post('/discover')
         .type('json')
         .expect('Content-Type', /json/);
+    });
+
+    afterEach(function() {
+      conf.set("moVerifier", previousDefault);
     });
 
     it("should works without the MSISDN parameter", function(done) {
@@ -378,6 +383,18 @@ describe("HTTP API exposed by the server", function() {
         });
       });
 
+    it("should not return the sms/momt flow if no specific or default number.",
+      function(done) {
+        conf.set("moVerifier", "");
+        jsonReq.send({"mcc": "512"}).expect(200).end(function(err, res) {
+          if (err) throw err;
+          expect(res.body).to.eql({
+            "verificationMethods": [],
+            "verificationDetails": {}
+          });
+          done();
+        });
+      });
   });
 
   describe("POST /register", function() {
