@@ -26,6 +26,7 @@ var range = require("./utils").range;
 var fs = require('fs');
 var mdl = require("../msisdn-gateway/middleware");
 var crypto = require("crypto");
+var pjson = require("../package.json");
 
 function expectFormatedError(body, code, errno, error, message, info) {
   var errmap = {};
@@ -832,4 +833,23 @@ describe("HTTP API exposed by the server", function() {
           .expect(200).end(done);
       });
   });
+
+  describe("GET /api-specs", function(done) {
+    it("should return the Videur api spec file.", function(done) {
+      supertest(app)
+        .get('/api-specs')
+        .type('json')
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          if (err) throw err;
+          var spec = JSON.parse(res.body);
+
+          expect(spec.service.location).to.match(/http:\/\/127.0.0.1:(\d)+/);
+          expect(spec.service.version, pjson.version);
+          done();
+        });
+    });
+  });
+
 });

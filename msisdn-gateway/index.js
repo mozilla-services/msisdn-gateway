@@ -26,6 +26,7 @@ var validateJWCryptoKey = require("./utils").validateJWCryptoKey;
 var generateCertificate = require("./utils").generateCertificate;
 var Hawk = require('hawk');
 var errors = require("./errno");
+var specs = require("./api-specs");
 var jwcrypto = require('jwcrypto');
 var i18n = require('./i18n')(conf.get('i18n'));
 
@@ -715,6 +716,17 @@ app.get("/.well-known/browserid", function(req, res) {
 
 app.get("/.well-known/browserid/warning.html", function(req, res) {
   res.sendfile(__dirname + "/templates/idp-warning.html");
+});
+
+
+/*
+ * Videur integration.
+ *
+ */
+app.get("/api-specs", function(req, res) {
+  specs.service.location = conf.get("protocol") + "://" + req.get("host");
+  specs.service.version = pjson.version;
+  res.json(200, JSON.stringify(specs));
 });
 
 
