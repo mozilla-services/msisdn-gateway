@@ -352,13 +352,12 @@ if (conf.get('allowedOrigins') === "") {
   throw "Please defined the list of allowed origins for CORS.";
 }
 
-var smsGatewaysPrioritySet = false;
 var smsGateways = conf.get('smsGateways');
-
-Object.keys(smsGateways).forEach(function(gateway) {
+var smsGatewaysPrioritySet = Object.keys(smsGateways).some(function(gateway) {
   if (smsGateways[gateway].priority) {
-    smsGatewaysPrioritySet = true;
+    return true;
   }
+  return false;
 });
 
 if (!smsGatewaysPrioritySet) {
