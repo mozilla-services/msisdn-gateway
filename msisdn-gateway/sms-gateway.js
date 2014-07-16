@@ -77,9 +77,8 @@ function getMoVerifierFor(mcc, mnc) {
   // If the defaultMoVerifier is not set, return null.
   if (defaultMoVerifier) {
     return defaultMoVerifier;
-  } else {
-    return null;
   }
+  return null;
 }
 
 
