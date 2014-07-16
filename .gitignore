@@ -2,11 +2,14 @@ node_modules
 coverage
 html-report
 lib-cov
-config/development.json
-config/production.json
+!config/test.json
+!config/sample.json
+config/
 loadtests/*.pyc
 loadtests/venv/
 locale/
 !locale/README.md
 !locale/templates/
 app/
+circus/err.log
+circus/out.log

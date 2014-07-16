@@ -96,3 +96,8 @@ update-l10n-git:
 	@echo "Sync locales"
 	cp -fr $(TMPDIR)/msisdn-gateway-l10n/locale/ .
 	@mv /tmp/README.save locale/README.md
+
+
+.PHONY: circus
+circus:
+	circusd circus/msisdn-gateway.ini
