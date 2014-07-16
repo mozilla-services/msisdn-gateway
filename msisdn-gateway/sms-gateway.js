@@ -37,9 +37,9 @@ function buildSmsGateway() {
 buildSmsGateway();
 
 
-function sendSMS(msisdn, message, callback, counter) {
-  if (counter === undefined) {
-    counter = conf.get("nbSmsSendTries");
+function sendSMS(msisdn, message, callback, retries) {
+  if (retries === undefined) {
+    retries = conf.get("nbSmsSendTries");
   }
   var provider = providers[0];
   provider.sendSms(msisdn, message, function(err) {
@@ -48,8 +48,8 @@ function sendSMS(msisdn, message, callback, counter) {
       if (providers.length > 1) {
         providers.push(providers.shift());
       }
-      if (counter > 1) {
-        sendSMS(msisdn, message, callback, --counter);
+      if (retries > 1) {
+        sendSMS(msisdn, message, callback, --retries);
       } else {
         callback(err);
       }

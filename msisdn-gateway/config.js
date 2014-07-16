@@ -226,7 +226,7 @@ var conf = convict({
       },
       priority: {
         doc: 'the priority of this backend wrt others. ' +
-          '(Highest score = Highest priority)',
+             '(Highest score = Highest priority)',
         format: Number,
         default: 0
       }
@@ -249,7 +249,7 @@ var conf = convict({
       },
       priority: {
         doc: 'the priority of this backend wrt others. ' +
-          '(Highest score = Highest priority)',
+             '(Highest score = Highest priority)',
         format: Number,
         default: 0
       }
@@ -272,7 +272,7 @@ var conf = convict({
       },
       priority: {
         doc: 'the priority of this backend wrt others. ' +
-          '(Highest score = Highest priority)',
+             '(Highest score = Highest priority)',
         format: Number,
         default: 0
       }
