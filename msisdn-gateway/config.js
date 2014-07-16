@@ -198,7 +198,7 @@ var conf = convict({
     default: {}
   },
   smsGatewayResetTimer: {
-    doc: "When a gateway fails, reorder it by priority after this time (s).",
+    doc: "A timer that automatically reorder gateways by priority (seconds).",
     format: Number,
     default: 3600
   },
