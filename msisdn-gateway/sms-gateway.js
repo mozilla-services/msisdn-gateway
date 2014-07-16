@@ -4,7 +4,7 @@
 "use strict";
 
 var conf = require("./config").conf;
-
+var format = require("util").format;
 var smsGatewaysConf = conf.get("smsGateways");
 
 var providers;
@@ -65,13 +65,20 @@ function sendSMS(msisdn, message, callback, retries) {
  */
 function getMoVerifierFor(mcc, mnc) {
   var moVerifierList = conf.get("moVerifierList");
-  if (moVerifierList.hasOwnProperty(mcc + mnc)) {
-    return moVerifierList[mcc + mnc];
+  var defaultMoVerifier = conf.get("moVerifier");
+
+  var mccMnc = format("%s%s", mcc, mnc);
+  if (moVerifierList.hasOwnProperty(mccMnc)) {
+    return moVerifierList[mccMnc];
   }
   if (moVerifierList.hasOwnProperty(mcc)) {
     return moVerifierList[mcc];
   }
-  return conf.get("moVerifier");
+  // If the defaultMoVerifier is not set, return null.
+  if (defaultMoVerifier) {
+    return defaultMoVerifier;
+  }
+  return null;
 }
 
 

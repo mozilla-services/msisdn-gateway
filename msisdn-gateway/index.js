@@ -273,9 +273,11 @@ app.post("/discover", function(req, res) {
     mnc = req.body.mnc;
   }
 
-  if (req.body.hasOwnProperty("msisdn")) {
+  var moVerifier = smsGateway.getMoVerifierFor(mcc, mnc);
+
+  if (req.body.hasOwnProperty("msisdn") || moVerifier === null) {
     var msisdn = phone(req.body.msisdn);
-    if (msisdn === null) {
+    if (msisdn === null && moVerifier !== null) {
       sendError(res, 400,
                 errors.INVALID_PARAMETERS, "Invalid MSISDN number.");
       return;
@@ -291,12 +293,14 @@ app.post("/discover", function(req, res) {
     };
   }
 
-  // SMS/MOMT methods configuration
-  verificationMethods.push("sms/momt");
-  verificationDetails["sms/momt"] = {
-    mtSender: conf.get("mtSender"),
-    moVerifier: smsGateway.getMoVerifierFor(mcc, mnc)
-  };
+  if (moVerifier !== null) {
+    // SMS/MOMT methods configuration
+    verificationMethods.push("sms/momt");
+    verificationDetails["sms/momt"] = {
+      mtSender: conf.get("mtSender"),
+      moVerifier: moVerifier
+    };
+  }
 
   res.json(200, {
     verificationMethods: verificationMethods,
