@@ -1,10 +1,15 @@
 CHANGELOG
 =========
 
-0.5.0 (unreleased)
+0.4.1 (2014-07-16)
 ------------------
 
-- No changes yet.
+- Disable MOMT flow if no specific or default number is set
+- Add the --fd argument to let circus spawn the socket
+- Add the /api-specs url for videur
+- Really fix the decrypt error
+- Update configuration example
+- Install fake_dynamo only if needed
 
 
 0.4.0 (2014-07-15)
