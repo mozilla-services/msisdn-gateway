@@ -845,7 +845,7 @@ describe("HTTP API exposed by the server", function() {
           if (err) throw err;
           var spec = JSON.parse(res.body);
 
-          expect(spec.service.location).to.match(/http:\/\/127.0.0.1:(\d)*/);
+          expect(spec.service.location).to.match(/http:\/\/127.0.0.1:(\d)+/);
           expect(spec.service.version, pjson.version);
           done();
         });
