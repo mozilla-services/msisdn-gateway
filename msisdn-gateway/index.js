@@ -89,7 +89,8 @@ var corsEnabled = cors({
     var acceptedOrigin = allowedOrigins.indexOf('*') !== -1 ||
                          allowedOrigins.indexOf(origin) !== -1;
     callback(null, acceptedOrigin);
-  }
+  },
+  credentials: true
 });
 
 function requireParams() {
