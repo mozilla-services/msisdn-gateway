@@ -6,7 +6,6 @@
 
 var express = require("express");
 var crypto = require("crypto");
-var net = require("net");
 var conf = require("./config").conf;
 var pjson = require("../package.json");
 var raven = require("raven");
@@ -739,6 +738,7 @@ app.get("/api-specs", function(req, res) {
 
 if (argv.hasOwnProperty("fd")) {
   var server = http.createServer(app);
+  server.maxConnections = 100;
   server.listen({fd: parseInt(argv.fd, 10)}, function() {
     console.log("Server listening on fd://" + argv.fd);
   });
