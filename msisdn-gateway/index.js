@@ -85,12 +85,11 @@ app.use(handle404);
 
 var corsEnabled = cors({
   origin: function(origin, callback) {
-    var acceptedOrigin = conf.get("allowedOrigins").indexOf(origin) !== -1;
+    var allowedOrigins = conf.get('allowedOrigins');
+    var acceptedOrigin = allowedOrigins.indexOf('*') !== -1 ||
+                         allowedOrigins.indexOf(origin) !== -1;
     callback(null, acceptedOrigin);
-  },
-  // Configures the Access-Control-Allow-Credentials CORS header, required
-  // until we stop sending cookies.
-  credentials: true
+  }
 });
 
 function requireParams() {
