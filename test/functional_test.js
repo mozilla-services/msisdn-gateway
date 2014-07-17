@@ -98,7 +98,6 @@ describe("HTTP API exposed by the server", function() {
           .set('Origin', 'http://mozilla.org')
           .expect('Access-Control-Allow-Origin', 'http://mozilla.org')
           .expect('Access-Control-Allow-Methods', 'GET,HEAD,PUT,POST,DELETE')
-          .expect('Access-Control-Allow-Credentials', 'true')
           .end(done);
       });
 
@@ -123,7 +122,6 @@ describe("HTTP API exposed by the server", function() {
           supertest(app)[method](route)
             .set('Origin', 'http://mozilla.org')
             .expect('Access-Control-Allow-Origin', 'http://mozilla.org')
-            .expect('Access-Control-Allow-Credentials', 'true')
             .end(done);
         });
 
