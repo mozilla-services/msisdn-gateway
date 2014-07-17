@@ -738,13 +738,8 @@ app.get("/api-specs", function(req, res) {
 
 
 if (argv.hasOwnProperty("fd")) {
-  var socket = new net.Socket({
-    fd: parseInt(argv.fd, 10),
-    readable: true,
-    writable: true
-  });
-  socket.setNoDelay(true);
-  server = app.listen(socket, function() {
+  var server = http.createServer(app);
+  server.listen({fd: parseInt(argv.fd, 10)}, function() {
     console.log("Server listening on fd://" + argv.fd);
   });
 } else {
