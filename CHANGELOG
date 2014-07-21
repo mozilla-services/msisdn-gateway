@@ -10,72 +10,71 @@ CHANGELOG
 0.4.1 (2014-07-16)
 ------------------
 
-- Disable MOMT flow if no specific or default number is set
-- Add the --fd argument to let circus spawn the socket
-- Add the /api-specs url for videur
-- Really fix the decrypt error
-- Update configuration example
-- Install fake_dynamo only if needed
+- [feature] 1038676 — Disable MOMT flow if no specific or default number is set
+- [feature] Add the --fd argument to let circus spawn the socket
+- [feature] Add the /api-specs url for videur
+- [bug]     1037604 — Really fix the decrypt error
+- [config]  Update configuration example
+- [feature] Install fake_dynamo only if needed
 
 
 0.4.0 (2014-07-15)
 ------------------
 
-- Fix 0.3.1 loadtest decrypt error
-- Add BeepSend SMS Gateway
-- Add SMS Gateway fallback mechanism
-- Moved to AWS-SDK to handle STS support
-- Make the loadtest Python 2.6 compatible
+- [feature] Add BeepSend SMS Gateway
+- [feature] Add SMS Gateway fallback mechanism
+- [feature] Moved to AWS-SDK to handle STS support
+- [bug]     Make the loadtest Python 2.6 compatible
 
 
 0.3.1 (2014-07-08)
 ------------------
 
-- Fix MSISDN certificate generation
-- Improve loadtests debugging
-- Change loadtests configuration from duration to hits
+- [bug]     Fix MSISDN certificate generation
+- [feature] Improve loadtests debugging
+- [bug]     Change loadtests configuration from duration to hits
 
 
 0.3.0 (2014-07-03)
 ------------------
 
-- Add loadtests
-- Remove res.on("header") deprecation
-- Graceful shutdown of the server ok SIGTERM
-- Manage l10n translation
-- Handle Hawk auth behind and HTTPS ELB
-- Add a DynamoDB persistent storage backend
-- Handle https and http agents configuration
-- Store encrypted MSISDN number into the database
+- [feature] 1031517 — Add loadtests
+- [feature] Remove res.on("header") deprecation
+- [feature] Graceful shutdown of the server ok SIGTERM
+- [feature] 1032270 — Manage l10n translation
+- [bug]     Handle Hawk auth behind and HTTPS ELB
+- [feature] Add a DynamoDB persistent storage backend
+- [feature] Handle https and http agents configuration
+- [feature] Store encrypted MSISDN number into the database
 
 
 0.2.0 (2014-06-06)
 ------------------
 
-- Add the SMS MOMT protocol
-- Rewrite the API flows
-  - POST /discover
-  - POST /register
-  - POST /unregister
-  - POST /sms/mt/verify
-  - SMS /sms/momt/verify
-  - POST /sms/verify_code
-  - POST /certificat/sign
-- Use the FxA error format
-- Use Hawk Session
-- Implement BrowserID IdP well-known info.
-- Allow a limited number of retries for a verification code
-- Return the right moVerifier wrt the MCC/MNC code
-- Manage Hawk session expiration
+- [api]     Add the SMS MOMT protocol
+- [api]     Rewrite the API flows
+              - POST /discover
+              - POST /register
+              - POST /unregister
+              - POST /sms/mt/verify
+              - SMS /sms/momt/verify
+              - POST /sms/verify_code
+              - POST /certificat/sign
+- [feature] Use the FxA error format
+- [feature] Use Hawk Session
+- [feature] Implement BrowserID IdP well-known info.
+- [feature] Allow a limited number of retries for a verification code
+- [feature] Return the right moVerifier wrt the MCC/MNC code
+- [feature] Manage Hawk session expiration
 
 
 0.1.0 (2014-05-06)
 ------------------
 
-- Get a first PoC working
-- Add the SMS MT protocol
-    - /register
-    - /unregister
-    - /sms/verify
-    - /sms/verify_code
-    - /sms/resend_code
+- [feature] Get a first PoC working
+- [feature] Add the SMS MT protocol
+              - /register
+              - /unregister
+              - /sms/verify
+              - /sms/verify_code
+              - /sms/resend_code
