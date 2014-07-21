@@ -11,7 +11,7 @@ TMPDIR ?= /tmp
 test: lint cover-mocha spaceleft
 
 install:
-	@if [ -z "$$FAKE_DYNAMO" ]; then echo "Installing fake_dynamo..."; gem install --user-install fake_dynamo; fi
+	@if [ -z "$(FAKE_DYNAMO)" ]; then echo "Installing fake_dynamo..."; gem install --user-install fake_dynamo; fi
 	@npm install
 
 .PHONY: lint
