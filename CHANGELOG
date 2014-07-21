@@ -51,21 +51,21 @@ CHANGELOG
 0.2.0 (2014-06-06)
 ------------------
 
-- [api]     Add the SMS MOMT protocol
-- [api]     Rewrite the API flows
-              - POST /discover
-              - POST /register
-              - POST /unregister
-              - POST /sms/mt/verify
-              - SMS /sms/momt/verify
-              - POST /sms/verify_code
-              - POST /certificat/sign
-- [feature] Use the FxA error format
-- [feature] Use Hawk Session
-- [feature] Implement BrowserID IdP well-known info.
-- [feature] Allow a limited number of retries for a verification code
-- [feature] Return the right moVerifier wrt the MCC/MNC code
-- [feature] Manage Hawk session expiration
+- [api-change] Add the SMS MOMT protocol
+- [api-change] Rewrite the API flows
+                 - POST /discover
+                 - POST /register
+                 - POST /unregister
+                 - POST /sms/mt/verify
+                 - SMS /sms/momt/verify
+                 - POST /sms/verify_code
+                 - POST /certificat/sign
+- [feature]    Use the FxA error format
+- [feature]    Use Hawk Session
+- [feature]    Implement BrowserID IdP well-known info.
+- [feature]    Allow a limited number of retries for a verification code
+- [feature]    Return the right moVerifier wrt the MCC/MNC code
+- [feature]    Manage Hawk session expiration
 
 
 0.1.0 (2014-05-06)
