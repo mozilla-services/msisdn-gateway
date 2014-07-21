@@ -109,7 +109,7 @@ var conf = convict({
   allowedOrigins: {
     doc: "Authorized origins for cross-origin requests.",
     format: Array,
-    default: ['http://localhost:3000']
+    default: ['*']
   },
   retryAfter: {
     doc: "Seconds to wait for on 503",
