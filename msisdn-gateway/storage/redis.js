@@ -10,6 +10,7 @@ var ONE_DAY_SEC = 24 * 3600;  // A day in seconds
 var CODE_KEY_PREFIX = "msisdn_code_";
 var CODE_COUNTER_PREFIX = "code_count_";
 var MSISDN_KEY_PREFIX = "msisdn_sms_";
+var MSISDN_MTSENDER_PREFIX = "msisdn_sms_";
 var SESSION_KEY_PREFIX = "msisdn_session_";
 var CERTIFICATE_KEY_PREFIX = "msisdn_certificate_";
 
@@ -100,6 +101,23 @@ RedisStorage.prototype = {
     });
   },
 
+  setMtSender: function(hawkHmacId, mtSender, callback) {
+    var key = MSISDN_MTSENDER_PREFIX + hawkHmacId;
+    this._client.setex(key, ONE_DAY_SEC, mtSender, callback);
+  },
+
+  getMtSender: function(hawkHmacId, callback) {
+    var key = MSISDN_MTSENDER_PREFIX + hawkHmacId;
+    this._client.get(key, function(err, result) {
+      if (err) {
+        callback(err);
+        return;
+      }
+
+      callback(null, result);
+    });
+  },
+
   setSession: function(hawkHmacId, authKey, callback) {
     var key = SESSION_KEY_PREFIX + hawkHmacId;
     this._client.setex(key, this._settings.hawkSessionDuration,
@@ -153,6 +171,7 @@ RedisStorage.prototype = {
     var sessionKey = SESSION_KEY_PREFIX + hawkHmacId;
     var certificateKey = CERTIFICATE_KEY_PREFIX + hawkHmacId;
     var msisdnKey = MSISDN_KEY_PREFIX + hawkHmacId;
+    var mtSenderKey = MSISDN_MTSENDER_PREFIX + hawkHmacId;
     var codeKey = CODE_KEY_PREFIX + hawkHmacId;
     var counterKey = CODE_COUNTER_PREFIX + hawkHmacId;
 
@@ -171,13 +190,19 @@ RedisStorage.prototype = {
             callback(err);
             return;
           }
-          self._client.del(codeKey, function(err) {
+          self._client.del(mtSenderKey, function(err) {
             if (err) {
               callback(err);
               return;
             }
-            self._client.del(counterKey, function(err) {
-              callback(err);
+            self._client.del(codeKey, function(err) {
+              if (err) {
+                callback(err);
+                return;
+              }
+              self._client.del(counterKey, function(err) {
+                callback(err);
+              });
             });
           });
         });
@@ -189,6 +214,7 @@ RedisStorage.prototype = {
     var self = this;
     var sessionKey = SESSION_KEY_PREFIX + hawkHmacId;
     var msisdnKey = MSISDN_KEY_PREFIX + hawkHmacId;
+    var mtSenderKey = MSISDN_MTSENDER_PREFIX + hawkHmacId;
     var codeKey = CODE_KEY_PREFIX + hawkHmacId;
     var counterKey = CODE_COUNTER_PREFIX + hawkHmacId;
 
@@ -202,15 +228,21 @@ RedisStorage.prototype = {
           callback(err);
           return;
         }
-        self._client.del(codeKey, function(err) {
+        self._client.del(mtSenderKey, function(err) {
           if (err) {
             callback(err);
             return;
           }
-          self._client.del(counterKey, function(err) {
-            callback(err);
+          self._client.del(codeKey, function(err) {
+            if (err) {
+              callback(err);
+              return;
+            }
+            self._client.del(counterKey, function(err) {
+              callback(err);
+            });
           });
-        });
+        })
       });
     });
   },

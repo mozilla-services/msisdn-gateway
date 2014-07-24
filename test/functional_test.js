@@ -372,7 +372,7 @@ describe("HTTP API exposed by the server", function() {
             "verificationMethods": ["sms/momt"],
             "verificationDetails": {
               "sms/momt": {
-                "mtSender": "Mozilla@",
+                "mtSender": "+1...",
                 "moVerifier": "+1..."
               }
             }
@@ -462,7 +462,7 @@ describe("HTTP API exposed by the server", function() {
     });
 
     it("should require a valid MSISDN number", function(done) {
-      jsonReq.send({msisdn: "0123456789"})
+      jsonReq.send({msisdn: "0123456789", mcc: "271", mnc: "07"})
         .expect(400)
         .expect('Content-Type', /json/)
         .end(function(err, res) {
@@ -473,15 +473,25 @@ describe("HTTP API exposed by the server", function() {
         });
     });
 
+    it("should require MCC/MNC codes", function(done) {
+      jsonReq.send({msisdn: "0123456789"}).expect(400).end(
+        function(err, res) {
+          if (err) throw err;
+          expectFormatedError(res.body, 400, errors.MISSING_PARAMETERS,
+                              "Missing mcc,mnc");
+          done();
+        });
+    });
+
     it("should send a SMS with the long code by default.", function(done) {
       var message;
       sandbox.stub(smsGateway, "sendSMS",
-        function(msisdn, msg, cb) {
+        function(from, msisdn, msg, cb) {
           message = msg;
           cb(null);
         });
-      jsonReq.send({msisdn: "+33123456789"}).expect(204).end(
-        function(err, res) {
+      jsonReq.send({msisdn: "+33123456789", "mcc": "217", "mnc": "07"})
+        .expect(204).end(function(err, res) {
           if (err) throw err;
           sinon.assert.calledOnce(smsGateway.sendSMS);
           expect(message).to.length(32);
@@ -493,12 +503,14 @@ describe("HTTP API exposed by the server", function() {
       function(done) {
         var message;
         sandbox.stub(smsGateway, "sendSMS",
-          function(msisdn, msg, cb) {
+          function(from, msisdn, msg, cb) {
             message = msg;
             cb(null);
           });
         jsonReq.send({
           msisdn: "+33123456789",
+          mcc: "217",
+          mnc: "204",
           shortVerificationCode: true
         }).expect(204).end(
           function(err, res) {
@@ -515,12 +527,14 @@ describe("HTTP API exposed by the server", function() {
        "is false.", function(done) {
         var message;
         sandbox.stub(smsGateway, "sendSMS",
-          function(msisdn, msg, cb) {
+          function(from, msisdn, msg, cb) {
             message = msg;
             cb(null);
           });
          jsonReq.send({
            msisdn: "+33123456789",
+           mcc: "217",
+           mnc: "204",
            shortVerificationCode: false
          }).expect(204).end(
           function(err, res) {
@@ -534,16 +548,20 @@ describe("HTTP API exposed by the server", function() {
     it("should not accept another number verification for the same session",
       function(done) {
         sandbox.stub(smsGateway, "sendSMS",
-          function(msisdn, msg, cb) {
+          function(from, msisdn, msg, cb) {
             cb(null);
           });
          jsonReq.send({
-           msisdn: "+33123456789"
+           msisdn: "+33123456789",
+           mcc: "217",
+           mnc: "07"
          }).expect(204).end(
           function(err, res) {
             if (err) throw err;
             buildJsonReq().send({
-              msisdn: "+33214365879"
+              msisdn: "+33214365879",
+              mcc: "217",
+              mnc: "07"
             }).expect(400).expect('Content-Type', /json/)
               .end(function(err, res) {
                 expectFormatedError(res.body, 400, errors.INVALID_PARAMETERS,
@@ -566,7 +584,7 @@ describe("HTTP API exposed by the server", function() {
       jsonReq = buildJsonReq();
 
       sandbox.stub(smsGateway, "sendSMS",
-        function(msisdn, msg, cb) {
+        function(from, msisdn, msg, cb) {
           message = msg;
           cb(null);
         });
@@ -595,6 +613,7 @@ describe("HTTP API exposed by the server", function() {
        function(done) {
          jsonReq.query({
            msisdn: "33123456789",
+           "network-code": "21407",
            text: "/sms/momt/verify " + hawkCredentials.id
          }).expect(200).end(function(err, res) {
            if (err) throw err;
@@ -611,6 +630,24 @@ describe("HTTP API exposed by the server", function() {
            });
          });
        });
+
+    it("should send a SMS with the code using the network-code.",
+      function(done) {
+         jsonReq.query({
+           msisdn: "33123456789",
+           "network-code": "21407",
+           text: "/sms/momt/verify " + hawkCredentials.id
+         }).expect(200).end(function(err, res) {
+             sinon.assert.called(smsGateway.sendSMS);
+             storage.getMSISDN(hawkHmacId, function(err, msisdn) {
+               if (err) throw err;
+               expect(
+                 encrypt.decrypt(hawkCredentials.id, msisdn)
+               ).to.eql("+33123456789");
+               done();
+             });
+         });
+    });
 
     it("should send a SMS with the code.", function(done) {
          jsonReq.query({

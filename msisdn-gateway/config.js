@@ -187,6 +187,11 @@ var conf = convict({
     format: String,
     default: "Mozilla@"
   },
+  mtSenderList: {
+    doc: 'List of mtSenderNumber w/ regards to MCC/MNC, see config/test.json',
+    format: Object,
+    default: {}
+  },
   moVerifier: {
     doc: "Number to SMS should be sent",
     format: String,

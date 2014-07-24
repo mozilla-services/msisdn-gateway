@@ -54,7 +54,7 @@ describe("SMS Gateway", function() {
       }).sendSMS;
 
 
-      sendSMS("+33123456789", "Body", function(err) {
+      sendSMS("Mozilla@", "+33123456789", "Body", function(err) {
         expect(requests).to.length(1);
         expect(requests[0].url).to.match(/beepsend/);
         done(err);
@@ -88,7 +88,7 @@ describe("SMS Gateway", function() {
       }).sendSMS;
 
 
-      sendSMS("+33123456789", "Body", function(err) {
+      sendSMS("Mozilla@", "+33123456789", "Body", function(err) {
         expect(numberOfTries).to.eql(3);
         done();
       });
@@ -148,7 +148,7 @@ describe("SMS Gateway", function() {
         apiSecret: "456",
         priority: 10
       });
-      gateway.sendSms("123456789", "Body", function(err, res) {
+      gateway.sendSms("Mozilla@", "123456789", "Body", function(err, res) {
         expect(requests).to.length(1);
         expect(requests[0]).to.match(/^http:\/\/nexmo/);
         expect(requests[0]).to.match(/api_key=123/);
@@ -178,7 +178,7 @@ describe("SMS Gateway", function() {
         apiToken: "456",
         priority: 10
       });
-      gateway.sendSms("123456789", "Body", function(err, res) {
+      gateway.sendSms("Mozilla@", "123456789", "Body", function(err, res) {
         expect(requests).to.length(1);
         expect(requests[0].url).to.match(/^http:\/\/beepsend/);
         expect(requests[0].url).to.match(/123$/);
@@ -211,7 +211,7 @@ describe("SMS Gateway", function() {
         pwd: "456",
         priority: 10
       });
-      gateway.sendSms("+33123456789", "Body", function(err, res) {
+      gateway.sendSms("Mozilla@", "+33123456789", "Body", function(err, res) {
         expect(requests).to.length(1);
         expect(requests[0]).to.match(/^http:\/\/leonix/);
         expect(requests[0]).to.match(/service=20629/);
