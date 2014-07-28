@@ -63,15 +63,15 @@ function sendSMS(mtSender, msisdn, message, callback, retries) {
  * Get the mtSender number with regards to MCC/MNC
  */
 function getMtSenderFor(mcc, mnc) {
-  var mtSenderList = conf.get("mtSenderList");
+  var mtSenderMapping = conf.get("mtSenderMapping");
   var defaultMtSender = conf.get("mtSender");
 
   var mccMnc = format("%s%s", mcc, mnc);
-  if (mtSenderList.hasOwnProperty(mccMnc)) {
-    return mtSenderList[mccMnc];
+  if (mtSenderMapping.hasOwnProperty(mccMnc)) {
+    return mtSenderMapping[mccMnc];
   }
-  if (mtSenderList.hasOwnProperty(mcc)) {
-    return mtSenderList[mcc];
+  if (mtSenderMapping.hasOwnProperty(mcc)) {
+    return mtSenderMapping[mcc];
   }
   return defaultMtSender;
 }
@@ -81,15 +81,15 @@ function getMtSenderFor(mcc, mnc) {
  * Get the moVerifier number with regards to MCC/MNC
  */
 function getMoVerifierFor(mcc, mnc) {
-  var moVerifierList = conf.get("moVerifierList");
+  var moVerifierMapping = conf.get("moVerifierMapping");
   var defaultMoVerifier = conf.get("moVerifier");
 
   var mccMnc = format("%s%s", mcc, mnc);
-  if (moVerifierList.hasOwnProperty(mccMnc)) {
-    return moVerifierList[mccMnc];
+  if (moVerifierMapping.hasOwnProperty(mccMnc)) {
+    return moVerifierMapping[mccMnc];
   }
-  if (moVerifierList.hasOwnProperty(mcc)) {
-    return moVerifierList[mcc];
+  if (moVerifierMapping.hasOwnProperty(mcc)) {
+    return moVerifierMapping[mcc];
   }
   // If the defaultMoVerifier is not set, return null.
   if (defaultMoVerifier) {

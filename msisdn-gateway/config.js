@@ -187,7 +187,7 @@ var conf = convict({
     format: String,
     default: "Mozilla@"
   },
-  mtSenderList: {
+  mtSenderMapping: {
     doc: 'List of mtSenderNumber w/ regards to MCC/MNC, see config/test.json',
     format: Object,
     default: {}
@@ -197,7 +197,7 @@ var conf = convict({
     format: String,
     default: ""
   },
-  moVerifierList: {
+  moVerifierMapping: {
     doc: 'List of moVerifierNumber w/ regards to MCC/MNC, see config/test.json',
     format: Object,
     default: {}

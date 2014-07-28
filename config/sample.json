@@ -35,7 +35,7 @@
   },
   "mtSender": "Mozilla@",
   "moVerifier": "+44...",
-  "moVerifierList": {
+  "moVerifierMapping": {
     "208": "+33...",
     "308": "+33...",
     "340": "+33...",

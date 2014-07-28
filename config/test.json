@@ -38,7 +38,7 @@
     }
   },
   "mtSender": "Mozilla@",
-  "mtSenderList": {
+  "mtSenderMapping": {
     "302": "+1...",
     "310": "+1...",
     "311": "+1...",
@@ -51,7 +51,7 @@
     "544": "+1..."
   },
   "moVerifier": "456",
-  "moVerifierList": {
+  "moVerifierMapping": {
     "208": "+33...",
     "308": "+33...",
     "340": "+33...",

@@ -99,26 +99,26 @@ describe("SMS Gateway", function() {
     var previousList, previousDefault;
 
     beforeEach(function() {
-      previousList = conf.get("moVerifierList");
+      previousList = conf.get("moVerifierMapping");
       previousDefault = conf.get("moVerifier");
     });
 
     afterEach(function() {
-      conf.set("moVerifierList", previousList);
+      conf.set("moVerifierMapping", previousList);
       conf.set("moVerifier", previousDefault);
     });
 
     it("should return the (MCC, MNC) specific number.", function() {
-      var list = conf.get("moVerifierList");
+      var list = conf.get("moVerifierMapping");
       list["208110"] = "1234";
-      conf.set("moVerifierList", list);
+      conf.set("moVerifierMapping", list);
       expect(getMoVerifier(208, 110)).to.eql("1234");
     });
 
     it("should return the (MCC, _) specific number.", function() {
-      var list = conf.get("moVerifierList");
+      var list = conf.get("moVerifierMapping");
       list["208"] = "1234";
-      conf.set("moVerifierList", list);
+      conf.set("moVerifierMapping", list);
       expect(getMoVerifier(208, 111)).to.eql("1234");
     });
 
@@ -136,26 +136,26 @@ describe("SMS Gateway", function() {
     var previousList, previousDefault;
 
     beforeEach(function() {
-      previousList = conf.get("mtSenderList");
+      previousList = conf.get("mtSenderMapping");
       previousDefault = conf.get("mtSender");
     });
 
     afterEach(function() {
-      conf.set("mtSenderList", previousList);
+      conf.set("mtSenderMapping", previousList);
       conf.set("mtSender", previousDefault);
     });
 
     it("should return the (MCC, MNC) specific number.", function() {
-      var list = conf.get("mtSenderList");
+      var list = conf.get("mtSenderMapping");
       list["21407"] = "1234";
-      conf.set("mtSenderList", list);
+      conf.set("mtSenderMapping", list);
       expect(getMtSender("214", "07")).to.eql("1234");
     });
 
     it("should return the (MCC, _) specific number.", function() {
-      var list = conf.get("mtSenderList");
+      var list = conf.get("mtSenderMapping");
       list["208"] = "1234";
-      conf.set("mtSenderList", list);
+      conf.set("mtSenderMapping", list);
       expect(getMtSender(208, 111)).to.eql("1234");
     });
 
