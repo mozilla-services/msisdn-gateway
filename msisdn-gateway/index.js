@@ -340,7 +340,7 @@ app.post("/unregister", hawkMiddleware, function(req, res) {
       sendError(res, 503, errors.BACKEND, "Service Unavailable");
       return;
     }
-    res.json(200, {});
+    res.json(204, "");
   });
 });
 
@@ -397,7 +397,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
           /* Send SMS */
           // XXX export string in l10n external file.
           smsGateway.sendSMS(req.msisdn, message, function(err, data) {
-            res.json(200, {});
+            res.json(204, "");
           });
         });
       });
@@ -646,7 +646,7 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
       sendError(res, 400, errors.BADJSON, err);
       return;
     }
-    var duration = req.body.duration;
+    var duration = parseInt(req.body.duration, 10);
 
     // Validate publicKey.
     try {
@@ -733,7 +733,7 @@ var server;
 app.get("/api-specs", function(req, res) {
   specs.service.location = conf.get("protocol") + "://" + req.get("host");
   specs.service.version = pjson.version;
-  res.json(200, JSON.stringify(specs));
+  res.json(200, specs);
 });
 
 

@@ -16,7 +16,7 @@ module.exports = function headersMiddleware(req, res, next) {
   res._headersMiddleware = true;
   res.writeHead = function headersWriteHead() {
     if (res.statusCode === 200 || res.statusCode === 401) {
-      res.setHeader('Timestamp', Date.now());
+      res.setHeader('Timestamp', parseInt(Date.now() / 1000, 10));
     }
 
     if (res.statusCode === 503 || res.statusCode === 429) {

@@ -272,11 +272,8 @@ Failing requests may be due to the following errors:
 
 ### Response
 
-Successful requests will produce a "200 OK" response with following format:
+Successful requests will produce a "204 No Content" response.
 
-```json
-{}
-```
 
 ## POST /v1/msisdn/sms/mt/verify
 
@@ -291,7 +288,9 @@ curl -v \
 "https://msisdn.accounts.firefox.com/v1/msisdn/sms/mt/verify" \
 -H 'Authorization: Hawk id="d4c5b1e3f5791ef83896c27519979b93a45e6d0da34c7509c5632ac35b28b48d", ts="1373391043", nonce="ohQjqb", hash="vBODPWhDhiRWM4tmI9qp+np+3aoqEFzdGuGk0h7bh9w=", mac="LAnpP3P2PXelC6hUoUaHP72nCqY5Iibaa3eeiGBqIIU="' \
 -d '{
-  "msisdn": "+442071838750"
+  "msisdn": "+442071838750",
+  "mcc": "365",
+  "mnc": "010"
 }'
 ```
 
@@ -306,6 +305,7 @@ curl -v \
 -H 'Accept-Language: da, en-gb' \
 -d '{
   "msisdn": "+442071838750",
+  "mcc": "365",
   "shortVerificationCode: true"
 }'
 ```
@@ -316,11 +316,7 @@ ___Parameters___
 
 ### Response
 
-Successful requests will produce a "200 OK" response with following format:
-
-```json
-{}
-```
+Successful requests will produce a "204 No Content" response.
 
 Failing requests may be due to the following errors:
 

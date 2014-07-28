@@ -428,12 +428,11 @@ describe("HTTP API exposed by the server", function() {
       jsonReq = supertest(app)
         .post('/unregister')
         .hawk(hawkCredentials)
-        .type('json')
-        .expect('Content-Type', /json/);
+        .type('json');
     });
 
     it("should clean the session.", function(done) {
-      jsonReq.send({msisdn: "+33123456789"}).expect(200).end(
+      jsonReq.send({msisdn: "+33123456789"}).expect(204).end(
         function(err, res, tokenId) {
           if (err) {
             throw err;
@@ -457,15 +456,16 @@ describe("HTTP API exposed by the server", function() {
         return supertest(app)
           .post('/sms/mt/verify')
           .hawk(hawkCredentials)
-          .type('json')
-          .expect('Content-Type', /json/);
+          .type('json');
       };
       jsonReq = buildJsonReq();
     });
 
     it("should require a valid MSISDN number", function(done) {
-      jsonReq.send({msisdn: "0123456789"}).expect(400).end(
-        function(err, res) {
+      jsonReq.send({msisdn: "0123456789"})
+        .expect(400)
+        .expect('Content-Type', /json/)
+        .end(function(err, res) {
           if (err) throw err;
           expectFormatedError(res.body, 400, errors.INVALID_MSISDN,
                               "Invalid MSISDN number.");
@@ -480,8 +480,9 @@ describe("HTTP API exposed by the server", function() {
           message = msg;
           cb(null);
         });
-      jsonReq.send({msisdn: "+33123456789"}).expect(200).end(
+      jsonReq.send({msisdn: "+33123456789"}).expect(204).end(
         function(err, res) {
+          if (err) throw err;
           sinon.assert.calledOnce(smsGateway.sendSMS);
           expect(message).to.length(32);
           done();
@@ -499,8 +500,9 @@ describe("HTTP API exposed by the server", function() {
         jsonReq.send({
           msisdn: "+33123456789",
           shortVerificationCode: true
-        }).expect(200).end(
+        }).expect(204).end(
           function(err, res) {
+            if (err) throw err;
             sinon.assert.calledOnce(smsGateway.sendSMS);
             var code = message.substr(message.length-6);
             expect(message).to.eql("Your verification code is: " + code);
@@ -520,8 +522,9 @@ describe("HTTP API exposed by the server", function() {
          jsonReq.send({
            msisdn: "+33123456789",
            shortVerificationCode: false
-         }).expect(200).end(
+         }).expect(204).end(
           function(err, res) {
+            if (err) throw err;
             sinon.assert.calledOnce(smsGateway.sendSMS);
             expect(message).to.length(32);
             done();
@@ -536,15 +539,17 @@ describe("HTTP API exposed by the server", function() {
           });
          jsonReq.send({
            msisdn: "+33123456789"
-         }).expect(200).end(
+         }).expect(204).end(
           function(err, res) {
+            if (err) throw err;
             buildJsonReq().send({
               msisdn: "+33214365879"
-            }).expect(400).end(function(err, res) {
-              expectFormatedError(res.body, 400, errors.INVALID_PARAMETERS,
-                "You can validate only one MSISDN per session.");
-              done(err);
-            });
+            }).expect(400).expect('Content-Type', /json/)
+              .end(function(err, res) {
+                expectFormatedError(res.body, 400, errors.INVALID_PARAMETERS,
+                  "You can validate only one MSISDN per session.");
+                done();
+              });
           });
       });
   });
@@ -570,6 +575,7 @@ describe("HTTP API exposed by the server", function() {
     it("should always return a 200 even with no msisdn.", function(done) {
        jsonReq.query()
          .expect(200).end(function(err, res) {
+           if (err) throw err;
            sinon.assert.notCalled(smsGateway.sendSMS);
            done();
          });
@@ -579,6 +585,7 @@ describe("HTTP API exposed by the server", function() {
        function(done) {
          jsonReq.query({msisdn: "33123456789", text: "wrong-smsBody"})
            .expect(200).end(function(err, res) {
+             if (err) throw err;
              sinon.assert.notCalled(smsGateway.sendSMS);
              done();
            });
@@ -590,6 +597,7 @@ describe("HTTP API exposed by the server", function() {
            msisdn: "33123456789",
            text: "/sms/momt/verify " + hawkCredentials.id
          }).expect(200).end(function(err, res) {
+           if (err) throw err;
            sinon.assert.called(smsGateway.sendSMS);
            smsGateway.sendSMS.reset();
 
@@ -597,6 +605,7 @@ describe("HTTP API exposed by the server", function() {
              msisdn: "33214365879",
              text: "/sms/momt/verify " + hawkCredentials.id
            }).expect(200).end(function(err, res) {
+             if (err) throw err;
              sinon.assert.notCalled(smsGateway.sendSMS);
              done();
            });
@@ -608,14 +617,15 @@ describe("HTTP API exposed by the server", function() {
            msisdn: "33123456789",
            text: "/sms/momt/verify " + hawkCredentials.id
          }).expect(200).end(function(err, res) {
-             sinon.assert.called(smsGateway.sendSMS);
-             storage.getMSISDN(hawkHmacId, function(err, msisdn) {
-               if (err) throw err;
-               expect(
-                 encrypt.decrypt(hawkCredentials.id, msisdn)
-               ).to.eql("+33123456789");
-               done();
-             });
+           if (err) throw err;
+           sinon.assert.called(smsGateway.sendSMS);
+           storage.getMSISDN(hawkHmacId, function(err, msisdn) {
+             if (err) throw err;
+             expect(
+               encrypt.decrypt(hawkCredentials.id, msisdn)
+             ).to.eql("+33123456789");
+             done();
+           });
          });
     });
   });
@@ -864,7 +874,7 @@ describe("HTTP API exposed by the server", function() {
         .expect(200)
         .end(function(err, res) {
           if (err) throw err;
-          var spec = JSON.parse(res.body);
+          var spec = res.body;
 
           expect(spec.service.location).to.match(/http:\/\/127.0.0.1:(\d)+/);
           expect(spec.service.version, pjson.version);
