@@ -478,9 +478,24 @@ describe("HTTP API exposed by the server", function() {
         function(err, res) {
           if (err) throw err;
           expectFormatedError(res.body, 400, errors.MISSING_PARAMETERS,
-                              "Missing mcc,mnc");
+                              "Missing mcc");
           done();
         });
+    });
+
+    it("should works only with a MCC code", function(done) {
+      var message;
+      sandbox.stub(smsGateway, "sendSMS",
+        function(from, msisdn, msg, cb) {
+          message = msg;
+          cb(null);
+        });
+      jsonReq.send({msisdn: "+33123456789", "mcc": "217"})
+        .expect(200).end(
+          function(err, res) {
+            sinon.assert.calledOnce(smsGateway.sendSMS);
+            done();
+          });
     });
 
     it("should send a SMS with the long code by default.", function(done) {

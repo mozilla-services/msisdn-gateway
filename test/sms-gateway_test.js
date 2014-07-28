@@ -159,6 +159,14 @@ describe("SMS Gateway", function() {
       expect(getMtSender(208, 111)).to.eql("1234");
     });
 
+    it("should return the (MCC, _) specific number if MNC not provided.",
+      function() {
+        var list = conf.get("mtSenderMapping");
+        list["208"] = "1234";
+        conf.set("mtSenderMapping", list);
+        expect(getMtSender(208)).to.eql("1234");
+      });
+
     it("should return the default number.", function() {
       expect(getMtSender(514, 111)).to.eql("Mozilla@");
     });

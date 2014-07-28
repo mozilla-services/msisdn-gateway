@@ -353,8 +353,9 @@ app.post("/unregister", hawkMiddleware, function(req, res) {
  * Ask for a new number registration.
  **/
 app.post("/sms/mt/verify", hawkMiddleware,
-  requireParams("msisdn", "mcc", "mnc"), validateMSISDN, function(req, res) {
-    if (req.body.mnc.length !== 3 && req.body.mnc.length !== 2) {
+  requireParams("msisdn", "mcc"), validateMSISDN, function(req, res) {
+    if (req.body.hasOwnProperty("mnc") && req.body.mnc.length !== 3 &&
+        req.body.mnc.length !== 2) {
       sendError(
         res, 400,
         errors.INVALID_PARAMETERS, "Invalid MNC."
