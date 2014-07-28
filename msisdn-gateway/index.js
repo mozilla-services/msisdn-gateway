@@ -100,7 +100,8 @@ function requireParams() {
     var missingParams;
 
     if (!req.accepts("json")) {
-      res.json(406, ["application/json"]);
+      sendError(res, 406, errors.BADJSON,
+                "Request body should be defined as application/json");
       return;
     }
 
@@ -643,7 +644,7 @@ app.post("/certificate/sign", hawkMiddleware, requireParams(
     try {
       publicKey = JSON.parse(req.body.publicKey);
     } catch (err) {
-      sendError(res, 400, errors.BADJSON, err);
+      sendError(res, 406, errors.BADJSON, err);
       return;
     }
     var duration = parseInt(req.body.duration, 10);
