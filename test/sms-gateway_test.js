@@ -11,6 +11,7 @@ var proxyquire = require('proxyquire');
 var conf = require("../msisdn-gateway").conf;
 
 var getMoVerifier = require("../msisdn-gateway/sms-gateway").getMoVerifierFor;
+var getMtSender = require("../msisdn-gateway/sms-gateway").getMtSenderFor;
 
 
 describe("SMS Gateway", function() {
@@ -128,6 +129,42 @@ describe("SMS Gateway", function() {
     it("should return null if no default number.", function() {
       conf.set("moVerifier", "");
       expect(getMoVerifier(514, 111)).to.eql(null);
+    });
+  });
+
+  describe("#getMtSenderFor", function() {
+    var previousList, previousDefault;
+
+    beforeEach(function() {
+      previousList = conf.get("mtSenderList");
+      previousDefault = conf.get("mtSender");
+    });
+
+    afterEach(function() {
+      conf.set("mtSenderList", previousList);
+      conf.set("mtSender", previousDefault);
+    });
+
+    it("should return the (MCC, MNC) specific number.", function() {
+      var list = conf.get("mtSenderList");
+      list["21407"] = "1234";
+      conf.set("mtSenderList", list);
+      expect(getMtSender("214", "07")).to.eql("1234");
+    });
+
+    it("should return the (MCC, _) specific number.", function() {
+      var list = conf.get("mtSenderList");
+      list["208"] = "1234";
+      conf.set("mtSenderList", list);
+      expect(getMtSender(208, 111)).to.eql("1234");
+    });
+
+    it("should return the default number.", function() {
+      expect(getMtSender(514, 111)).to.eql("Mozilla@");
+    });
+
+    it("should return the default number.", function() {
+      expect(getMtSender()).to.eql("Mozilla@");
     });
   });
 
