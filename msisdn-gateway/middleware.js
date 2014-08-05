@@ -34,10 +34,11 @@ function sendError(res, code, errno, error, message, info) {
 function validateMSISDN(req, res, next) {
   req.msisdn = phone(req.body.msisdn);
 
-  if (req.msisdn === null) {
+  if (req.msisdn.length !== 2) {
     sendError(res, 400, errors.INVALID_MSISDN, "Invalid MSISDN number.");
     return;
   }
+  req.msisdn = req.msisdn[0];
   req.msisdnId = hmac(req.msisdn, conf.get("msisdnIdSecret"));
 
   next();
