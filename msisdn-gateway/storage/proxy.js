@@ -47,7 +47,7 @@ function StorageProxy(conf, options) {
                         " to be used as volatile storage.");
       }
       if (typeof _persistentStorage[method] !== "function") {
-        type = _volatileStorage.constructor.name;
+        type = _persistentStorage.constructor.name;
         throw new Error(type + " need a " + method +
                         " to be used as volatile storage.");
       }
