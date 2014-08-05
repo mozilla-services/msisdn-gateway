@@ -10,7 +10,7 @@ var querystring = require("querystring");
 
 function Nexmo(options) {
   this._conf = options;
-  if (!this._conf.endpoint === '') {
+  if (this._conf.endpoint === '') {
     throw new Error("You should configure Nexmo credentials first.");
   }
 }
