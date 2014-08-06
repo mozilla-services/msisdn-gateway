@@ -7,3 +7,5 @@ services: redis-server
 
 before_script:
   - gem install fake_dynamo
+  - npm run outdated
+  - make lint
