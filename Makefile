@@ -32,7 +32,7 @@ cover-mocha:
 
 .PHONY: jshint
 jshint:
-	@$(NODE_LOCAL_BIN)/jshint test msisdn-gateway/*.js
+	@$(NODE_LOCAL_BIN)/jshint test/*.js msisdn-gateway/*.js msisdn-gateway/*/*.js tools/*.js
 
 .PHONY: mocha
 mocha:

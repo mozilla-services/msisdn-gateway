@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-var getStorage = require("./index")
+var getStorage = require("./index");
 
 
 function StorageProxy(conf, options) {
