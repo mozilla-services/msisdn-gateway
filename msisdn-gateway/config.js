@@ -187,13 +187,18 @@ var conf = convict({
     format: String,
     default: "Mozilla@"
   },
+  mtSenderMapping: {
+    doc: 'Mapping of mtSenderNumber to MCC/MNC, see config/test.json',
+    format: Object,
+    default: {}
+  },
   moVerifier: {
     doc: "Number to SMS should be sent",
     format: String,
     default: ""
   },
-  moVerifierList: {
-    doc: 'List of moVerifierNumber w/ regards to MCC/MNC, see config/test.json',
+  moVerifierMapping: {
+    doc: 'Mapping of moVerifierNumber to MCC/MNC, see config/test.json',
     format: Object,
     default: {}
   },

@@ -11,6 +11,7 @@ function StorageProxy(conf, options) {
     "setCode", "verifyCode",
     "setCodeWrongTry", "expireCode",
     "storeMSISDN", "getMSISDN",
+    "setMtSender", "getMtSender",
     "setSession", "getSession"
   ];
 

@@ -293,7 +293,6 @@ curl -v \
   "mnc": "010"
 }'
 ```
-
 or
 
 ```sh
@@ -312,6 +311,8 @@ curl -v \
 
 ___Parameters___
 * `msisdn` - the client's claimed MSISDN in E.164 format.
+* `mcc` - the Mobile Country Code for the MSISDN to verify
+* `mnc` - the Mobile Network Code for the MSISDN to verify
 * `shortVerificationCode` - (optional) if `true`, the server should send a short, human transcribable code with instructional text in the verification SMS. If `false` or excluded, the server will send a longer code without text. If `true`, the client should also take care to set the `Accept-Language` header so the server can appropriate localize any text in the SMS.
 
 ### Response

@@ -37,19 +37,19 @@ function buildSmsGateway() {
 buildSmsGateway();
 
 
-function sendSMS(msisdn, message, callback, retries) {
+function sendSMS(mtSender, msisdn, message, callback, retries) {
   if (retries === undefined) {
     retries = conf.get("nbSmsSendTries");
   }
   var provider = providers[0];
-  provider.sendSms(msisdn, message, function(err) {
+  provider.sendSms(mtSender, msisdn, message, function(err) {
     if (err) {
       // In case of error, try the next provider.
       if (providers.length > 1) {
         providers.push(providers.shift());
       }
       if (retries > 1) {
-        sendSMS(msisdn, message, callback, --retries);
+        sendSMS(mtSender, msisdn, message, callback, --retries);
       } else {
         callback(err);
       }
@@ -59,20 +59,37 @@ function sendSMS(msisdn, message, callback, retries) {
   });
 }
 
+/**
+ * Get the mtSender number with regards to MCC/MNC
+ */
+function getMtSenderFor(mcc, mnc) {
+  var mtSenderMapping = conf.get("mtSenderMapping");
+  var defaultMtSender = conf.get("mtSender");
+
+  var mccMnc = format("%s%s", mcc, mnc);
+  if (mtSenderMapping.hasOwnProperty(mccMnc)) {
+    return mtSenderMapping[mccMnc];
+  }
+  if (mtSenderMapping.hasOwnProperty(mcc)) {
+    return mtSenderMapping[mcc];
+  }
+  return defaultMtSender;
+}
+
 
 /**
  * Get the moVerifier number with regards to MCC/MNC
  */
 function getMoVerifierFor(mcc, mnc) {
-  var moVerifierList = conf.get("moVerifierList");
+  var moVerifierMapping = conf.get("moVerifierMapping");
   var defaultMoVerifier = conf.get("moVerifier");
 
   var mccMnc = format("%s%s", mcc, mnc);
-  if (moVerifierList.hasOwnProperty(mccMnc)) {
-    return moVerifierList[mccMnc];
+  if (moVerifierMapping.hasOwnProperty(mccMnc)) {
+    return moVerifierMapping[mccMnc];
   }
-  if (moVerifierList.hasOwnProperty(mcc)) {
-    return moVerifierList[mcc];
+  if (moVerifierMapping.hasOwnProperty(mcc)) {
+    return moVerifierMapping[mcc];
   }
   // If the defaultMoVerifier is not set, return null.
   if (defaultMoVerifier) {
@@ -84,5 +101,6 @@ function getMoVerifierFor(mcc, mnc) {
 
 module.exports = {
   sendSMS: sendSMS,
-  getMoVerifierFor: getMoVerifierFor
+  getMoVerifierFor: getMoVerifierFor,
+  getMtSenderFor: getMtSenderFor
 };

@@ -262,8 +262,11 @@ app.post("/discover", function(req, res) {
       url, mcc, mnc;
 
   if (!req.body.hasOwnProperty("mcc") || req.body.mcc.length !== 3) {
-    sendError(res, 400,
-              errors.INVALID_PARAMETERS, "Invalid MCC.");
+    sendError(
+      res, 400,
+      errors.INVALID_PARAMETERS,
+      "Invalid MCC."
+    );
     return;
   }
 
@@ -275,6 +278,7 @@ app.post("/discover", function(req, res) {
   }
 
   var moVerifier = smsGateway.getMoVerifierFor(mcc, mnc);
+  var mtSender = smsGateway.getMtSenderFor(mcc, mnc);
 
   if (req.body.hasOwnProperty("msisdn") || moVerifier === null) {
     var msisdn = phone(req.body.msisdn);
@@ -289,7 +293,7 @@ app.post("/discover", function(req, res) {
 
     verificationMethods.push("sms/mt");
     verificationDetails["sms/mt"] = {
-      mtSender: conf.get("mtSender"),
+      mtSender: mtSender,
       url: url
     };
   }
@@ -298,7 +302,7 @@ app.post("/discover", function(req, res) {
     // SMS/MOMT methods configuration
     verificationMethods.push("sms/momt");
     verificationDetails["sms/momt"] = {
-      mtSender: conf.get("mtSender"),
+      mtSender: mtSender,
       moVerifier: moVerifier
     };
   }
@@ -348,9 +352,29 @@ app.post("/unregister", hawkMiddleware, function(req, res) {
 /**
  * Ask for a new number registration.
  **/
-app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
-  validateMSISDN, function(req, res) {
-    var code, message;
+app.post("/sms/mt/verify", hawkMiddleware,
+  requireParams("msisdn", "mcc"), validateMSISDN, function(req, res) {
+    if (req.body.hasOwnProperty("mnc") && req.body.mnc.length !== 3 &&
+        req.body.mnc.length !== 2) {
+      sendError(
+        res, 400,
+        errors.INVALID_PARAMETERS, "Invalid MNC."
+      );
+      return;
+    }
+
+    if (req.body.mcc.length !== 3) {
+      sendError(
+        res, 400,
+        errors.INVALID_PARAMETERS, "Invalid MCC."
+      );
+      return;
+    }
+
+    var mcc = req.body.mcc,
+      mnc = req.body.mnc,
+      code, message;
+
     if (!req.body.hasOwnProperty("shortVerificationCode") ||
         req.body.shortVerificationCode !== true) {
       code = crypto.randomBytes(conf.get("longCodeBytes")).toString("hex");
@@ -395,11 +419,14 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
             sendError(res, 503, errors.BACKEND, "Service Unavailable");
             return;
           }
+
           /* Send SMS */
+          var mtSender = smsGateway.getMtSenderFor(mcc, mnc);
           // XXX export string in l10n external file.
-          smsGateway.sendSMS(req.msisdn, message, function(err, data) {
-            res.json(204, "");
-          });
+          smsGateway.sendSMS(mtSender, req.msisdn, message,
+            function(err, data) {
+              res.json(204, "");
+            });
         });
       });
     });
@@ -411,6 +438,7 @@ app.post("/sms/mt/verify", hawkMiddleware, requireParams("msisdn"),
  **/
 
 function handleMobileOriginatedMessages(res, options) {
+  var mtSender = smsGateway.getMtSenderFor(options.mcc, options.mnc);
   var hawkId = options.text.split(" ");
   hawkId = hawkId[1];
 
@@ -486,7 +514,7 @@ function handleMobileOriginatedMessages(res, options) {
           }
 
           /* Send SMS */
-          smsGateway.sendSMS(options.msisdn, code, function(err) {
+          smsGateway.sendSMS(mtSender, options.msisdn, code, function(err) {
             if (err) {
               logError(err);
               sendError(res, 503, errors.BACKEND, "Service Unavailable");
@@ -511,6 +539,11 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
     msisdn: phone('+' + req.query.msisdn),
     text: req.query.text
   };
+
+  if (req.query.hasOwnProperty("network-code")) {
+    options.mcc = req.query["network-code"].slice(0, 3);
+    options.mnc = req.query["network-code"].slice(3, 6);
+  }
 
   handleMobileOriginatedMessages(res, options);
 });

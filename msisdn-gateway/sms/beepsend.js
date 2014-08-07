@@ -16,16 +16,16 @@ function BeepSend(options) {
 
 
 BeepSend.prototype = {
-  sendSms: function sendSms(msisdn, message, callback) {
+  sendSms: function sendSms(from, to, message, callback) {
     request.post({
       url: this._conf.endpoint + "/" + this._conf.connectionId,
       headers: {
         "Authorization": "Token " + this._conf.apiToken
       },
       form: {
-        to: msisdn,
+        to: to,
         message: message,
-        from: conf.get("mtSender").replace(/@$/g, "")
+        from: from.replace(/@$/g, "")
       }
     }, function(err) {
       callback(err);

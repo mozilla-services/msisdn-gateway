@@ -11,6 +11,7 @@ var proxyquire = require('proxyquire');
 var conf = require("../msisdn-gateway").conf;
 
 var getMoVerifier = require("../msisdn-gateway/sms-gateway").getMoVerifierFor;
+var getMtSender = require("../msisdn-gateway/sms-gateway").getMtSenderFor;
 
 
 describe("SMS Gateway", function() {
@@ -54,7 +55,7 @@ describe("SMS Gateway", function() {
       }).sendSMS;
 
 
-      sendSMS("+33123456789", "Body", function(err) {
+      sendSMS("Mozilla@", "+33123456789", "Body", function(err) {
         expect(requests).to.length(1);
         expect(requests[0].url).to.match(/beepsend/);
         done(err);
@@ -88,7 +89,7 @@ describe("SMS Gateway", function() {
       }).sendSMS;
 
 
-      sendSMS("+33123456789", "Body", function(err) {
+      sendSMS("Mozilla@", "+33123456789", "Body", function(err) {
         expect(numberOfTries).to.eql(3);
         done();
       });
@@ -98,26 +99,26 @@ describe("SMS Gateway", function() {
     var previousList, previousDefault;
 
     beforeEach(function() {
-      previousList = conf.get("moVerifierList");
+      previousList = conf.get("moVerifierMapping");
       previousDefault = conf.get("moVerifier");
     });
 
     afterEach(function() {
-      conf.set("moVerifierList", previousList);
+      conf.set("moVerifierMapping", previousList);
       conf.set("moVerifier", previousDefault);
     });
 
     it("should return the (MCC, MNC) specific number.", function() {
-      var list = conf.get("moVerifierList");
+      var list = conf.get("moVerifierMapping");
       list["208110"] = "1234";
-      conf.set("moVerifierList", list);
+      conf.set("moVerifierMapping", list);
       expect(getMoVerifier(208, 110)).to.eql("1234");
     });
 
     it("should return the (MCC, _) specific number.", function() {
-      var list = conf.get("moVerifierList");
+      var list = conf.get("moVerifierMapping");
       list["208"] = "1234";
-      conf.set("moVerifierList", list);
+      conf.set("moVerifierMapping", list);
       expect(getMoVerifier(208, 111)).to.eql("1234");
     });
 
@@ -128,6 +129,50 @@ describe("SMS Gateway", function() {
     it("should return null if no default number.", function() {
       conf.set("moVerifier", "");
       expect(getMoVerifier(514, 111)).to.eql(null);
+    });
+  });
+
+  describe("#getMtSenderFor", function() {
+    var previousList, previousDefault;
+
+    beforeEach(function() {
+      previousList = conf.get("mtSenderMapping");
+      previousDefault = conf.get("mtSender");
+    });
+
+    afterEach(function() {
+      conf.set("mtSenderMapping", previousList);
+      conf.set("mtSender", previousDefault);
+    });
+
+    it("should return the (MCC, MNC) specific number.", function() {
+      var list = conf.get("mtSenderMapping");
+      list["21407"] = "1234";
+      conf.set("mtSenderMapping", list);
+      expect(getMtSender("214", "07")).to.eql("1234");
+    });
+
+    it("should return the (MCC, _) specific number.", function() {
+      var list = conf.get("mtSenderMapping");
+      list["208"] = "1234";
+      conf.set("mtSenderMapping", list);
+      expect(getMtSender(208, 111)).to.eql("1234");
+    });
+
+    it("should return the (MCC, _) specific number if MNC not provided.",
+      function() {
+        var list = conf.get("mtSenderMapping");
+        list["208"] = "1234";
+        conf.set("mtSenderMapping", list);
+        expect(getMtSender(208)).to.eql("1234");
+      });
+
+    it("should return the default number.", function() {
+      expect(getMtSender(514, 111)).to.eql("Mozilla@");
+    });
+
+    it("should return the default number.", function() {
+      expect(getMtSender()).to.eql("Mozilla@");
     });
   });
 
@@ -148,7 +193,7 @@ describe("SMS Gateway", function() {
         apiSecret: "456",
         priority: 10
       });
-      gateway.sendSms("123456789", "Body", function(err, res) {
+      gateway.sendSms("Mozilla@", "123456789", "Body", function(err, res) {
         expect(requests).to.length(1);
         expect(requests[0]).to.match(/^http:\/\/nexmo/);
         expect(requests[0]).to.match(/api_key=123/);
@@ -178,7 +223,7 @@ describe("SMS Gateway", function() {
         apiToken: "456",
         priority: 10
       });
-      gateway.sendSms("123456789", "Body", function(err, res) {
+      gateway.sendSms("Mozilla@", "123456789", "Body", function(err, res) {
         expect(requests).to.length(1);
         expect(requests[0].url).to.match(/^http:\/\/beepsend/);
         expect(requests[0].url).to.match(/123$/);
@@ -211,7 +256,7 @@ describe("SMS Gateway", function() {
         pwd: "456",
         priority: 10
       });
-      gateway.sendSms("+33123456789", "Body", function(err, res) {
+      gateway.sendSms("Mozilla@", "+33123456789", "Body", function(err, res) {
         expect(requests).to.length(1);
         expect(requests[0]).to.match(/^http:\/\/leonix/);
         expect(requests[0]).to.match(/service=20629/);
