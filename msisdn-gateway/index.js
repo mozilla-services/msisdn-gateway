@@ -30,10 +30,11 @@ var specs = require("./api-specs");
 var jwcrypto = require('jwcrypto');
 var i18n = require('./i18n')(conf.get('i18n'));
 
+var encrypt;
 if (conf.get("fakeEncrypt")) {
-  var encrypt = require("./fake-encrypt");
+  encrypt = require("./fake-encrypt");
 } else {
-  var encrypt = require("./encrypt");
+  encrypt = require("./encrypt");
 }
 
 // Configure http and https globalAgent
@@ -392,11 +393,17 @@ app.post("/sms/mt/verify", hawkMiddleware,
     }
 
     storage.getMSISDN(req.hawkHmacId, function(err, cipherMsisdn) {
+      if (err) {
+        logError(err);
+        sendError(res, 503, errors.BACKEND, "Service Unavailable");
+        return;
+      }
+
       var storedMsisdn;
       try {
         storedMsisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
-      } catch (err) {
-        logError(err);
+      } catch (err2) {
+        logError(err2);
         console.error("Unable to decrypt", req.hawk.id, cipherMsisdn);
         storedMsisdn = null;
       }
@@ -429,7 +436,10 @@ app.post("/sms/mt/verify", hawkMiddleware,
           var mtSender = smsGateway.getMtSenderFor(mcc, mnc);
           // XXX export string in l10n external file.
           smsGateway.sendSMS(mtSender, req.msisdn, message,
-            function(err, data) {
+            function(err /*, data */) {
+              if (err) {
+                logError(err);
+              }
               res.json(204, "");
             });
         });
@@ -478,8 +488,8 @@ function handleMobileOriginatedMessages(res, options) {
       var storedMsisdn;
       try {
         storedMsisdn = encrypt.decrypt(hawkId, cipherMsisdn);
-      } catch (err) {
-        logError(err);
+      } catch (err1) {
+        logError(err1);
         console.error("Unable to decrypt", hawkId, cipherMsisdn);
         storedMsisdn = null;
       }
@@ -660,8 +670,8 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
             try {
               var msisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
               res.json(200, {msisdn: msisdn});
-            } catch (err) {
-              logError(err);
+            } catch (err1) {
+              logError(err1);
               console.error("Unable to decrypt", req.hawk.id, cipherMsisdn);
               sendError(res, 411, errors.EXPIRED,
                         "Unable to decrypt stored MSISDN");
@@ -778,7 +788,7 @@ app.get("/api-specs", function(req, res) {
 
 
 if (argv.hasOwnProperty("fd")) {
-  var server = http.createServer(app);
+  server = http.createServer(app);
   server.maxConnections = 100;
   server.listen({fd: parseInt(argv.fd, 10)}, function() {
     console.log("Server listening on fd://" + argv.fd);

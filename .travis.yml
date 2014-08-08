@@ -8,5 +8,4 @@ services: redis-server
 before_script:
   - gem install fake_dynamo
   - npm run outdated
-  - npm run do-shrinkwrap # valiate dependencies against nodesecurity.io db.
   - make lint

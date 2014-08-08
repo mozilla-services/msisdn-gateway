@@ -36,8 +36,8 @@
   "devDependencies": {
     "async": "0.9.0",
     "chai": "1.9.1",
+    "eslint": "0.7.4",
     "istanbul": "*",
-    "jshint": "2.x",
     "mocha": "1.21.4",
     "nsp": "0.2.1",
     "proxyquire": "1.0.1",
@@ -49,8 +49,7 @@
     "test": "make test",
     "start": "make runserver",
     "outdated": "npm outdated --depth 0",
-    "do-shrinkwrap": "npm shrinkwrap --dev && npm run validate-shrinkwrap",
-    "validate-shrinkwrap": "nsp audit-shrinkwrap || true"
+    "lint": "eslint msisdn-gateway test tools"
   },
   "license": "MPL-2.0",
   "keywords": []

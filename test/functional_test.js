@@ -4,11 +4,14 @@
 
 "use strict";
 
+var crypto = require("crypto");
+var fs = require('fs');
 var expect = require("chai").expect;
 var addHawk = require("superagent-hawk");
 var supertest = addHawk(require("supertest"));
 var sinon = require("sinon");
 var async = require("async");
+
 var app = require("../msisdn-gateway").app;
 var conf = require("../msisdn-gateway").conf;
 var storage = require("../msisdn-gateway").storage;
@@ -16,16 +19,17 @@ var smsGateway = require("../msisdn-gateway/sms-gateway");
 var Token = require("../msisdn-gateway/token").Token;
 var hmac = require("../msisdn-gateway/hmac");
 var errors = require("../msisdn-gateway/errno");
+var encrypt;
 if (conf.get("fakeEncrypt")) {
-  var encrypt = require("../msisdn-gateway/fake-encrypt");
+  encrypt = require("../msisdn-gateway/fake-encrypt");
 } else {
-  var encrypt = require("../msisdn-gateway/encrypt");
+  encrypt = require("../msisdn-gateway/encrypt");
 }
 var testKeyPair = require("./testKeyPair.json");
 var range = require("./utils").range;
-var fs = require('fs');
+
 var mdl = require("../msisdn-gateway/middleware");
-var crypto = require("crypto");
+
 var pjson = require("../package.json");
 
 function expectFormatedError(body, code, errno, error, message, info) {
@@ -106,6 +110,7 @@ describe("HTTP API exposed by the server", function() {
           .options(route)
           .set('Origin', 'http://not-authorized')
           .end(function(err, res) {
+            if (err) throw err;
             expect(res.headers)
               .not.to.have.property('Access-Control-Allow-Origin');
             done();
@@ -129,6 +134,7 @@ describe("HTTP API exposed by the server", function() {
           supertest(app)[method](route)
             .set('Origin', 'http://not-authorized')
             .end(function(err, res) {
+              if (err) throw err;
               expect(res.headers)
                 .not.to.have.property('Access-Control-Allow-Origin');
               done();
@@ -149,9 +155,7 @@ describe("HTTP API exposed by the server", function() {
         .get('/__heartbeat__')
         .expect(503)
         .end(function(err, res) {
-          if (err) {
-            throw err;
-          }
+          if (err) throw err;
           expect(res.body).to.eql({
             'storage': false
           });
@@ -164,9 +168,7 @@ describe("HTTP API exposed by the server", function() {
         .get('/__heartbeat__')
         .expect(200)
         .end(function(err, res) {
-          if (err) {
-            throw err;
-          }
+          if (err) throw err;
           expect(res.body).to.eql({
             'storage': true
           });
@@ -182,6 +184,7 @@ describe("HTTP API exposed by the server", function() {
         .expect(200)
         .expect('Content-Type', /json/)
         .end(function(err, res) {
+          if (err) throw err;
           ["name", "description", "version", "homepage", "endpoint"]
           .forEach(function(key) {
             expect(res.body).to.have.property(key);
@@ -198,6 +201,7 @@ describe("HTTP API exposed by the server", function() {
           .get('/')
           .expect(200)
           .end(function(err, res) {
+            if (err) throw err;
             expect(res.body).not.to.have.property("version");
             done();
           });
@@ -210,6 +214,7 @@ describe("HTTP API exposed by the server", function() {
         .get('/unexistant')
         .expect(404)
         .end(function(err, res) {
+          if (err) throw err;
           expectFormatedError(res.body, 404);
           done();
         });
@@ -219,9 +224,7 @@ describe("HTTP API exposed by the server", function() {
       var res, res2;
       // create a big JSON blob
       fs.readFile( __dirname + '/DATA', function(err, data) {
-        if (err) {
-          throw err;
-        }
+        if (err) throw err;
         res = data.toString();
         res2 = data.toString();
 
@@ -231,6 +234,7 @@ describe("HTTP API exposed by the server", function() {
           .send(JSON.stringify({somedata: res, somemore: res2}))
           .expect(413)
           .end(function(err, res) {
+            if (err) throw err;
             done();
           });
       });
@@ -238,9 +242,9 @@ describe("HTTP API exposed by the server", function() {
 
     it("a 500 should send back JSON, always", function(done) {
       var _error = function(req, res) {
-        /* jshint ignore:start */
+        /*eslint-disable */
         res.json(200, {"boom": boom.tchak});
-        /* jshint ignore:end */
+        /*eslint-enable */
       };
 
       // plug an error on /error
@@ -251,6 +255,7 @@ describe("HTTP API exposed by the server", function() {
           .get('/error')
           .expect(500)
           .end(function(err, res) {
+            if (err) throw err;
             expectFormatedError(res.body, 500, 999, "boom is not defined");
             done();
           });
@@ -414,6 +419,7 @@ describe("HTTP API exposed by the server", function() {
     it("should create the Hawk session.", function(done) {
       jsonReq.send({msisdn: "+33623456789"}).expect(200).end(
         function(err, res) {
+          if (err) throw err;
           expect(res.body.hasOwnProperty("msisdnSessionToken")).to.equal(true);
           expect(res.body.msisdnSessionToken).to.length(64);
           done();
@@ -434,13 +440,9 @@ describe("HTTP API exposed by the server", function() {
     it("should clean the session.", function(done) {
       jsonReq.send({msisdn: "+33623456789"}).expect(204).end(
         function(err, res, tokenId) {
-          if (err) {
-            throw err;
-          }
+          if (err) throw err;
           storage.getSession(tokenId, function(err, result) {
-            if (err) {
-              throw err;
-            }
+            if (err) throw err;
             expect(result).to.equal(null);
             done();
           });
@@ -484,7 +486,6 @@ describe("HTTP API exposed by the server", function() {
     });
 
     it("should works only with a MCC code", function(done) {
-      var message;
       sandbox.stub(smsGateway, "sendSMS",
         function(from, msisdn, msg, cb) {
           message = msg;
@@ -492,7 +493,8 @@ describe("HTTP API exposed by the server", function() {
         });
       jsonReq.send({msisdn: "+33623456789", "mcc": "217"})
         .expect(200).end(
-          function(err, res) {
+          function(err /*, res */) {
+            if (err) throw err;
             sinon.assert.calledOnce(smsGateway.sendSMS);
             done();
           });
@@ -506,7 +508,7 @@ describe("HTTP API exposed by the server", function() {
           cb(null);
         });
       jsonReq.send({msisdn: "+33623456789", "mcc": "217", "mnc": "07"})
-        .expect(204).end(function(err, res) {
+        .expect(204).end(function(err /*, res*/) {
           if (err) throw err;
           sinon.assert.calledOnce(smsGateway.sendSMS);
           expect(message).to.length(32);
@@ -528,12 +530,12 @@ describe("HTTP API exposed by the server", function() {
           mnc: "204",
           shortVerificationCode: true
         }).expect(204).end(
-          function(err, res) {
+          function(err /*, res */) {
             if (err) throw err;
             sinon.assert.calledOnce(smsGateway.sendSMS);
-            var code = message.substr(message.length-6);
+            var code = message.substr(message.length - 6);
             expect(message).to.eql("Your verification code is: " + code);
-            expect(isNaN(parseInt(code))).to.eql(false);
+            expect(isNaN(parseInt(code, 10))).to.eql(false);
             done();
           });
       });
@@ -552,7 +554,7 @@ describe("HTTP API exposed by the server", function() {
            mnc: "204",
            shortVerificationCode: false
          }).expect(204).end(
-          function(err, res) {
+          function(err /*, res */) {
             if (err) throw err;
             sinon.assert.calledOnce(smsGateway.sendSMS);
             expect(message).to.length(32);
@@ -571,7 +573,7 @@ describe("HTTP API exposed by the server", function() {
            mcc: "217",
            mnc: "07"
          }).expect(204).end(
-          function(err, res) {
+          function(err /*, res */) {
             if (err) throw err;
             buildJsonReq().send({
               msisdn: "+33614365879",
@@ -579,6 +581,7 @@ describe("HTTP API exposed by the server", function() {
               mnc: "07"
             }).expect(400).expect('Content-Type', /json/)
               .end(function(err, res) {
+                if (err) throw err;
                 expectFormatedError(res.body, 400, errors.INVALID_PARAMETERS,
                   "You can validate only one MSISDN per session.");
                 done();
@@ -588,7 +591,7 @@ describe("HTTP API exposed by the server", function() {
   });
 
   describe("GET /sms/momt/nexmo_callback", function() {
-    var buildJsonReq, jsonReq, message;
+    var buildJsonReq, jsonReq;
 
     beforeEach(function() {
       buildJsonReq = function buildJsonReq() {
@@ -607,7 +610,7 @@ describe("HTTP API exposed by the server", function() {
 
     it("should always return a 200 even with no msisdn.", function(done) {
        jsonReq.query()
-         .expect(200).end(function(err, res) {
+         .expect(200).end(function(err /*, res */) {
            if (err) throw err;
            sinon.assert.notCalled(smsGateway.sendSMS);
            done();
@@ -617,7 +620,7 @@ describe("HTTP API exposed by the server", function() {
     it("should always return a 200 even if the smsBody is not found.",
        function(done) {
          jsonReq.query({msisdn: "33623456789", text: "wrong-smsBody"})
-           .expect(200).end(function(err, res) {
+           .expect(200).end(function(err /*, res */) {
              if (err) throw err;
              sinon.assert.notCalled(smsGateway.sendSMS);
              done();
@@ -630,7 +633,7 @@ describe("HTTP API exposed by the server", function() {
            msisdn: "33623456789",
            "network-code": "21407",
            text: "/sms/momt/verify " + hawkCredentials.id
-         }).expect(200).end(function(err, res) {
+         }).expect(200).end(function(err /*, res */) {
            if (err) throw err;
            sinon.assert.called(smsGateway.sendSMS);
            smsGateway.sendSMS.reset();
@@ -638,7 +641,7 @@ describe("HTTP API exposed by the server", function() {
            buildJsonReq().query({
              msisdn: "33214365879",
              text: "/sms/momt/verify " + hawkCredentials.id
-           }).expect(200).end(function(err, res) {
+           }).expect(200).end(function(err /*, res */) {
              if (err) throw err;
              sinon.assert.notCalled(smsGateway.sendSMS);
              done();
@@ -648,27 +651,28 @@ describe("HTTP API exposed by the server", function() {
 
     it("should send a SMS with the code using the network-code.",
       function(done) {
-         jsonReq.query({
-           msisdn: "33623456789",
-           "network-code": "21407",
-           text: "/sms/momt/verify " + hawkCredentials.id
-         }).expect(200).end(function(err, res) {
-             sinon.assert.called(smsGateway.sendSMS);
-             storage.getMSISDN(hawkHmacId, function(err, msisdn) {
-               if (err) throw err;
-               expect(
-                 encrypt.decrypt(hawkCredentials.id, msisdn)
-               ).to.eql("+33623456789");
-               done();
-             });
-         });
+        jsonReq.query({
+          msisdn: "33623456789",
+          "network-code": "21407",
+          text: "/sms/momt/verify " + hawkCredentials.id
+        }).expect(200).end(function(err /*, res */) {
+          if (err) throw err;
+          sinon.assert.called(smsGateway.sendSMS);
+          storage.getMSISDN(hawkHmacId, function(err, msisdn) {
+            if (err) throw err;
+            expect(
+              encrypt.decrypt(hawkCredentials.id, msisdn)
+            ).to.eql("+33623456789");
+            done();
+          });
+        });
     });
 
     it("should send a SMS with the code.", function(done) {
          jsonReq.query({
            msisdn: "33623456789",
            text: "/sms/momt/verify " + hawkCredentials.id
-         }).expect(200).end(function(err, res) {
+         }).expect(200).end(function(err /*, res */) {
            if (err) throw err;
            sinon.assert.called(smsGateway.sendSMS);
            storage.getMSISDN(hawkHmacId, function(err, msisdn) {
@@ -738,10 +742,10 @@ describe("HTTP API exposed by the server", function() {
           function(id, done) {
             buildJsonReq().send({"code": "654321"}).expect(400).end(done);
           },
-          function(err, results) {
+          function(err /*, results */) {
             if (err) throw err;
             jsonReq.send({"code": "654321"}).expect(410).end(
-              function(err, res) {
+              function(err /*, res */) {
                 if (err) throw err;
                 storage.verifyCode(hawkHmacId, "123456",
                   function(err, result) {
@@ -756,6 +760,7 @@ describe("HTTP API exposed by the server", function() {
 
     it("should validate if the code format is invalid.", function(done) {
       jsonReq.send({code: "123456789"}).expect(400).end(function(err, res) {
+        if (err) throw err;
         expectFormatedError(res.body, 400, errors.INVALID_PARAMETERS,
           "Code should be short (6 characters) or long (32 characters).");
         done();
@@ -784,9 +789,11 @@ describe("HTTP API exposed by the server", function() {
             if (err) throw err;
             var now = Date.now();
             jsonReq.send(validPayload).expect(200).end(function(err, res) {
+              if (err) throw err;
               expect(res.body.msisdn).to.equal(msisdn);
               storage.getCertificateData(hawkHmacId,
                 function(err, certificateData) {
+                  if (err) throw err;
                   expect(
                     encrypt.decrypt(hawkCredentials.id,
                                     certificateData.cipherMsisdn)
@@ -810,6 +817,7 @@ describe("HTTP API exposed by the server", function() {
             function(err) {
               if (err) throw err;
               jsonReq.send(validPayload).expect(200).end(function(err, res) {
+                if (err) throw err;
                 expect(res.body.msisdn).to.equal(msisdn);
                 storage.getSession(hawkHmacId, function(err, result) {
                   if(err) throw err;

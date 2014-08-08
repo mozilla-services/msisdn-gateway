@@ -15,7 +15,7 @@ install:
 	@npm install
 
 .PHONY: lint
-lint: jshint
+lint: eslint
 
 clean:
 	rm -rf .venv node_modules coverage lib-cov html-report
@@ -30,9 +30,9 @@ cover-mocha:
 		sleep 2; exit $$EXIT_CODE
 	@echo aim your browser at coverage/lcov-report/index.html for details
 
-.PHONY: jshint
-jshint:
-	@$(NODE_LOCAL_BIN)/jshint test/*.js msisdn-gateway/*.js msisdn-gateway/*/*.js tools/*.js
+.PHONY: eslint
+eslint:
+	@npm run lint
 
 .PHONY: mocha
 mocha:
@@ -46,7 +46,7 @@ mocha:
 spaceleft:
 	@if which grin 2>&1 >/dev/null; \
 	then \
-	  grin " $$" msisdn-gateway/ test/ config/; \
+		grin " $$" msisdn-gateway/ test/ config/; \
 	fi
 
 .PHONY: runserver
@@ -57,22 +57,22 @@ runserver:
 .PHONY: messages
 messages:
 	./node_modules/i18n-abide/node_modules/.bin/jsxgettext \
-	    --join-existing \
-	    -L javascript \
-	    --output-dir=./locale/templates/LC_MESSAGES \
-	    --from-code=utf-8 \
-	    --output=messages.pot msisdn-gateway/index.js
+		--join-existing \
+		-L javascript \
+		--output-dir=./locale/templates/LC_MESSAGES \
+		--from-code=utf-8 \
+		--output=messages.pot msisdn-gateway/index.js
 	for l in `ls ./locale | grep -v templates | grep -v README.md`; do \
-        mkdir -p locale/$$l/LC_MESSAGES/; \
-        msginit --input=./locale/templates/LC_MESSAGES/messages.pot \
-            --output-file=./locale/$$l/LC_MESSAGES/messages.po \
-            -l $$l; \
-    done
+		mkdir -p locale/$$l/LC_MESSAGES/; \
+		msginit --input=./locale/templates/LC_MESSAGES/messages.pot \
+			--output-file=./locale/$$l/LC_MESSAGES/messages.po \
+			-l $$l; \
+	done
 
 .PHONY: compile-messages
 compile-messages:
 	mkdir -p app/i18n
-	./node_modules/.bin/compile-json locale app/i18n
+	$(NODE_LOCAL_BIN)/compile-json locale app/i18n
 
 .PHONY: update-l10n
 update-l10n: update-l10n-git compile-messages
@@ -80,17 +80,17 @@ update-l10n: update-l10n-git compile-messages
 .PHONY: update-l10n-git
 update-l10n-git:
 	@if [ '$(NOVERIFY)' = '' ]; then \
-	    echo "WARNING all update made in locale/* will be overridden by this command. CTRL-C to quit"; \
-	    read toot; \
+		echo "WARNING all update made in locale/* will be overridden by this command. CTRL-C to quit"; \
+		read toot; \
 	fi
 	@if [ ! -d $(TMPDIR)/msisdn-gateway-l10n ]; then \
-	    echo "Cloning https://github.com/mozilla-services/msisdn-gateway-l10n.git"; \
-	    git clone https://github.com/mozilla-services/msisdn-gateway-l10n.git $(TMPDIR)/msisdn-gateway-l10n; \
+		echo "Cloning https://github.com/mozilla-services/msisdn-gateway-l10n.git"; \
+		git clone https://github.com/mozilla-services/msisdn-gateway-l10n.git $(TMPDIR)/msisdn-gateway-l10n; \
 	else \
-	    echo "Updating https://github.com/mozilla-services/msisdn-gateway-l10n.git"; \
-	    cd $(TMPDIR)/msisdn-gateway-l10n; \
-	      git checkout master; \
-	      git pull origin master; \
+		echo "Updating https://github.com/mozilla-services/msisdn-gateway-l10n.git"; \
+		cd $(TMPDIR)/msisdn-gateway-l10n; \
+			git checkout master; \
+			git pull origin master; \
 	fi
 	@mv ./locale/README.md /tmp/README.save
 	@echo "Sync locales"

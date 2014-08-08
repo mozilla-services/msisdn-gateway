@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-"use strict";
-
 var expect = require("chai").expect;
 var sinon = require("sinon");
 var request = require("request");
@@ -13,8 +11,9 @@ var conf = require("../msisdn-gateway").conf;
 var getMoVerifier = require("../msisdn-gateway/sms-gateway").getMoVerifierFor;
 var getMtSender = require("../msisdn-gateway/sms-gateway").getMtSenderFor;
 
-
 describe("SMS Gateway", function() {
+  "use strict";
+
   var sandbox, requests, Gateway, requestGetStub, requestPostStub;
 
   beforeEach(function() {
@@ -56,6 +55,7 @@ describe("SMS Gateway", function() {
 
 
       sendSMS("Mozilla@", "+33623456789", "Body", function(err) {
+        if (err) throw err;
         expect(requests).to.length(1);
         expect(requests[0].url).to.match(/beepsend/);
         done(err);
@@ -90,6 +90,7 @@ describe("SMS Gateway", function() {
 
 
       sendSMS("Mozilla@", "+33623456789", "Body", function(err) {
+        if (err) throw err;
         expect(numberOfTries).to.eql(3);
         done();
       });
@@ -193,7 +194,8 @@ describe("SMS Gateway", function() {
         apiSecret: "456",
         priority: 10
       });
-      gateway.sendSms("Mozilla@", "0623456789", "Body", function(err, res) {
+      gateway.sendSms("Mozilla@", "0623456789", "Body", function(err /*, res */) {
+        if (err) throw err;
         expect(requests).to.length(1);
         expect(requests[0]).to.match(/^http:\/\/nexmo/);
         expect(requests[0]).to.match(/api_key=123/);
@@ -223,7 +225,8 @@ describe("SMS Gateway", function() {
         apiToken: "456",
         priority: 10
       });
-      gateway.sendSms("Mozilla@", "0623456789", "Body", function(err, res) {
+      gateway.sendSms("Mozilla@", "0623456789", "Body", function(err /*, res */) {
+        if (err) throw err;
         expect(requests).to.length(1);
         expect(requests[0].url).to.match(/^http:\/\/beepsend/);
         expect(requests[0].url).to.match(/123$/);
@@ -256,7 +259,8 @@ describe("SMS Gateway", function() {
         pwd: "456",
         priority: 10
       });
-      gateway.sendSms("Mozilla@", "+33623456789", "Body", function(err, res) {
+      gateway.sendSms("Mozilla@", "+33623456789", "Body", function(err /*, res */) {
+        if (err) throw err;
         expect(requests).to.length(1);
         expect(requests[0]).to.match(/^http:\/\/leonix/);
         expect(requests[0]).to.match(/service=20629/);

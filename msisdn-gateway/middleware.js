@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
+
 var conf = require("./config").conf;
 var hmac = require("./hmac");
 var phone = require("phone");
@@ -53,7 +54,7 @@ function checkHeaders(req, res, next) {
   next();
 }
 
-function logErrors(err, req, res, next) {
+function logErrors(err, req, res /*, next */) {
   req.unhandledError = err;
   var message = err.message;
   var status = err.status || 500;
