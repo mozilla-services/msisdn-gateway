@@ -486,9 +486,10 @@ describe("HTTP API exposed by the server", function() {
     });
 
     it("should works only with a MCC code", function(done) {
+      // var message;
       sandbox.stub(smsGateway, "sendSMS",
         function(from, msisdn, msg, cb) {
-          message = msg;
+          // message = msg;
           cb(null);
         });
       jsonReq.send({msisdn: "+33623456789", "mcc": "217"})
@@ -603,7 +604,7 @@ describe("HTTP API exposed by the server", function() {
 
       sandbox.stub(smsGateway, "sendSMS",
         function(from, msisdn, msg, cb) {
-          message = msg;
+          // message = msg;
           cb(null);
         });
     });
@@ -898,7 +899,7 @@ describe("HTTP API exposed by the server", function() {
     });
   });
 
-  describe("GET /.well-known/browserid", function(done) {
+  describe("GET /.well-known/browserid", function(/* done */) {
     it("should return the publickey and mandatory metadata.", function(done) {
       supertest(app)
         .get('/.well-known/browserid')
@@ -925,7 +926,7 @@ describe("HTTP API exposed by the server", function() {
       });
   });
 
-  describe("GET /api-specs", function(done) {
+  describe("GET /api-specs", function(/* done */) {
     it("should return the Videur api spec file.", function(done) {
       supertest(app)
         .get('/api-specs')
