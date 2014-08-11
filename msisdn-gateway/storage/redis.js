@@ -242,7 +242,7 @@ RedisStorage.prototype = {
               callback(err);
             });
           });
-        })
+        });
       });
     });
   },

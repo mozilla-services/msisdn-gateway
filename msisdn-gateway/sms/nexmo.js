@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-var conf = require("../config").conf;
 var request = require("request");
 var querystring = require("querystring");
 
