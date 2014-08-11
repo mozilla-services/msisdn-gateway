@@ -38,13 +38,15 @@ class TestMSISDN(TestCase):
         if random.randint(0, 100) < PERCENTAGE_OF_MT_FLOW:
             # 1. Ask MSISDN validation
             resp = self.start_mt_flow()
-            self.assertEqual(resp.status_code, 200,
-                             "Start MT Flow failed: %s" % resp.content)
+            self.assertEqual(resp.status_code, 204,
+                             "Start MT Flow failed: %s (%s)" % (resp.content,
+                                                                resp.status_code))
         else:
             # 2. Send SMS /sms/momt/verify hawkId
             resp = self.start_momt_flow()
             self.assertEqual(resp.status_code, 200,
-                             "Start MOMT Flow failed: %s" % resp.content)
+                             "Start MOMT Flow failed: %s (%s)" % (resp.content,
+                                                                resp.status_code))
 
         # Poll omxen for the message
         message = self.read_message()
@@ -63,7 +65,8 @@ class TestMSISDN(TestCase):
                 # message it is probably because two test where using
                 # the same MSISDN at the same time
                 self.assertEquals(resp.status_code, 400,
-                                  "Omxen collision failed: %s" % resp.content)
+                                  "Omxen collision failed: %s (%s)" % (
+                                      resp.content, resp.status_code))
 
                 self.incr_counter("omxen-message-collision")
         else:
@@ -71,17 +74,16 @@ class TestMSISDN(TestCase):
             self.incr_counter("try-wrong-code")
             resp = self.verify_code()
             self.assertEquals(resp.status_code, 400,
-                              "Try wrong code failed: %d - %s" % (
-                                  resp.status_code,
-                                  resp.content))
+                              "Try wrong code failed: %s (%s)" % (
+                                  resp.content, resp.status_code))
 
         # Unregister
         self.unregister()
 
     def __get_random_msisdn(self):
-        code = "%d" % random.randint(0, 999999999)
-        code = code.zfill(9)
-        return "+33%s" % code
+        code = "%d" % random.randint(0, 99999999)
+        code = code.zfill(8)
+        return "+336%s" % code
 
     def discover(self):
         resp = self.session.post(
@@ -90,7 +92,8 @@ class TestMSISDN(TestCase):
             headers={'Content-type': 'application/json'}
         )
         self.assertEquals(resp.status_code, 200,
-                          "Discover endpoint failed: %s" % resp.content)
+                          "Discover endpoint failed: %s (%s)" % (
+                              resp.content, resp.status_code))
 
     def register(self):
         resp = self.session.post(self.server_url + '/register')
@@ -98,7 +101,8 @@ class TestMSISDN(TestCase):
         try:
             sessionToken = resp.json()['msisdnSessionToken']
         except ValueError:
-            self.fail("No JSON has been returned: %s" % resp.content)
+            self.fail("No JSON has been returned: %s (%s)" % (
+                resp.content, resp.status_code))
         except KeyError:
             self.fail("msisdnSessionToken not found in response: %s" %
                       resp.content)
@@ -116,6 +120,7 @@ class TestMSISDN(TestCase):
             self.server_url + '/sms/mt/verify',
             data=json.dumps({
                 "msisdn": self.msisdn,
+                "mcc": "208",
                 "shortVerification": self.shortVerificationCode
             }),
             headers={'Content-type': 'application/json'},
@@ -192,15 +197,17 @@ class TestMSISDN(TestCase):
                                  headers={'Content-type': 'application/json'},
                                  auth=self.hawk_auth)
         self.assertEqual(resp.status_code, 200,
-                         "Sign certificate failed: %s" % resp.content)
+                         "Sign certificate failed: %s (%s)" % (
+                             resp.content, resp.status_code))
 
     def unregister(self):
         resp = self.session.post(self.server_url + '/unregister',
                                  headers={'Content-type': 'application/json'},
                                  auth=self.hawk_auth)
         self.incr_counter("unregister")
-        self.assertEqual(resp.status_code, 200,
-                         "Unregister failed: %s" % resp.content)
+        self.assertEqual(resp.status_code, 204,
+                         "Unregister failed: %s (%s)" % (resp.content,
+                                                         resp.status_code))
 
 
 def HKDF_extract(salt, IKM, hashmod=hashlib.sha256):
