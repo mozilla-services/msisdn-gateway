@@ -1,10 +1,13 @@
 CHANGELOG
 =========
 
-0.5.0 (unreleased)
+0.4.2 (2014-08-12)
 ------------------
 
-- No changes yet.
+- [feature] Replace status code 200 with empty JSON to code 204 - No Content
+- [feature] Handle the MCC on sms/mt/verify in order to choose
+            the right MtSender number.
+- [bug] fix CORS to allow credentials
 
 
 0.4.1 (2014-07-16)
