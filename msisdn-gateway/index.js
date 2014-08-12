@@ -541,7 +541,7 @@ app.get("/sms/momt/nexmo_callback", function(req, res) {
   }
 
   var options = {
-    msisdn: phone('+' + req.query.msisdn)[0],
+    msisdn: '+' + req.query.msisdn,
     text: req.query.text
   };
   console.log(options, req.query);
@@ -562,7 +562,7 @@ app.get("/sms/momt/beepsend_callback", function(req, res) {
   }
 
   var options = {
-    msisdn: phone('+' + req.query.from)[0],
+    msisdn: '+' + req.query.from,
     text: req.query.message
   };
 
