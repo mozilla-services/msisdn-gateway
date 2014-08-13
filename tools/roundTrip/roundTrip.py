@@ -6,13 +6,8 @@ import sys
 
 from docopt import docopt
 from requests_hawk import HawkAuth
-
-try:
-    # Python 2 compat
-    input = raw_input
-except NameError:
-    pass
-
+from six import text_type
+from six.moves import input
 
 HELP = """This program helps you test a MSISDN Gateway server from the CLI.
 
@@ -60,7 +55,7 @@ def main(args):
         discover_args["mnc"] = arguments["--mnc"]
     if arguments["--msisdn"] is not None:
         discover_args["msisdn"] = arguments["--msisdn"]
-        
+
     r = requests.post(url, json.dumps(discover_args), headers=headers)
     r.raise_for_status()
     discover = r.json()
@@ -100,7 +95,7 @@ def main(args):
         # 3.1 Give the Number and HawkId
         moVerifier = discover['verificationDetails']["sms/momt"]["moVerifier"]
         print("Please send the following message to %s:" % moVerifier)
-        print("\n\tSMS %s\n" % hawkId)
+        print("\n\tSMS %s\n" % hawkId.decode("ascii"))
 
     # 4. Ask for the code
     code = input(
@@ -124,7 +119,7 @@ def main(args):
     r.raise_for_status()
     sign = r.json()
     cert = sign["cert"]
-    info = json.loads(decode_bytes(cert.split('.')[1]))
+    info = json.loads(decode_bytes(cert.split('.')[1]).decode("utf-8"))
     info["publicKey"] = "<stripped>"
     info["pubkey"] = "<stripped>"
     print("Verified: %s" % json.dumps(info, indent=2, sort_keys=True))
@@ -139,7 +134,7 @@ def decode_bytes(value):
 
     If the value is not correctly encoded, ValueError will be raised.
     """
-    if isinstance(value, unicode):
+    if isinstance(value, text_type):
         value = value.encode("ascii")
     pad = len(value) % 4
     if pad == 2:
@@ -151,7 +146,7 @@ def decode_bytes(value):
     try:
         return base64.urlsafe_b64decode(value)
     except TypeError as e:
-        raise ValueError(str(e))
+        raise ValueError(text_type(e))
 
 
 if __name__ == "__main__":
