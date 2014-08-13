@@ -20,7 +20,7 @@ Nexmo.prototype = {
     var url = this._conf.endpoint + "?" + querystring.stringify({
       api_key: this._conf.apiKey,
       api_secret: this._conf.apiSecret,
-      from: from,
+      from: from.replace("+", ""),
       to: to.replace("+", ""),
       text: message
     });
