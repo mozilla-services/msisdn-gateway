@@ -1,0 +1,20 @@
+Round Trip
+==========
+
+This little CLI tool let you validate both MT and MOMT flow using
+MSISDN server.
+
+To start a MT Flow:
+
+    python roundTrip.py -H https://msisdn.services.mozilla.com \
+        -c 310 -n +1xxxxxxxxxxx
+
+To start a MOMT Flow:
+
+    python roundTrip.py -H https://msisdn.services.mozilla.com -c 310
+
+
+INSTALL
+-------
+
+    make install
