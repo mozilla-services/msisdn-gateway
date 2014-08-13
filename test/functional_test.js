@@ -493,7 +493,7 @@ describe("HTTP API exposed by the server", function() {
           cb(null);
         });
       jsonReq.send({msisdn: "+33623456789", "mcc": "217"})
-        .expect(200).end(
+        .expect(204).end(
           function(err /*, res */) {
             if (err) throw err;
             sinon.assert.calledOnce(smsGateway.sendSMS);

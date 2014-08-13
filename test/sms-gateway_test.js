@@ -89,8 +89,7 @@ describe("SMS Gateway", function() {
       }).sendSMS;
 
 
-      sendSMS("Mozilla@", "+33623456789", "Body", function(err) {
-        if (err) throw err;
+      sendSMS("Mozilla@", "+33623456789", "Body", function() {
         expect(numberOfTries).to.eql(3);
         done();
       });

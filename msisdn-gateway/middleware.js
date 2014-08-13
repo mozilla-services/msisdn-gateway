@@ -54,7 +54,9 @@ function checkHeaders(req, res, next) {
   next();
 }
 
+/*eslint-disable*/
 function logErrors(err, req, res, next) {
+/*eslint-enable*/
   req.unhandledError = err;
   var message = err.message;
   var status = err.status || 500;
