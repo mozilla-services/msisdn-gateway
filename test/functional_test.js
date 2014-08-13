@@ -486,15 +486,13 @@ describe("HTTP API exposed by the server", function() {
     });
 
     it("should works only with a MCC code", function(done) {
-      // var message;
       sandbox.stub(smsGateway, "sendSMS",
         function(from, msisdn, msg, cb) {
-          // message = msg;
           cb(null);
         });
       jsonReq.send({msisdn: "+33623456789", "mcc": "217"})
         .expect(204).end(
-          function(err /*, res */) {
+          function(err) {
             if (err) throw err;
             sinon.assert.calledOnce(smsGateway.sendSMS);
             done();
@@ -509,7 +507,7 @@ describe("HTTP API exposed by the server", function() {
           cb(null);
         });
       jsonReq.send({msisdn: "+33623456789", "mcc": "217", "mnc": "07"})
-        .expect(204).end(function(err /*, res*/) {
+        .expect(204).end(function(err) {
           if (err) throw err;
           sinon.assert.calledOnce(smsGateway.sendSMS);
           expect(message).to.length(32);
@@ -531,7 +529,7 @@ describe("HTTP API exposed by the server", function() {
           mnc: "204",
           shortVerificationCode: true
         }).expect(204).end(
-          function(err /*, res */) {
+          function(err) {
             if (err) throw err;
             sinon.assert.calledOnce(smsGateway.sendSMS);
             var code = message.substr(message.length - 6);
@@ -555,7 +553,7 @@ describe("HTTP API exposed by the server", function() {
            mnc: "204",
            shortVerificationCode: false
          }).expect(204).end(
-          function(err /*, res */) {
+          function(err) {
             if (err) throw err;
             sinon.assert.calledOnce(smsGateway.sendSMS);
             expect(message).to.length(32);
@@ -574,7 +572,7 @@ describe("HTTP API exposed by the server", function() {
            mcc: "217",
            mnc: "07"
          }).expect(204).end(
-          function(err /*, res */) {
+          function(err) {
             if (err) throw err;
             buildJsonReq().send({
               msisdn: "+33614365879",
@@ -604,14 +602,13 @@ describe("HTTP API exposed by the server", function() {
 
       sandbox.stub(smsGateway, "sendSMS",
         function(from, msisdn, msg, cb) {
-          // message = msg;
           cb(null);
         });
     });
 
     it("should always return a 200 even with no msisdn.", function(done) {
        jsonReq.query()
-         .expect(200).end(function(err /*, res */) {
+         .expect(200).end(function(err) {
            if (err) throw err;
            sinon.assert.notCalled(smsGateway.sendSMS);
            done();
@@ -621,7 +618,7 @@ describe("HTTP API exposed by the server", function() {
     it("should always return a 200 even if the smsBody is not found.",
        function(done) {
          jsonReq.query({msisdn: "33623456789", text: "wrong-smsBody"})
-           .expect(200).end(function(err /*, res */) {
+           .expect(200).end(function(err) {
              if (err) throw err;
              sinon.assert.notCalled(smsGateway.sendSMS);
              done();
@@ -634,7 +631,7 @@ describe("HTTP API exposed by the server", function() {
            msisdn: "33623456789",
            "network-code": "21407",
            text: "/sms/momt/verify " + hawkCredentials.id
-         }).expect(200).end(function(err /*, res */) {
+         }).expect(200).end(function(err) {
            if (err) throw err;
            sinon.assert.called(smsGateway.sendSMS);
            smsGateway.sendSMS.reset();
@@ -642,7 +639,7 @@ describe("HTTP API exposed by the server", function() {
            buildJsonReq().query({
              msisdn: "33214365879",
              text: "/sms/momt/verify " + hawkCredentials.id
-           }).expect(200).end(function(err /*, res */) {
+           }).expect(200).end(function(err) {
              if (err) throw err;
              sinon.assert.notCalled(smsGateway.sendSMS);
              done();
@@ -656,7 +653,7 @@ describe("HTTP API exposed by the server", function() {
           msisdn: "33623456789",
           "network-code": "21407",
           text: "/sms/momt/verify " + hawkCredentials.id
-        }).expect(200).end(function(err /*, res */) {
+        }).expect(200).end(function(err) {
           if (err) throw err;
           sinon.assert.called(smsGateway.sendSMS);
           storage.getMSISDN(hawkHmacId, function(err, msisdn) {
@@ -673,7 +670,7 @@ describe("HTTP API exposed by the server", function() {
          jsonReq.query({
            msisdn: "33623456789",
            text: "/sms/momt/verify " + hawkCredentials.id
-         }).expect(200).end(function(err /*, res */) {
+         }).expect(200).end(function(err) {
            if (err) throw err;
            sinon.assert.called(smsGateway.sendSMS);
            storage.getMSISDN(hawkHmacId, function(err, msisdn) {
@@ -743,10 +740,10 @@ describe("HTTP API exposed by the server", function() {
           function(id, done) {
             buildJsonReq().send({"code": "654321"}).expect(400).end(done);
           },
-          function(err /*, results */) {
+          function(err) {
             if (err) throw err;
             jsonReq.send({"code": "654321"}).expect(410).end(
-              function(err /*, res */) {
+              function(err) {
                 if (err) throw err;
                 storage.verifyCode(hawkHmacId, "123456",
                   function(err, result) {
@@ -899,7 +896,7 @@ describe("HTTP API exposed by the server", function() {
     });
   });
 
-  describe("GET /.well-known/browserid", function(/* done */) {
+  describe("GET /.well-known/browserid", function() {
     it("should return the publickey and mandatory metadata.", function(done) {
       supertest(app)
         .get('/.well-known/browserid')
@@ -926,7 +923,7 @@ describe("HTTP API exposed by the server", function() {
       });
   });
 
-  describe("GET /api-specs", function(/* done */) {
+  describe("GET /api-specs", function() {
     it("should return the Videur api spec file.", function(done) {
       supertest(app)
         .get('/api-specs')

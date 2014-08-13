@@ -402,8 +402,8 @@ app.post("/sms/mt/verify", hawkMiddleware,
       var storedMsisdn;
       try {
         storedMsisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
-      } catch (err2) {
-        logError(err2);
+      } catch (error) {
+        logError(error);
         console.error("Unable to decrypt", req.hawk.id, cipherMsisdn);
         storedMsisdn = null;
       }
@@ -436,9 +436,11 @@ app.post("/sms/mt/verify", hawkMiddleware,
           var mtSender = smsGateway.getMtSenderFor(mcc, mnc);
           // XXX export string in l10n external file.
           smsGateway.sendSMS(mtSender, req.msisdn, message,
-            function(err /*, data */) {
+            function(err, data) {
               if (err) {
                 logError(err);
+                sendError(res, 503, errors.BACKEND, data);
+                return;
               }
               res.json(204, "");
             });
@@ -488,8 +490,8 @@ function handleMobileOriginatedMessages(res, options) {
       var storedMsisdn;
       try {
         storedMsisdn = encrypt.decrypt(hawkId, cipherMsisdn);
-      } catch (err1) {
-        logError(err1);
+      } catch (error) {
+        logError(error);
         console.error("Unable to decrypt", hawkId, cipherMsisdn);
         storedMsisdn = null;
       }
@@ -670,8 +672,8 @@ app.post("/sms/verify_code", hawkMiddleware, requireParams("code"),
             try {
               var msisdn = encrypt.decrypt(req.hawk.id, cipherMsisdn);
               res.json(200, {msisdn: msisdn});
-            } catch (err1) {
-              logError(err1);
+            } catch (error) {
+              logError(error);
               console.error("Unable to decrypt", req.hawk.id, cipherMsisdn);
               sendError(res, 411, errors.EXPIRED,
                         "Unable to decrypt stored MSISDN");

@@ -24,8 +24,8 @@ Nexmo.prototype = {
       to: to.replace("+", ""),
       text: message
     });
-    request.get(url, function(err) {
-      callback(err);
+    request.get(url, function(err, resp) {
+      callback(err, resp.content);
     });
   }
 };
