@@ -49,7 +49,9 @@
     "test": "make test",
     "start": "make runserver",
     "outdated": "npm outdated --depth 0",
-    "lint": "eslint msisdn-gateway test tools"
+    "lint": "eslint msisdn-gateway test tools",
+    "lint-jsdoc": "eslint msisdn-gateway tools --rule 'valid-jsdoc: [1, {requireReturn:false}]'",
+    "audit-shrinkwrap": "npm shrinkwrap --dev && nsp audit-shrinkwrap || true"
   },
   "license": "MPL-2.0",
   "keywords": []
