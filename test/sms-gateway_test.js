@@ -22,12 +22,18 @@ describe("SMS Gateway", function() {
     requestPostStub = sandbox.stub(request, "post",
       function(options, cb) {
         requests.push(options);
-        cb(null, {statusCode: 200});
+        cb(null, {
+          body: '{"messages": [{"status":"0"}]}',
+          statusCode: 200
+        });
       });
     requestGetStub = sandbox.stub(request, "get",
       function(options, cb) {
         requests.push(options);
-        cb(null, {statusCode: 200});
+        cb(null, {
+          body: '{"messages": [{"status":"0"}]}',
+          statusCode: 200
+        });
       });
 
   });
@@ -72,13 +78,19 @@ describe("SMS Gateway", function() {
       requestGetStub = sandbox.stub(request, "get",
         function(options, cb) {
           numberOfTries++;
-          cb(new Error("Service Unavailable."), {statusCode: 503});
+          cb(new Error("Service Unavailable."), {
+            body: '{"messages": [{"status":"0"}]}',
+            statusCode: 503
+          });
         });
 
       requestPostStub = sandbox.stub(request, "post",
         function(options, cb) {
           numberOfTries++;
-          cb(new Error("Service Unavailable."), {statusCode: 503});
+          cb(new Error("Service Unavailable."), {
+            body: '{"messages": [{"status":"0"}]}',
+            statusCode: 503
+          });
         });
 
       var sendSMS = proxyquire("../msisdn-gateway/sms-gateway", {

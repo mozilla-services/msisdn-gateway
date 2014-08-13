@@ -55,7 +55,7 @@ function sendSMS(mtSender, msisdn, message, callback, retries) {
       }
       return;
     }
-    callback(null);
+    callback(null, data);
   });
 }
 

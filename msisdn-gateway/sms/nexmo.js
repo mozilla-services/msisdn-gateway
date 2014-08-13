@@ -25,7 +25,23 @@ Nexmo.prototype = {
       text: message
     });
     request.get(url, function(err, resp) {
-      callback(err, resp.content);
+      if (err) {
+        callback(err, resp.body);
+        return;
+      }
+
+      try {
+        var content = JSON.parse(resp.body);
+        if (content.messages && content.messages.length > 0 &&
+            content.messages[0].status !== "0") {
+          callback(
+            new Error(content.messages[0].status + " — " +
+                      content.messages[0]["error-text"])
+          );
+          return;
+        }
+      } catch(error) {}
+      callback(err, resp.body);
     });
   }
 };
