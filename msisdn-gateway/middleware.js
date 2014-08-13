@@ -54,11 +54,10 @@ function checkHeaders(req, res, next) {
   next();
 }
 
-function logErrors(err, req, res /*, next */) {
+function logErrors(err, req, res, next) {
   req.unhandledError = err;
   var message = err.message;
   var status = err.status || 500;
-
   sendError(res, status, 999, message);
 }
 
