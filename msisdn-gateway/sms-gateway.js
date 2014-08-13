@@ -42,7 +42,7 @@ function sendSMS(mtSender, msisdn, message, callback, retries) {
     retries = conf.get("nbSmsSendTries");
   }
   var provider = providers[0];
-  provider.sendSms(mtSender, msisdn, message, function(err) {
+  provider.sendSms(mtSender, msisdn, message, function(err, data) {
     if (err) {
       // In case of error, try the next provider.
       if (providers.length > 1) {
@@ -51,11 +51,11 @@ function sendSMS(mtSender, msisdn, message, callback, retries) {
       if (retries > 1) {
         sendSMS(mtSender, msisdn, message, callback, --retries);
       } else {
-        callback(err);
+        callback(err, data);
       }
       return;
     }
-    callback(null);
+    callback(null, data);
   });
 }
 

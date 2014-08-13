@@ -25,8 +25,8 @@ Leonix.prototype = {
       number: to.replace("+33", "0"),
       msg: message
     });
-    request.get(url, function(err) {
-      callback(err);
+    request.get(url, function(err, resp) {
+      callback(err, resp.body);
     });
   }
 };

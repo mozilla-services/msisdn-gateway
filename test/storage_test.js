@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-"use strict";
 var expect = require("chai").expect;
 var getStorage = require("../msisdn-gateway/storage");
 var conf = require("../msisdn-gateway").conf;
@@ -21,6 +20,8 @@ var authKey = "37387f4e03e5767ba8266f004003423202778b55041ea70c0d00256" +
   "e78a3bad8";
 
 describe("Storage", function() {
+  "use strict";
+
   function testStorage(name, createStorage) {
     var storage;
 
@@ -33,6 +34,7 @@ describe("Storage", function() {
 
       afterEach(function(done) {
         storage.drop(function(err) {
+          if (err) throw err;
           // Remove the storage reference so tests blow up in an explicit way.
           storage = undefined;
           done(err);
@@ -47,10 +49,9 @@ describe("Storage", function() {
           }
           storage.setCode(msisdnMac, code,
             function(err) {
-              if (err)  {
-                throw err;
-              }
+              if (err) throw err;
               storage.verifyCode(msisdnMac, code, function(err, value){
+                if (err) throw err;
                 expect(value).to.equal(true);
                 done();
               });
@@ -66,10 +67,9 @@ describe("Storage", function() {
           }
           storage.setCode(msisdnMac, code,
             function(err) {
-              if (err)  {
-                throw err;
-              }
+              if (err) throw err;
               storage.verifyCode(msisdnMac, "wrong-code", function(err, value){
+                if (err) throw err;
                 expect(value).to.equal(false);
                 done();
               });
@@ -83,10 +83,9 @@ describe("Storage", function() {
           }
           storage.setCode(msisdnMac, code,
             function(err) {
-              if (err)  {
-                throw err;
-              }
+              if (err) throw err;
               storage.verifyCode("wrong-mac", code, function(err, value){
+                if (err) throw err;
                 expect(value).to.equal(null);
                 done();
               });
@@ -101,8 +100,10 @@ describe("Storage", function() {
             return;
           }
           storage.setCodeWrongTry(hawkHmacId, function(err, tries) {
+            if (err) throw err;
             expect(tries).to.eql(1);
             storage.setCodeWrongTry(hawkHmacId, function(err, tries) {
+              if (err) throw err;
               expect(tries).to.eql(2);
               done();
             });
@@ -118,7 +119,7 @@ describe("Storage", function() {
           }
           storage.setCode(hawkHmacId, "123", function(err) {
             if (err) throw err;
-            storage.setCodeWrongTry(hawkHmacId, function(err, tries) {
+            storage.setCodeWrongTry(hawkHmacId, function(err /*, tries */) {
               if (err) throw err;
               storage.expireCode(hawkHmacId, function(err) {
                 if (err) throw err;
@@ -145,10 +146,9 @@ describe("Storage", function() {
           }
           storage.storeMSISDN(hawkHmacId, authKey,
             function(err) {
-              if (err)  {
-                throw err;
-              }
+              if (err) throw err;
               storage.getMSISDN(hawkHmacId, function(err, value){
+                if (err) throw err;
                 expect(value).to.eql(authKey);
                 done();
               });
@@ -163,6 +163,7 @@ describe("Storage", function() {
             return;
           }
           storage.getMSISDN("wrong-hawkHmacId", function(err, value){
+            if (err) throw err;
             expect(value).to.equal(null);
             done();
             });
@@ -177,10 +178,9 @@ describe("Storage", function() {
           }
           storage.setSession(hawkHmacId, authKey,
             function(err) {
-              if (err)  {
-                throw err;
-              }
+              if (err) throw err;
               storage.getSession(hawkHmacId, function(err, value){
+                if (err) throw err;
                 expect(value).to.eql({
                   key: authKey,
                   algorithm: "sha256"
@@ -198,6 +198,7 @@ describe("Storage", function() {
             return;
           }
           storage.getSession("wrong-hawkHmacId", function(err, value){
+            if (err) throw err;
             expect(value).to.equal(null);
             done();
           });
@@ -208,10 +209,9 @@ describe("Storage", function() {
         it("should set the MSISDN.", function(done) {
           storage.setCertificateData(hawkHmacId, {foo: "bar"},
             function(err) {
-              if (err)  {
-                throw err;
-              }
+              if (err) throw err;
               storage.getCertificateData(hawkHmacId, function(err, value){
+                if (err) throw err;
                 expect(value).to.eql({foo: "bar"});
                 done();
               });
@@ -222,6 +222,7 @@ describe("Storage", function() {
       describe("#getCertificateData", function() {
         it("should return null on invalid hawkHmacId.", function(done) {
           storage.getCertificateData("wrong-hawkHmacId", function(err, value){
+            if (err) throw err;
             expect(value).to.equal(null);
             done();
           });
@@ -238,6 +239,7 @@ describe("Storage", function() {
                   if (err) throw err;
                   storage.getCertificateData(hawkHmacId,
                     function(err, value) {
+                      if (err) throw err;
                       expect(value).to.equal(null);
                       done();
                     });
@@ -272,6 +274,7 @@ describe("Storage", function() {
                                 expect(value).to.equal(null);
                                 storage.getCertificateData(hawkHmacId,
                                   function(err, value) {
+                                    if (err) throw err;
                                     expect(value).to.equal(null);
                                     done();
                                   });
@@ -320,6 +323,7 @@ describe("Storage", function() {
                               expect(value).to.equal(null);
                               storage.getCertificateData(hawkHmacId,
                                 function(err, value) {
+                                  if (err) throw err;
                                   expect(value).to.equal(authKey);
                                   done();
                               });

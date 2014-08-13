@@ -24,7 +24,8 @@ var duration = parseInt(conf.duration, 10) || 3600;
 var audience = conf.audience || "http://loop.dev.mozaws.net";
 var host = conf.host;
 var trustedIssuers = conf.trustedIssuers || [host];
-var host = conf.host || "msisdn-dev.stage.mozaws.net";
+
+host = conf.host || "msisdn-dev.stage.mozaws.net";
 
 // generate an assertion (and keypair and signed cert if required)
 function createAssertion(cert, cb) {

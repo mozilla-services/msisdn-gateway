@@ -26,8 +26,8 @@ BeepSend.prototype = {
         message: message,
         from: from.replace(/@$/g, "")
       }
-    }, function(err) {
-      callback(err);
+    }, function(err, resp) {
+      callback(err, resp.body);
     });
   }
 };

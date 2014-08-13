@@ -13,7 +13,9 @@ var MSISDN = "+33508866481";
 
 var counter = 0;
 
+/*eslint-disable*/
 while (true) {
+/*eslint-enable*/
   // Uncomment to activate random values.
   // MSISDN = "+33" + digitsCode(9);
   var cipher = encrypt.encrypt(HawkId, MSISDN);

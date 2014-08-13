@@ -61,7 +61,7 @@ describe("index.js", function() {
           expect(res.body).eql({
             code: 400,
             errno: errors.MISSING_PARAMETERS,
-            error: "Missing a,b",
+            error: "Missing a,b"
           });
           done();
         });

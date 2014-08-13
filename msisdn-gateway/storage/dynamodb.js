@@ -184,8 +184,8 @@ DynamoDBStorage.prototype = {
 
       try {
         dynamoObj = self.dynamoFromObject(data);
-      } catch (err) {
-        callback(err);
+      } catch (error) {
+        callback(error);
         return;
       }
 
