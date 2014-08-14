@@ -9,7 +9,7 @@ require("jwcrypto/lib/algs/ds");
 require("jwcrypto/lib/algs/rs");
 
 jwcrypto.generateKeypair({
-    algorithm: "DS",
+    algorithm: "DSA",
     keysize: 256
   }, function(err, keypair) {
     if (err) {

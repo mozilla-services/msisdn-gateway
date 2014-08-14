@@ -9,7 +9,7 @@ var sinon = require("sinon");
 
 var errors = require("../msisdn-gateway/errno");
 var app = require("../msisdn-gateway").app;
-var requireParams = require("../msisdn-gateway").requireParams;
+var requireParams = require("../msisdn-gateway/routes/utils").requireParams;
 var server = require("../msisdn-gateway").server;
 var shutdown = require("../msisdn-gateway").shutdown;
 
