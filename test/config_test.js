@@ -33,4 +33,10 @@ describe("config", function() {
       }).to.throw(/Should be an 4 bytes key encoded as hexadecimal/);
     });
   });
+
+  describe("sample.json", function() {
+    it("should load.", function() {
+      require("../config/sample.json");
+    });
+  });
 });
