@@ -89,7 +89,12 @@ is equivalent to:
 How to run the tests?
 ---------------------
 
+To run DynamoDB tests you will need to install and run [fake_dynamo](https://github.com/ananthakumaran/fake_dynamo) or [ddbmock](https://pypi.python.org/pypi/ddbmock)
+
+FakeDynamo needs ruby, ruby-dev(el) and rubygems.
+
     make test
+
 
 How to update translation?
 --------------------------
