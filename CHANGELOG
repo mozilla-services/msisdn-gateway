@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.4.4 (2014-08-19)
+------------------
+
+- [bug] MCC set to null is considered as missing.
+
+
 0.4.3 (2014-08-13)
 ------------------
 
