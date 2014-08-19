@@ -16,6 +16,7 @@ var app = require("../msisdn-gateway").app;
 var conf = require("../msisdn-gateway").conf;
 var storage = require("../msisdn-gateway").storage;
 var smsGateway = require("../msisdn-gateway/sms-gateway");
+var FileMap = require("../msisdn-gateway/sms/infos/file");
 var Token = require("../msisdn-gateway/token").Token;
 var hmac = require("../msisdn-gateway/hmac");
 var errors = require("../msisdn-gateway/errno");
@@ -301,10 +302,11 @@ describe("HTTP API exposed by the server", function() {
 
 
   describe("POST /discover", function() {
-    var jsonReq, previousDefault;
+    var jsonReq, previousDefault, mapping;
 
     beforeEach(function() {
-      previousDefault = conf.get("moVerifier");
+      previousDefault = conf.get("smsMapping");
+      mapping = conf.get("smsMapping");
       jsonReq = supertest(app)
         .post('/discover')
         .type('json')
@@ -312,7 +314,7 @@ describe("HTTP API exposed by the server", function() {
     });
 
     afterEach(function() {
-      conf.set("moVerifier", previousDefault);
+      conf.set("smsMapping", previousDefault);
     });
 
     it("should works without the MSISDN parameter", function(done) {
@@ -388,7 +390,9 @@ describe("HTTP API exposed by the server", function() {
 
     it("should return the sms/mt flow if no moVerifier number and no MSISDN.",
       function(done) {
-        conf.set("moVerifier", "");
+        mapping.moVerifier = "";
+        conf.set("smsMapping", mapping);
+        smsGateway.numberMap = new FileMap(mapping);
         jsonReq.send({"mcc": "512"}).expect(200).end(function(err, res) {
           if (err) throw err;
           expect(res.body).to.eql({

@@ -8,8 +8,8 @@ var request = require("request");
 var proxyquire = require('proxyquire');
 var conf = require("../msisdn-gateway").conf;
 
-var getMoVerifier = require("../msisdn-gateway/sms-gateway").getMoVerifierFor;
-var getMtSender = require("../msisdn-gateway/sms-gateway").getMtSenderFor;
+var smsGateway = require("../msisdn-gateway/sms-gateway");
+var FileMap = require("../msisdn-gateway/sms/infos/file");
 
 describe("SMS Gateway", function() {
   "use strict";
@@ -108,83 +108,112 @@ describe("SMS Gateway", function() {
     });
 
   describe("#getMoVerifierFor", function() {
-    var previousList, previousDefault;
+    var previousMapping, mapping;
 
     beforeEach(function() {
-      previousList = conf.get("moVerifierMapping");
-      previousDefault = conf.get("moVerifier");
+      previousMapping = conf.get("smsMapping");
+      mapping = conf.get("smsMapping");
     });
 
     afterEach(function() {
-      conf.set("moVerifierMapping", previousList);
-      conf.set("moVerifier", previousDefault);
+      conf.set("smsMapping", previousMapping);
     });
 
     it("should return the (MCC, MNC) specific number.", function() {
-      var list = conf.get("moVerifierMapping");
-      list["208110"] = "1234";
-      conf.set("moVerifierMapping", list);
-      expect(getMoVerifier(208, 110)).to.eql("1234");
+      mapping.moVerifierMapping["208110"] = "1234";
+      conf.set("smsMapping", mapping);
+      smsGateway.numberMap = new FileMap(mapping);
+      smsGateway.numberMap.getMoVerifierFor(208, 110, function(err, number) {
+        if (err) throw err;
+        expect(number).to.eql("1234");
+      });
     });
 
     it("should return the (MCC, _) specific number.", function() {
-      var list = conf.get("moVerifierMapping");
-      list["208"] = "1234";
-      conf.set("moVerifierMapping", list);
-      expect(getMoVerifier(208, 111)).to.eql("1234");
+      mapping.moVerifierMapping["208"] = "1234";
+      conf.set("smsMapping", mapping);
+      smsGateway.numberMap = new FileMap(mapping);
+      smsGateway.numberMap.getMoVerifierFor(208, 111, function(err, number) {
+        if (err) throw err;
+        expect(number).to.eql("1234");
+      });
     });
 
     it("should return the default number.", function() {
-      expect(getMoVerifier(514, 111)).to.eql("456");
+      smsGateway.numberMap.getMoVerifierFor(514, 111, function(err, number) {
+        if (err) throw err;
+        expect(number).to.eql("456");
+      });
     });
 
     it("should return null if no default number.", function() {
-      conf.set("moVerifier", "");
-      expect(getMoVerifier(514, 111)).to.eql(null);
+      mapping.moVerifier = "";
+      conf.set("smsMapping", mapping);
+      smsGateway.numberMap = new FileMap(mapping);
+      smsGateway.numberMap.getMoVerifierFor(514, 111, function(err, number) {
+        if (err) throw err;
+        expect(number).to.eql(null);
+      });
     });
   });
 
   describe("#getMtSenderFor", function() {
-    var previousList, previousDefault;
+    var previousMapping, mapping;
 
     beforeEach(function() {
-      previousList = conf.get("mtSenderMapping");
-      previousDefault = conf.get("mtSender");
+      previousMapping = conf.get("smsMapping");
+      mapping = conf.get("smsMapping");
     });
 
     afterEach(function() {
-      conf.set("mtSenderMapping", previousList);
-      conf.set("mtSender", previousDefault);
+      conf.set("smsMapping", previousMapping);
     });
 
     it("should return the (MCC, MNC) specific number.", function() {
-      var list = conf.get("mtSenderMapping");
-      list["21407"] = "1234";
-      conf.set("mtSenderMapping", list);
-      expect(getMtSender("214", "07")).to.eql("1234");
+      mapping.mtSenderMapping["21407"] = "1234";
+      conf.set("smsMapping", mapping);
+      smsGateway.numberMap = new FileMap(mapping);
+      smsGateway.numberMap.getMtSenderFor("214", "07", function(err, number) {
+        if (err) throw err;
+        expect(number).to.eql("1234");
+      });
     });
 
     it("should return the (MCC, _) specific number.", function() {
-      var list = conf.get("mtSenderMapping");
-      list["208"] = "1234";
-      conf.set("mtSenderMapping", list);
-      expect(getMtSender(208, 111)).to.eql("1234");
+      mapping.mtSenderMapping["208"] = "1234";
+      conf.set("smsMapping", mapping);
+      smsGateway.numberMap = new FileMap(mapping);
+      smsGateway.numberMap.getMtSenderFor(208, 111, function(err, number) {
+        if (err) throw err;
+        expect(number).to.eql("1234");
+      });
     });
 
     it("should return the (MCC, _) specific number if MNC not provided.",
       function() {
-        var list = conf.get("mtSenderMapping");
-        list["208"] = "1234";
-        conf.set("mtSenderMapping", list);
-        expect(getMtSender(208)).to.eql("1234");
+        mapping.mtSenderMapping["208"] = "1234";
+        conf.set("smsMapping", mapping);
+        smsGateway.numberMap = new FileMap(mapping);
+        smsGateway.numberMap.getMtSenderFor(208, undefined,
+          function(err, number) {
+            if (err) throw err;
+            expect(number).to.eql("1234");
+          });
       });
 
     it("should return the default number.", function() {
-      expect(getMtSender(514, 111)).to.eql("Mozilla@");
+      smsGateway.numberMap.getMtSenderFor(514, 111, function(err, number) {
+        if (err) throw err;
+        expect(number).to.eql("Mozilla@");
+      });
     });
 
     it("should return the default number.", function() {
-      expect(getMtSender()).to.eql("Mozilla@");
+      smsGateway.numberMap.getMtSenderFor(undefined, undefined,
+        function(err, number) {
+          if (err) throw err;
+          expect(number).to.eql("Mozilla@");
+        });
     });
   });
 

@@ -109,7 +109,7 @@ var conf = convict({
   allowedOrigins: {
     doc: "Authorized origins for cross-origin requests.",
     format: Array,
-    default: ['http://localhost:3000']
+    default: ['*']
   },
   retryAfter: {
     doc: "Seconds to wait for on 503",
@@ -182,25 +182,57 @@ var conf = convict({
     doc: "The Browser ID Private Key, run bin/generate-keypair to get them",
     format: validateJWCryptoKey
   },
-  mtSender: {
-    doc: "Number from which SMS are sent",
-    format: String,
-    default: "Mozilla@"
-  },
-  mtSenderMapping: {
-    doc: 'Mapping of mtSenderNumber to MCC/MNC, see config/test.json',
-    format: Object,
-    default: {}
-  },
-  moVerifier: {
-    doc: "Number to SMS should be sent",
-    format: String,
-    default: ""
-  },
-  moVerifierMapping: {
-    doc: 'Mapping of moVerifierNumber to MCC/MNC, see config/test.json',
-    format: Object,
-    default: {}
+  smsMapping: {
+    engine: {
+      doc: "The Mapping engine use can be file, redis, daybed.",
+      format: String,
+      default: "file"
+    },
+    mtSender: {
+      doc: "Number from which SMS are sent",
+      format: String,
+      default: "Mozilla@"
+    },
+    mtSenderMapping: {
+      doc: 'Mapping of mtSenderNumber to MCC/MNC, see config/test.json',
+      format: Object,
+      default: {}
+    },
+    moVerifier: {
+      doc: "Number to SMS should be sent",
+      format: String,
+      default: ""
+    },
+    moVerifierMapping: {
+      doc: 'Mapping of moVerifierNumber to MCC/MNC, see config/test.json',
+      format: Object,
+      default: {}
+    },
+    host: {
+      doc: 'Redis or Daybed host',
+      format: String,
+      default: "localhost"
+    },
+    port: {
+      doc: 'Redis or Daybed port',
+      format: Number,
+      default: 6379
+    },
+    db: {
+      doc: 'Redis database',
+      format: Number,
+      default: 0
+    },
+    mtSenderModelName: {
+      doc: 'Redis or Daybed MT Sender model name',
+      format: String,
+      default: "msisdn-mt-number"
+    },
+    moVerifierModelName: {
+      doc: 'Redis or Daybed MO Verifier model name',
+      format: String,
+      default: "msisdn-mo-number"
+    }
   },
   smsGatewayResetTimer: {
     doc: "A timer that automatically reorder gateways by priority (seconds).",
