@@ -270,11 +270,11 @@ describe("HTTP API exposed by the server", function() {
           .post('/sms/mt/verify')
           .send({msisdn: "123456"})
           .set("Authorization", "Hawk wrong-parameters")
-          .expect(401)
+          .expect(400)
           // .expect("WWW-Authenticate", "Hawk")
           .end(function(err, res) {
             if (err) throw err;
-            expectFormatedError(res.body, 401, errors.INVALID_REQUEST_SIG,
+            expectFormatedError(res.body, 400, errors.INVALID_AUTH_TOKEN,
                                 "Bad header format");
             done();
           });

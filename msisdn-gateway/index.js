@@ -10,13 +10,9 @@ var raven = require("raven");
 var cors = require("cors");
 var logging = require("express-logging");
 var headers = require("./headers");
-var hmac = require("./hmac");
-var sendError = require("./middleware").sendError;
 var checkHeaders = require("./middleware").checkHeaders;
 var handle404 = require("./middleware").handle404;
 var applyErrorLogging = require("./middleware").applyErrorLogging;
-var Hawk = require('hawk');
-var errors = require("./errno");
 var i18n = require('./i18n')(conf.get('i18n'));
 
 // Configure http and https globalAgent
@@ -59,6 +55,7 @@ applyErrorLogging(app);
 // Handle404 is the last route after the app.router and other error handling.
 app.use(handle404);
 
+var hawkMiddleware = require('./hawk')(storage);
 
 var corsEnabled = cors({
   origin: function(origin, callback) {
@@ -69,101 +66,6 @@ var corsEnabled = cors({
   },
   credentials: true
 });
-
-
-/**
- * The Hawk middleware.
- *
- * Checks that the requests are authenticated with hawk, and sign the
- * responses.
- */
-function hawkMiddleware(req, res, next) {
-  Hawk.server.authenticate(req, function(id, callback) {
-    var hawkHmacId = hmac(id, conf.get("hawkIdSecret"));
-    storage.getSession(hawkHmacId, function(err, sessionKey) {
-      if (err) {
-        callback(err);
-        return;
-      }
-      if (sessionKey === null) {
-        storage.getCertificateData(hawkHmacId,
-          function(err, certificateData) {
-            if (err) {
-              callback(err);
-              return;
-            }
-            if (certificateData === null) {
-              callback(null, null);
-              return;
-            }
-            callback(null, {
-              key: certificateData.hawkKey,
-              algorithm: "sha256"
-            });
-          });
-        return;
-      }
-      callback(null, sessionKey);
-    });
-  }, {port: conf.get("protocol") === "https" ? 443 : undefined},
-    function(err, credentials, artifacts) {
-      req.hawk = artifacts;
-
-      if (err) {
-        if (!err.isMissing && !err.isBoom) {
-          logError(err, artifacts);
-        }
-
-        // In case no supported authentication was specified, challenge the
-        // client.
-
-        res.setHeader("WWW-Authenticate",
-                      err.output.headers["WWW-Authenticate"]);
-
-        var errno = errors.INVALID_PARAMETERS;
-
-        if (err.isBoom) {
-          switch (err.output.payload.statusCode) {
-          case 400:
-            errno = errors.INVALID_REQUEST_SIG;
-            break;
-          case 401:
-            errno = errors.INVALID_AUTH_TOKEN;
-            break;
-          default:
-            errno = errors.INVALID_PARAMETERS;
-          }
-        }
-
-        sendError(res, 401, errno,
-                  err.output.payload.message);
-        return;
-      }
-
-      req.hawkHmacId = hmac(req.hawk.id, conf.get("hawkIdSecret"));
-      req.hawk.key = credentials.key;
-
-
-      /* Make sure we don't decorate the writeHead more than one time. */
-      if (res._hawkEnabled) {
-        next();
-        return;
-      }
-
-      var writeHead = res.writeHead;
-      res._hawkEnabled = true;
-      res.writeHead = function hawkWriteHead() {
-        var header = Hawk.server.header(
-          credentials, artifacts, {
-            payload: res.body,
-            contentType: res.get('Content-Type')
-          });
-        res.setHeader("Server-Authorization", header);
-        writeHead.apply(res, arguments);
-      };
-      next();
-    });
-}
 
 /**
  * Enable CORS for all requests.
