@@ -106,7 +106,7 @@ function requireParams() {
     }
 
     missingParams = params.filter(function(param) {
-      return req.body[param] === undefined;
+      return !req.body[param];
     });
 
     if (missingParams.length > 0) {
@@ -256,13 +256,12 @@ app.get("/", function(req, res) {
 /**
  * Return the best verification method wrt msisdn, mcc, mnc, roaming
  **/
-app.post("/discover", function(req, res) {
+app.post("/discover", requireParams("mcc"), function(req, res) {
   var verificationMethods = [],
       verificationDetails = {},
       url, mcc, mnc;
 
-  if (!req.body.hasOwnProperty("mcc") || !req.body.mcc ||
-      req.body.mcc.length !== 3) {
+  if (req.body.mcc.length !== 3) {
     sendError(
       res, 400,
       errors.INVALID_PARAMETERS,
@@ -360,8 +359,8 @@ app.post("/unregister", hawkMiddleware, function(req, res) {
  **/
 app.post("/sms/mt/verify", hawkMiddleware,
   requireParams("msisdn", "mcc"), validateMSISDN, function(req, res) {
-    if (req.body.hasOwnProperty("mnc") && req.body.mnc.length !== 3 &&
-        req.body.mnc.length !== 2) {
+    if (req.body.hasOwnProperty("mnc") && req.body.mnc &&
+        req.body.mnc.length !== 3 && req.body.mnc.length !== 2) {
       sendError(
         res, 400,
         errors.INVALID_PARAMETERS, "Invalid MNC."
