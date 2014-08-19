@@ -177,7 +177,7 @@ var registration = require("./routes/registration");
 registration(app, conf, logError, storage, hawkMiddleware);
 
 var discover = require("./routes/discover");
-discover(app, conf);
+discover(app, conf, logError);
 
 var sms = require("./routes/sms");
 sms(app, conf, logError, storage, hawkMiddleware);

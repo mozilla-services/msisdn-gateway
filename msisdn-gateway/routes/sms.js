@@ -100,16 +100,24 @@ module.exports = function(app, conf, logError, storage, hawkMiddleware) {
             }
 
             /* Send SMS */
-            var mtSender = smsGateway.getMtSenderFor(mcc, mnc);
-            // XXX export string in l10n external file.
-            smsGateway.sendSMS(mtSender, req.msisdn, message,
-              function(err, data) {
+            smsGateway.numberMap.getMtSenderFor(mcc, mnc,
+              function(err, mtSender) {
                 if (err) {
                   logError(err);
-                  sendError(res, 503, errors.BACKEND, data);
+                  sendError(res, 503, errors.BACKEND, "Service Unavailable");
                   return;
                 }
-                res.json(204, "");
+
+                // XXX export string in l10n external file.
+                smsGateway.sendSMS(mtSender, req.msisdn, message,
+                  function(err, data) {
+                    if (err) {
+                      logError(err);
+                      sendError(res, 503, errors.BACKEND, data);
+                      return;
+                    }
+                    res.json(204, "");
+                  });
               });
           });
         });
@@ -122,94 +130,101 @@ module.exports = function(app, conf, logError, storage, hawkMiddleware) {
    **/
 
   function handleMobileOriginatedMessages(res, options) {
-    var mtSender = smsGateway.getMtSenderFor(options.mcc, options.mnc);
-    var hawkId = options.text.split(" ");
-    hawkId = hawkId[1];
-
-    if (hawkId === undefined) {
-      logError(options.text + " is not in the right format.");
-      res.json(200, {});
-      return;
-    }
-
-    var hawkHmacId = hmac(hawkId, conf.get("hawkIdSecret"));
-
-    storage.getSession(hawkHmacId, function(err, result) {
-      if (err) {
-        logError(err);
-        sendError(res, 503, errors.BACKEND, "Service Unavailable");
-        return;
-      }
-
-      if (result === null) {
-        // This session doesn't exists should answer 200
-        res.json(200, {});
-        return;
-      }
-
-      storage.getMSISDN(hawkHmacId, function(err, cipherMsisdn) {
+    smsGateway.numberMap.getMtSenderFor(options.mcc, options.mnc,
+      function(err, mtSender) {
         if (err) {
           logError(err);
           sendError(res, 503, errors.BACKEND, "Service Unavailable");
           return;
         }
 
-        var storedMsisdn;
-        try {
-          storedMsisdn = encrypt.decrypt(hawkId, cipherMsisdn);
-        } catch (error) {
-          logError(error);
-          console.error("Unable to decrypt", hawkId, cipherMsisdn);
-          storedMsisdn = null;
-        }
-
-        if (storedMsisdn !== null && storedMsisdn !== options.msisdn) {
-          logError(
-            new Error("Attempt to very several MSISDN per session.", {
-              sessionId: hawkHmacId,
-              previousMsisdn: storedMsisdn,
-              currentMsisdn: options.msisdn
-            })
-          );
-
+        var hawkId = options.text.split(" ");
+        hawkId = hawkId[1];
+        if (hawkId === undefined) {
+          logError(options.text + " is not in the right format.");
           res.json(200, {});
           return;
         }
 
-        if (cipherMsisdn === null) {
-          cipherMsisdn = encrypt.encrypt(hawkId, options.msisdn);
-        }
+        var hawkHmacId = hmac(hawkId, conf.get("hawkIdSecret"));
 
-        storage.storeMSISDN(hawkHmacId, cipherMsisdn, function(err) {
+        storage.getSession(hawkHmacId, function(err, result) {
           if (err) {
             logError(err);
             sendError(res, 503, errors.BACKEND, "Service Unavailable");
             return;
           }
 
-          var code = crypto.randomBytes(conf.get("longCodeBytes"))
-            .toString("hex");
+          if (result === null) {
+            // This session doesn't exists should answer 200
+            res.json(200, {});
+            return;
+          }
 
-          storage.setCode(hawkHmacId, code, function(err) {
+          storage.getMSISDN(hawkHmacId, function(err, cipherMsisdn) {
             if (err) {
               logError(err);
               sendError(res, 503, errors.BACKEND, "Service Unavailable");
               return;
             }
 
-            /* Send SMS */
-            smsGateway.sendSMS(mtSender, options.msisdn, code, function(err) {
+            var storedMsisdn;
+            try {
+              storedMsisdn = encrypt.decrypt(hawkId, cipherMsisdn);
+            } catch (error) {
+              logError(error);
+              console.error("Unable to decrypt", hawkId, cipherMsisdn);
+              storedMsisdn = null;
+            }
+
+            if (storedMsisdn !== null && storedMsisdn !== options.msisdn) {
+              logError(
+                new Error("Attempt to very several MSISDN per session.", {
+                  sessionId: hawkHmacId,
+                  previousMsisdn: storedMsisdn,
+                  currentMsisdn: options.msisdn
+                })
+              );
+
+              res.json(200, {});
+              return;
+            }
+
+            if (cipherMsisdn === null) {
+              cipherMsisdn = encrypt.encrypt(hawkId, options.msisdn);
+            }
+
+            storage.storeMSISDN(hawkHmacId, cipherMsisdn, function(err) {
               if (err) {
                 logError(err);
                 sendError(res, 503, errors.BACKEND, "Service Unavailable");
                 return;
               }
-              res.json(200, {});
+
+              var code = crypto.randomBytes(conf.get("longCodeBytes"))
+                .toString("hex");
+
+              storage.setCode(hawkHmacId, code, function(err) {
+                if (err) {
+                  logError(err);
+                  sendError(res, 503, errors.BACKEND, "Service Unavailable");
+                  return;
+                }
+
+                /* Send SMS */
+                smsGateway.sendSMS(mtSender, options.msisdn, code, function(err) {
+                  if (err) {
+                    logError(err);
+                    sendError(res, 503, errors.BACKEND, "Service Unavailable");
+                    return;
+                  }
+                  res.json(200, {});
+                });
+              });
             });
           });
         });
       });
-    });
   }
 
   app.get("/sms/momt/nexmo_callback", function(req, res) {

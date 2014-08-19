@@ -10,7 +10,7 @@ var sendError = require("../middleware").sendError;
 var smsGateway = require("../sms-gateway");
 
 
-module.exports = function(app, conf) {
+module.exports = function(app, conf, logError) {
   /**
    * Return the best verification method wrt msisdn, mcc, mnc, roaming
    **/
@@ -35,44 +35,58 @@ module.exports = function(app, conf) {
       mnc = req.body.mnc;
     }
 
-    var moVerifier = smsGateway.getMoVerifierFor(mcc, mnc);
-    var mtSender = smsGateway.getMtSenderFor(mcc, mnc);
-
-    if (req.body.hasOwnProperty("msisdn") || moVerifier === null) {
-      var msisdn = phone(req.body.msisdn);
-      if (msisdn.length === 2) {
-        msisdn = msisdn[0];
-      } else {
-        msisdn = null;
-      }
-      if (msisdn === null && moVerifier !== null) {
-        sendError(res, 400,
-                  errors.INVALID_PARAMETERS, "Invalid MSISDN number.");
+    smsGateway.numberMap.getMoVerifierFor(mcc, mnc, function(err, moVerifier) {
+      if (err) {
+        logError(err);
+        sendError(res, 503, errors.BACKEND, "Service Unavailable");
         return;
       }
-      // SMS/MT methods configuration
-      url = conf.get("protocol") + "://" + req.get("host") +
+
+      smsGateway.numberMap.getMtSenderFor(mcc, mnc, function(err, mtSender) {
+        if (err) {
+          logError(err);
+          sendError(res, 503, errors.BACKEND, "Service Unavailable");
+          return;
+        }
+
+        if (req.body.hasOwnProperty("msisdn") || moVerifier === null) {
+          var msisdn = phone(req.body.msisdn);
+          if (msisdn.length === 2) {
+            msisdn = msisdn[0];
+          } else {
+            msisdn = null;
+          }
+          if (msisdn === null && moVerifier !== null) {
+            sendError(res, 400,
+                      errors.INVALID_PARAMETERS, "Invalid MSISDN number.");
+            return;
+          }
+
+          // SMS/MT methods configuration
+          url = conf.get("protocol") + "://" + req.get("host") +
             conf.get("apiPrefix") + "/sms/mt/verify";
 
-      verificationMethods.push("sms/mt");
-      verificationDetails["sms/mt"] = {
-        mtSender: mtSender,
-        url: url
-      };
-    }
+          verificationMethods.push("sms/mt");
+          verificationDetails["sms/mt"] = {
+            mtSender: mtSender,
+            url: url
+          };
+        }
 
-    if (moVerifier !== null) {
-      // SMS/MOMT methods configuration
-      verificationMethods.push("sms/momt");
-      verificationDetails["sms/momt"] = {
-        mtSender: mtSender,
-        moVerifier: moVerifier
-      };
-    }
+        if (moVerifier !== null) {
+          // SMS/MOMT methods configuration
+          verificationMethods.push("sms/momt");
+          verificationDetails["sms/momt"] = {
+            mtSender: mtSender,
+            moVerifier: moVerifier
+          };
+        }
 
-    res.json(200, {
-      verificationMethods: verificationMethods,
-      verificationDetails: verificationDetails
+        res.json(200, {
+          verificationMethods: verificationMethods,
+          verificationDetails: verificationDetails
+        });
+      });
     });
   });
 };

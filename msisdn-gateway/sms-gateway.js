@@ -4,8 +4,10 @@
 "use strict";
 
 var conf = require("./config").conf;
-var format = require("util").format;
 var smsGatewaysConf = conf.get("smsGateways");
+
+var smsMapping = conf.get("smsMapping");
+var MappingEngine = require("./sms/infos/" + smsMapping.engine);
 
 var providers;
 
@@ -59,48 +61,5 @@ function sendSMS(mtSender, msisdn, message, callback, retries) {
   });
 }
 
-/**
- * Get the mtSender number with regards to MCC/MNC
- */
-function getMtSenderFor(mcc, mnc) {
-  var mtSenderMapping = conf.get("mtSenderMapping");
-  var defaultMtSender = conf.get("mtSender");
-
-  var mccMnc = format("%s%s", mcc, mnc);
-  if (mtSenderMapping.hasOwnProperty(mccMnc)) {
-    return mtSenderMapping[mccMnc];
-  }
-  if (mtSenderMapping.hasOwnProperty(mcc)) {
-    return mtSenderMapping[mcc];
-  }
-  return defaultMtSender;
-}
-
-
-/**
- * Get the moVerifier number with regards to MCC/MNC
- */
-function getMoVerifierFor(mcc, mnc) {
-  var moVerifierMapping = conf.get("moVerifierMapping");
-  var defaultMoVerifier = conf.get("moVerifier");
-
-  var mccMnc = format("%s%s", mcc, mnc);
-  if (moVerifierMapping.hasOwnProperty(mccMnc)) {
-    return moVerifierMapping[mccMnc];
-  }
-  if (moVerifierMapping.hasOwnProperty(mcc)) {
-    return moVerifierMapping[mcc];
-  }
-  // If the defaultMoVerifier is not set, return null.
-  if (defaultMoVerifier) {
-    return defaultMoVerifier;
-  }
-  return null;
-}
-
-
-module.exports = {
-  sendSMS: sendSMS,
-  getMoVerifierFor: getMoVerifierFor,
-  getMtSenderFor: getMtSenderFor
-};
+module.exports.sendSMS = sendSMS;
+module.exports.numberMap = new MappingEngine(smsMapping);
