@@ -20,7 +20,7 @@ function requireParams() {
     }
 
     missingParams = params.filter(function(param) {
-      return req.body[param] === undefined;
+      return !req.body[param];
     });
 
     if (missingParams.length > 0) {

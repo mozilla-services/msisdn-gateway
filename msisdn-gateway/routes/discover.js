@@ -8,18 +8,19 @@ var errors = require("../errno");
 var phone = require("phone");
 var sendError = require("../middleware").sendError;
 var smsGateway = require("../sms-gateway");
+var requireParams = require("./utils").requireParams;
 
 
 module.exports = function(app, conf, logError) {
   /**
    * Return the best verification method wrt msisdn, mcc, mnc, roaming
    **/
-  app.post("/discover", function(req, res) {
+  app.post("/discover", requireParams("mcc"), function(req, res) {
     var verificationMethods = [],
         verificationDetails = {},
         url, mcc, mnc;
 
-    if (!req.body.hasOwnProperty("mcc") || req.body.mcc.length !== 3) {
+    if (req.body.mcc.length !== 3) {
       sendError(
         res, 400,
         errors.INVALID_PARAMETERS,
@@ -30,7 +31,7 @@ module.exports = function(app, conf, logError) {
 
     mcc = req.body.mcc;
 
-    if (req.body.hasOwnProperty("mnc") &&
+    if (req.body.hasOwnProperty("mnc") && req.body.mnc &&
         (req.body.mnc.length === 3 || req.body.mnc.length === 2)) {
       mnc = req.body.mnc;
     }
