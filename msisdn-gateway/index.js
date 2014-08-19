@@ -261,7 +261,8 @@ app.post("/discover", function(req, res) {
       verificationDetails = {},
       url, mcc, mnc;
 
-  if (!req.body.hasOwnProperty("mcc") || req.body.mcc.length !== 3) {
+  if (!req.body.hasOwnProperty("mcc") || !req.body.mcc ||
+      req.body.mcc.length !== 3) {
     sendError(
       res, 400,
       errors.INVALID_PARAMETERS,
@@ -272,7 +273,7 @@ app.post("/discover", function(req, res) {
 
   mcc = req.body.mcc;
 
-  if (req.body.hasOwnProperty("mnc") &&
+  if (req.body.hasOwnProperty("mnc") && req.body.mnc &&
       (req.body.mnc.length === 3 || req.body.mnc.length === 2)) {
     mnc = req.body.mnc;
   }

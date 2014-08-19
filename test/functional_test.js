@@ -314,6 +314,23 @@ describe("HTTP API exposed by the server", function() {
       jsonReq.send({"mcc": "302"}).expect(200).end(done);
     });
 
+    it("should not works with the MCC parameter set to null", function(done) {
+      jsonReq.send({"mcc": null}).expect(400).end(function(err, res) {
+        if (err) throw err;
+        expectFormatedError(res.body, 400, errors.INVALID_PARAMETERS,
+                            "Invalid MCC.");
+
+        done();
+      });
+    });
+
+    it("should not works with the MNC parameter set to null", function(done) {
+      jsonReq.send({"mcc": "302", "mnc": null}).expect(200).end(function(err, res) {
+        if (err) throw err;
+        done();
+      });
+    });
+
     it("should take only a valid MSISDN number", function(done) {
       jsonReq.send({msisdn: "0123456789", "mcc": "302"}).expect(400).end(
         function(err, res) {
