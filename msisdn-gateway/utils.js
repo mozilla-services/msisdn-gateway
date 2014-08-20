@@ -69,7 +69,7 @@ function generateCertificate(msisdn, host, publicKey, privateKey, duration,
     issuer: host,
     // Set issuedAt to 10 seconds ago. Pads for verifier clock skew
     issuedAt: new Date(now - (10 * 1000)),
-    expiresAt: new Date(now + duration)
+    expiresAt: new Date(now + duration * 1000)
   }, {
     "lastAuthAt": now,
     "verifiedMSISDN": msisdn
