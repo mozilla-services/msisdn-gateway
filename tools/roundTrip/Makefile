@@ -3,7 +3,7 @@ INSTALL_STAMP=$(VENV)/.install.stamp
 
 install: $(INSTALL_STAMP)
 
-$(INSTALL_STAMP):
+$(INSTALL_STAMP): requirements.pip
 	virtualenv $(VENV)
 	$(VENV)/bin/pip install -r requirements.pip
 	touch $(INSTALL_STAMP)
