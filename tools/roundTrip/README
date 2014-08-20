@@ -18,3 +18,4 @@ INSTALL
 -------
 
     make install
+    source .venv/bin/activate
