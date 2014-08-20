@@ -168,7 +168,7 @@ def main(args):
         -H 'Authorization: BROWSERID %s' \\
         -H 'Content-Type: application/json' -H 'Accept: application/json' \\
         -d '{\"simplePushURL\": \"http://httpbin.org/deny\"}' \\
-        %s/registration""" % (assertion, audience))
+        %s/registration\n""" % (assertion, audience))
 
         print("To validate the configuration of the service provider, you can "
               "run the curl command above.\n\n"
