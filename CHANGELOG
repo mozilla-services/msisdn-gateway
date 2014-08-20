@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.4.5 (2014-08-20)
+------------------
+
+- [bug] duration is in seconds and was used as being in milliseconds.
+
+
 0.4.4 (2014-08-19)
 ------------------
 
