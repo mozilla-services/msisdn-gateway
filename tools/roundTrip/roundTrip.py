@@ -57,13 +57,23 @@ def main(args):
         discover_args["msisdn"] = arguments["--msisdn"]
 
     r = requests.post(url, json.dumps(discover_args), headers=headers)
-    r.raise_for_status()
+    try:
+        r.raise_for_status()
+    except:
+        print r.content
+        raise
+
     discover = r.json()
 
     # 1.1 Register
     url = "%s/register" % host
     r = requests.post(url, headers=headers)
-    r.raise_for_status()
+    try:
+        r.raise_for_status()
+    except:
+        print r.content
+        raise
+
     register = r.json()
     hawk_auth = HawkAuth(hawk_session=register["msisdnSessionToken"],
                          server_url=host)
@@ -87,7 +97,11 @@ def main(args):
         }
         r = requests.post(url, json.dumps(verify_args),
                           auth=hawk_auth, headers=headers)
-        r.raise_for_status()
+        try:
+            r.raise_for_status()
+        except:
+            print r.content
+            raise
 
     # 3. If MOMT Flow
     else:
@@ -106,7 +120,11 @@ def main(args):
     url = "%s/sms/verify_code" % host
     r = requests.post(url, json.dumps({"code": code.strip()}),
                       auth=hawk_auth, headers=headers)
-    r.raise_for_status()
+    try:
+        r.raise_for_status()
+    except:
+        print r.content
+        raise
 
     # 6. Print out the certificate
     url = "%s/certificate/sign" % host
@@ -116,7 +134,12 @@ def main(args):
     }
     r = requests.post(url, json.dumps(sign_args),
                       auth=hawk_auth, headers=headers)
-    r.raise_for_status()
+    try:
+        r.raise_for_status()
+    except:
+        print r.content
+        raise
+
     sign = r.json()
     cert = sign["cert"]
     info = json.loads(decode_bytes(cert.split('.')[1]).decode("utf-8"))
