@@ -50,11 +50,11 @@ Options:
 
 Example:
 
-  roundTrip.py \
-    --host https://msisdn.services.mozilla.com -c 310 -n +1xxxxxxxxxxx \
-    --audience app://loop.services.mozilla.com \
-    --login-endpoint https://loop.services.mozilla.com/registration \
-    --json '{"simplePushURL": "http://httpbin.org/deny"}'
+|   roundTrip.py \\
+|     --host https://msisdn.services.mozilla.com -c 310 -n +1xxxxxxxxxxx \\
+|     --audience app://loop.services.mozilla.com \\
+|     --login-endpoint https://loop.services.mozilla.com/registration \\
+|     --json '{"simplePushURL": "http://httpbin.org/deny"}'
 
 
 
@@ -69,6 +69,22 @@ Some usefull Mobile Country Codes (MCC):
   - 310  USA (310 to 316 actually)
   - 454  China
   - 505  Australia
+"""
+
+ERROR_EXPLAINATION = """Here are the error messages you can get:
+  - "Certificate expired": you play too long with this curl command,
+                           ask for a new certificate
+
+  - "Invalid audience":    The Service Provider doesn't accept this audience
+                           It can be either a misconfiguration on the server or
+                           you trying the assertion to a wrong server.
+
+  - "Issuer not trusted":  The MSISDN server that generate your certificate
+                           is not trusted on this Service Provider.
+                           It can be either a misconfiguration or
+                           you trying the assertion to a wrong server.
+
+  - Something else? Please make a PR to add it here.
 """
 
 
@@ -198,8 +214,7 @@ def main(args):
             print("BID Assertion for %s:\n\n%s\n\n" % (audience, assertion))
 
         if arguments["--dry-run"]:
-            curl = """
-    curl -X POST -D - \\
+            curl = """\ncurl -X POST -D - \\
         -H 'Authorization: BROWSERID %s' \\""" % assertion
 
             if arguments["--data"]:
@@ -219,22 +234,7 @@ def main(args):
                   "Hawk-Session-Token header:\n\n")
 
             print(curl)
-
-            print("""Here are the error messages you can get:
-  - "Certificate expired": you play too long with this curl command,
-                           ask for a new certificate
-
-  - "Invalid audience":    The Service Provider doesn't accept this audience
-                           It can be either a misconfiguration on the server or
-                           you trying the assertion to a wrong server.
-
-  - "Issuer not trusted":  The MSISDN server that generate your certificate
-                           is not trusted on this Service Provider.
-                           It can be either a misconfiguration or
-                           you trying the assertion to a wrong server.
-
-  - Something else? Please make a PR to add it here.
-""")
+            print(ERROR_EXPLAINATION)
         else:
             headers = {"Authorization": "BROWSERID %s" % assertion}
             data = arguments["--data"]
@@ -242,7 +242,8 @@ def main(args):
                 data = arguments["--json"]
                 headers["Content-Type"] = "application/json"
                 headers["Accept"] = "application/json"
-            r = requests.post(arguments["--login-endpoint"], data=data, headers=headers)
+            r = requests.post(arguments["--login-endpoint"], data=data,
+                              headers=headers)
 
             # Try to extract an Hawk sessionToken from the response.
             sessionToken = None
@@ -258,10 +259,10 @@ def main(args):
                     sessionToken = r.headers[sessionHeader]
             else:
                 try:
-                    jsonResp = r.json()
-                    for key in jsonResp.keys():
+                    json_resp = r.json()
+                    for key in json_resp.keys():
                         if "token" in key.lower():
-                            sessionToken = jsonResp["key"]
+                            sessionToken = json_resp["key"]
                 except ValueError:
                     pass
 
