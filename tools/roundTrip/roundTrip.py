@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json
 import requests
@@ -62,7 +63,7 @@ def main(args):
     try:
         r.raise_for_status()
     except:
-        print r.content
+        print(r.content)
         raise
 
     discover = r.json()
@@ -73,7 +74,7 @@ def main(args):
     try:
         r.raise_for_status()
     except:
-        print r.content
+        print(r.content)
         raise
 
     register = r.json()
@@ -102,7 +103,7 @@ def main(args):
         try:
             r.raise_for_status()
         except:
-            print r.content
+            print(r.content)
             raise
 
     # 3. If MOMT Flow
@@ -125,7 +126,7 @@ def main(args):
     try:
         r.raise_for_status()
     except:
-        print r.content
+        print(r.content)
         raise
 
     # 6. Print out the certificate
@@ -140,7 +141,7 @@ def main(args):
     try:
         r.raise_for_status()
     except:
-        print r.content
+        print(r.content)
         raise
 
     sign = r.json()
