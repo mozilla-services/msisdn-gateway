@@ -77,6 +77,10 @@ def main(args):
     host = arguments["--host"]
     headers = {'content-type': 'application/json'}
 
+    if arguments["--version"]:
+        print("roundTrip %s" % VERSION)
+        sys.exit(0)
+
     # 1. Start the discover
     url = "%s/discover" % host
     discover_args = {"mcc": arguments["--mcc"], "roaming": False}
