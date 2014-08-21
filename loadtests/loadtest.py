@@ -39,14 +39,17 @@ class TestMSISDN(TestCase):
             # 1. Ask MSISDN validation
             resp = self.start_mt_flow()
             self.assertEqual(resp.status_code, 204,
-                             "Start MT Flow failed: %s (%s)" % (resp.content,
-                                                                resp.status_code))
+                             "Start MT Flow failed: %s (%s)" % (
+                                 resp.content, resp.status_code))
+            self.incr_counter("status-204")
+
         else:
             # 2. Send SMS /sms/momt/verify hawkId
             resp = self.start_momt_flow()
             self.assertEqual(resp.status_code, 200,
-                             "Start MOMT Flow failed: %s (%s)" % (resp.content,
-                                                                resp.status_code))
+                             "Start MOMT Flow failed: %s (%s)" % (
+                                 resp.content, resp.status_code))
+            self.incr_counter("status-200")
 
         # Poll omxen for the message
         message = self.read_message()
@@ -58,6 +61,7 @@ class TestMSISDN(TestCase):
             resp = self.verify_code(message)
             if resp.status_code == 200:
                 # If it was a valid code generate a certificate
+                self.incr_counter("status-200")
                 self.incr_counter("ask-for-certificate")
                 self.sign_certificate()
             else:
@@ -67,8 +71,8 @@ class TestMSISDN(TestCase):
                 self.assertEquals(resp.status_code, 400,
                                   "Omxen collision failed: %s (%s)" % (
                                       resp.content, resp.status_code))
-
-                self.incr_counter("omxen-message-collision")
+                self.incr_counter("status-400")
+                self.incr_counter("omxen-collision-PROBABLY-WRONG")
         else:
             # 2. Try to validate a wrong code
             self.incr_counter("try-wrong-code")
@@ -76,6 +80,7 @@ class TestMSISDN(TestCase):
             self.assertEquals(resp.status_code, 400,
                               "Try wrong code failed: %s (%s)" % (
                                   resp.content, resp.status_code))
+            self.incr_counter("status-400")
 
         # Unregister
         self.unregister()
@@ -94,9 +99,14 @@ class TestMSISDN(TestCase):
         self.assertEquals(resp.status_code, 200,
                           "Discover endpoint failed: %s (%s)" % (
                               resp.content, resp.status_code))
+        self.incr_counter("status-200")
 
     def register(self):
         resp = self.session.post(self.server_url + '/register')
+        self.assertEquals(resp.status_code, 200,
+                          "Register endpoint failed: %s (%s)" % (
+                              resp.content, resp.status_code))
+        self.incr_counter("status-200")
         self.incr_counter("register")
         try:
             sessionToken = resp.json()['msisdnSessionToken']
@@ -199,6 +209,7 @@ class TestMSISDN(TestCase):
         self.assertEqual(resp.status_code, 200,
                          "Sign certificate failed: %s (%s)" % (
                              resp.content, resp.status_code))
+        self.incr_counter("status-200")
 
     def unregister(self):
         resp = self.session.post(self.server_url + '/unregister',
@@ -208,6 +219,7 @@ class TestMSISDN(TestCase):
         self.assertEqual(resp.status_code, 204,
                          "Unregister failed: %s (%s)" % (resp.content,
                                                          resp.status_code))
+        self.incr_counter("status-204")
 
 
 def HKDF_extract(salt, IKM, hashmod=hashlib.sha256):
