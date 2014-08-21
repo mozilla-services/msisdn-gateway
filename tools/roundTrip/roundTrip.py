@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+VERSION = "0.1.0"
+
 import json
 import requests
 import sys
@@ -16,20 +19,43 @@ from browserid.tests.support import get_keypair
 HELP = """This program helps you test a MSISDN Gateway server from the CLI.
 
 Usage:
-  roundTrip.py --host=<host> --mcc=<mcc> [--mnc=<mnc>] [--msisdn=<msisdn>] [--audience=<audience>]
+  roundTrip --host=<host> --mcc=<mcc> [(--audience=<audience> (--dry-run | --login-endpoint=<endpoint>))] [(--data=<data> | --json=<json>)] [options]
+  roundTrip --host=<host> --mcc=<mcc> [(--audience=<audience> --dry-run --login-endpoint=<endpoint>)] [(--data=<data> | --json=<json>)] [options]
+  roundTrip -h | --help
+  roundTrip --version
 
 
 Options:
-  -h --help                  This help
-  -H --host=<host>           The MobileID host
-  -c --mcc=<mcc>             Mobile Country Code (three digit) ie: 214
-  --mnc=<mnc>                Mobile Network Code (two or three digit) ie: 07
-  -n --msisdn=<msisdn>       The MSISDN number you want to validate.
-  -a, --audience=<audience>  The service provider audience
+  -h --help   Show help
+  --version   Show version
 
+  MSISDN request configuration
+  ============================
+
+  -H --host=<host>       The MobileID host
+  -c --mcc=<mcc>         Mobile Country Code (3 digits) ie: 214
+  --mnc=<mnc>            Mobile Network Code (2 or 3 digits) ie: 07
+  -n --msisdn=<msisdn>   The MSISDN number you want to validate.
+  -v, --verbose          Display the assertion
+
+
+  BrowserID Service Provider request configuration
+  ================================================
+
+  -s, --dry-run                   Only display the cURL command to run
+  -a, --audience=<audience>       The Service Provider audience
+  -l, --login-endpoint=<endpoint> The Service Provider login endpoint
+  -d, --data=<data>               The data send as x-www-form-urlencoded
+  -j, --json=<json>               The data send as json
 
 Example:
-  roundTrip.py -H https://msisdn.services.mozilla.com -c 208 -n +33623456789
+
+  roundTrip.py \
+    --host https://msisdn.services.mozilla.com -c 310 -n +1xxxxxxxxxxx \
+    --audience app://loop.services.mozilla.com \
+    --login-endpoint https://loop.services.mozilla.com/registration \
+    --json '{"simplePushURL": "http://httpbin.org/deny"}'
+
 
 
 Some usefull Mobile Country Codes (MCC):
@@ -164,19 +190,33 @@ def main(args):
             [cert], jwt.generate(assertion, privateKey)
         )
 
-        print("""
+        if arguments["--verbose"]:
+            print("BID Assertion for %s:\n\n%s\n\n" % (audience, assertion))
+
+        if arguments["--dry-run"]:
+            curl = """
     curl -X POST -D - \\
-        -H 'Authorization: BROWSERID %s' \\
+        -H 'Authorization: BROWSERID %s' \\""" % assertion
+
+            if arguments["--data"]:
+                curl += """
+             -d '%s' \\""" % arguments["--data"]
+            if arguments["--json"]:
+                curl += """
         -H 'Content-Type: application/json' -H 'Accept: application/json' \\
-        -d '{\"simplePushURL\": \"http://httpbin.org/deny\"}' \\
-        %s/registration\n""" % (assertion, audience))
+        -d '%s' \\""" % arguments["--json"]
 
-        print("To validate the configuration of the service provider, you can "
-              "run the curl command above.\n\n"
-              "You should get a 200 OK status code with a Hawk-Session-Token "
-              "header.\n\n")
+            login_endpoint = arguments["--login-endpoint"] or "<login_URL>"
+            curl += "\n        %s\n""" % login_endpoint
 
-        print("""If not, here are the error messages you can get:
+            print("\nTo validate the configuration of the service provider, "
+                  "you can run the curl command below.\n\n"
+                  "You should get a 200 OK status code with a "
+                  "Hawk-Session-Token header:\n\n")
+
+            print(curl)
+
+            print("""Here are the error messages you can get:
   - "Certificate expired": you play too long with this curl command,
                            ask for a new certificate
 
@@ -191,7 +231,42 @@ def main(args):
 
   - Something else? Please make a PR to add it here.
 """)
+        else:
+            headers = {"Authorization": "BROWSERID %s" % assertion}
+            data = arguments["--data"]
+            if arguments["--json"]:
+                data = arguments["--json"]
+                headers["Content-Type"] = "application/json"
+                headers["Accept"] = "application/json"
+            r = requests.post(arguments["--login-endpoint"], data=data, headers=headers)
 
+            # Try to extract an Hawk sessionToken from the response.
+            sessionToken = None
+            if "Access-Control-Expose-Headers" in r.headers:
+                tokenHeader = r.headers["Access-Control-Expose-Headers"]
+                sessionHeaders = tokenHeader.split(",")
+                sessionHeader = None
+                for header in sessionHeaders:
+                    if "token" in header.lower():
+                        sessionHeader = header.strip()
+                        break
+                if sessionHeader:
+                    sessionToken = r.headers[sessionHeader]
+            else:
+                try:
+                    jsonResp = r.json()
+                    for key in jsonResp.keys():
+                        if "token" in key.lower():
+                            sessionToken = jsonResp["key"]
+                except ValueError:
+                    pass
+
+            print("Status: %s" % r.status_code)
+            if sessionToken:
+                print("Hawk sessionToken: %s" % sessionToken)
+            else:
+                print("Headers: %s" % r.headers)
+                print("Content: %s" % r.content)
 
 if __name__ == "__main__":
     main(sys.argv)
