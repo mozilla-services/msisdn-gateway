@@ -95,16 +95,15 @@ videur(app, conf);
 
 
 var argv = require('yargs').argv;
-var server;
+var server = http.createServer(app);
 
 if (argv.hasOwnProperty("fd")) {
-  server = http.createServer(app);
-  server.maxConnections = 100;
-  server.listen({fd: parseInt(argv.fd, 10)}, function() {
-    console.log("Server listening on fd://" + argv.fd);
+  var fd = parseInt(argv.fd, 10)
+  server.listen({fd: fd}, function() {
+    console.log("Server listening on fd://" + fd);
   });
 } else {
-  server = app.listen(conf.get("port"), conf.get("ip"), function() {
+  server.listen(conf.get("port"), conf.get("ip"), function() {
     console.log("Server listening on http://" +
                 conf.get("ip") + ":" + conf.get("port"));
   });
