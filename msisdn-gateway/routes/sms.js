@@ -259,7 +259,7 @@ module.exports = function(app, conf, logError, storage, hawkMiddleware) {
       text: req.body.message
     };
 
-    if (req.query.hasOwnProperty("mccmnc")) {
+    if (req.body.hasOwnProperty("mccmnc")) {
       options.mcc = req.body["mccmnc"].mcc;
       options.mnc = req.body["mccmnc"].mnc;
     }
