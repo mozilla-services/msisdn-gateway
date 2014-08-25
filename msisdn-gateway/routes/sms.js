@@ -247,17 +247,22 @@ module.exports = function(app, conf, logError, storage, hawkMiddleware) {
     handleMobileOriginatedMessages(res, options);
   });
 
-  app.get("/sms/momt/beepsend_callback", function(req, res) {
-    if (!req.query.hasOwnProperty("from")) {
+  app.post("/sms/momt/beepsend_callback", function(req, res) {
+    if (!req.body.hasOwnProperty("from")) {
       // New number setup should answer 200
       res.json(200, {});
       return;
     }
 
     var options = {
-      msisdn: '+' + req.query.from,
-      text: req.query.message
+      msisdn: '+' + req.body.from,
+      text: req.body.message
     };
+
+    if (req.query.hasOwnProperty("mccmnc")) {
+      options.mcc = req.body["mccmnc"].mcc;
+      options.mnc = req.body["mccmnc"].mnc;
+    }
 
     handleMobileOriginatedMessages(res, options);
   });
