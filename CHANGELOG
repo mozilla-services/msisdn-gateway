@@ -4,6 +4,9 @@ CHANGELOG
 0.5.0 (unreleased)
 ------------------
 
+ - [refactoring] SMS /sms/momt/ url update changed.
+                 This version needs a SMS Provider configuration.
+
 
 0.4.3 (2014-08-13)
 ------------------
