@@ -9,7 +9,7 @@ var digitsCode = require("../utils").digitsCode;
 var errors = require("../errno");
 var hmac = require("../hmac");
 var sendError = require("../middleware").sendError;
-var smsGateway = require("../sms-gateway");
+var smsGateway = require("../sms");
 var validateMSISDN = require("../middleware").validateMSISDN;
 var requireParams = require("./utils").requireParams;
 
@@ -128,8 +128,25 @@ module.exports = function(app, conf, logError, storage, hawkMiddleware) {
   /**
    * Handle Mobile Originated SMS reception
    **/
+  function handleMobileOriginated(req, res) {
+    var momtBackends = ["nexmo", "beepsend"];
+    if (!req.query.hasOwnProperty("provider") ||
+        momtBackends.indexOf(req.query.provider) === -1) {
+      sendError(res, 400, errors.INVALID_PARAMETERS,
+                "Provider should be one of: " + momtBackends.join(", "));
+      return;
+    }
 
-  function handleMobileOriginatedMessages(res, options) {
+    var paramsFromRequest = require("../sms/inbound/" + req.query.provider);
+
+    var options = paramsFromRequest(req.method === "GET" ? req.query : req.body);
+
+    if (options === null) {
+      // No options could means number setup and should answer 200 OK
+      res.status(200).json();
+      return;
+    }
+
     smsGateway.numberMap.getMtSenderFor(options.mcc, options.mnc,
       function(err, mtSender) {
         if (err) {
@@ -179,7 +196,7 @@ module.exports = function(app, conf, logError, storage, hawkMiddleware) {
 
             if (storedMsisdn !== null && storedMsisdn !== options.msisdn) {
               logError(
-                new Error("Attempt to very several MSISDN per session.", {
+                new Error("Attempt to verify several MSISDN per session.", {
                   sessionId: hawkHmacId,
                   previousMsisdn: storedMsisdn,
                   currentMsisdn: options.msisdn
@@ -227,45 +244,8 @@ module.exports = function(app, conf, logError, storage, hawkMiddleware) {
       });
   }
 
-  app.get("/sms/momt/nexmo_callback", function(req, res) {
-    if (!req.query.hasOwnProperty("msisdn")) {
-      // New number setup should answer 200
-      res.json(200, {});
-      return;
-    }
-
-    var options = {
-      msisdn: '+' + req.query.msisdn,
-      text: req.query.text
-    };
-
-    if (req.query.hasOwnProperty("network-code")) {
-      options.mcc = req.query["network-code"].slice(0, 3);
-      options.mnc = req.query["network-code"].slice(3, 6);
-    }
-
-    handleMobileOriginatedMessages(res, options);
-  });
-
-  app.post("/sms/momt/beepsend_callback", function(req, res) {
-    if (!req.body.hasOwnProperty("from")) {
-      // New number setup should answer 200
-      res.json(200, {});
-      return;
-    }
-
-    var options = {
-      msisdn: '+' + req.body.from,
-      text: req.body.message
-    };
-
-    if (req.body.hasOwnProperty("mccmnc")) {
-      options.mcc = req.body["mccmnc"].mcc;
-      options.mnc = req.body["mccmnc"].mnc;
-    }
-
-    handleMobileOriginatedMessages(res, options);
-  });
+  app.get("/sms/momt/", handleMobileOriginated);
+  app.post("/sms/momt/", handleMobileOriginated);
 
 
   /**
