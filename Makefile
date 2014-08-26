@@ -24,7 +24,7 @@ clean:
 cover-mocha:
 	@$(FAKE_DYNAMO) --db $(TMPDIR)/fake_dynamo.db --pid $(TMPDIR)/fake_dynamo.pid -D > /dev/null
 	@NODE_ENV=test $(NODE_LOCAL_BIN)/istanbul cover \
-		$(NODE_LOCAL_BIN)/_mocha -- --reporter spec test/*; \
+		$(NODE_LOCAL_BIN)/_mocha -- --reporter spec test/* -t 5000; \
 		EXIT_CODE=$$?; kill `cat $(TMPDIR)/fake_dynamo.pid`; \
 		rm -f $(TMPDIR)/fake_dynamo.db $(TMPDIR)/fake_dynamo.pid; \
 		sleep 2; exit $$EXIT_CODE
@@ -37,7 +37,7 @@ eslint:
 .PHONY: mocha
 mocha:
 	@$(FAKE_DYNAMO) --db $(TMPDIR)/fake_dynamo.db --pid $(TMPDIR)/fake_dynamo.pid -D > /dev/null
-	@NODE_ENV=test ./node_modules/mocha/bin/mocha test/* --reporter spec; \
+	@NODE_ENV=test ./node_modules/mocha/bin/mocha test/* --reporter spec -t 5000; \
 		EXIT_CODE=$$?; kill `cat $(TMPDIR)/fake_dynamo.pid`; \
 		rm -f $(TMPDIR)/fake_dynamo.db $(TMPDIR)/fake_dynamo.pid; \
 		sleep 2; exit $$EXIT_CODE
