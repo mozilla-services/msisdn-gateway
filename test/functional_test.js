@@ -15,7 +15,7 @@ var async = require("async");
 var app = require("../msisdn-gateway").app;
 var conf = require("../msisdn-gateway").conf;
 var storage = require("../msisdn-gateway").storage;
-var smsGateway = require("../msisdn-gateway/sms-gateway");
+var smsGateway = require("../msisdn-gateway/sms");
 var FileMap = require("../msisdn-gateway/sms/infos/file");
 var Token = require("../msisdn-gateway/token").Token;
 var hmac = require("../msisdn-gateway/hmac");
@@ -64,7 +64,7 @@ describe("HTTP API exposed by the server", function() {
     '/register': ['post'],
     '/unregister': ['post'],
     '/sms/mt/verify': ['post'],
-    '/sms/momt/nexmo_callback': ['post'],
+    '/sms/momt/': ['get', 'post'],
     '/sms/verify_code': ['post'],
     '/certificate/sign': ['post']
   };
@@ -609,98 +609,158 @@ describe("HTTP API exposed by the server", function() {
       });
   });
 
-  describe("GET /sms/momt/nexmo_callback", function() {
+  describe("MOMT Flow", function() {
     var buildJsonReq, jsonReq;
 
-    beforeEach(function() {
-      buildJsonReq = function buildJsonReq() {
-        return supertest(app)
-          .get('/sms/momt/nexmo_callback')
-          .expect('Content-Type', /json/);
-      };
-      jsonReq = buildJsonReq();
+    function buildMoMtDescribe(description, buildJsonReq, paramsMapper) {
 
-      sandbox.stub(smsGateway, "sendSMS",
-        function(from, msisdn, msg, cb) {
-          cb(null);
+      if (paramsMapper === undefined) {
+        paramsMapper = function (e) { return e; };
+      }
+
+      describe(description, function () {
+        beforeEach(function() {
+          jsonReq = buildJsonReq();
+
+          sandbox.stub(smsGateway, "sendSMS",
+            function(from, msisdn, msg, cb) {
+              cb(null);
+            });
         });
-    });
 
-    it("should always return a 200 even with no msisdn.", function(done) {
-       jsonReq.query()
-         .expect(200).end(function(err) {
-           if (err) throw err;
-           sinon.assert.notCalled(smsGateway.sendSMS);
-           done();
-         });
-    });
-
-    it("should always return a 200 even if the smsBody is not found.",
-       function(done) {
-         jsonReq.query({msisdn: "33623456789", text: "wrong-smsBody"})
-           .expect(200).end(function(err) {
-             if (err) throw err;
-             sinon.assert.notCalled(smsGateway.sendSMS);
-             done();
-           });
-       });
-
-    it("should not send a sms if another number try to register to session.",
-       function(done) {
-         jsonReq.query({
-           msisdn: "33623456789",
-           "network-code": "21407",
-           text: "/sms/momt/verify " + hawkCredentials.id
-         }).expect(200).end(function(err) {
-           if (err) throw err;
-           sinon.assert.called(smsGateway.sendSMS);
-           smsGateway.sendSMS.reset();
-
-           buildJsonReq().query({
-             msisdn: "33214365879",
-             text: "/sms/momt/verify " + hawkCredentials.id
-           }).expect(200).end(function(err) {
-             if (err) throw err;
-             sinon.assert.notCalled(smsGateway.sendSMS);
-             done();
-           });
-         });
-       });
-
-    it("should send a SMS with the code using the network-code.",
-      function(done) {
-        jsonReq.query({
-          msisdn: "33623456789",
-          "network-code": "21407",
-          text: "/sms/momt/verify " + hawkCredentials.id
-        }).expect(200).end(function(err) {
-          if (err) throw err;
-          sinon.assert.called(smsGateway.sendSMS);
-          storage.getMSISDN(hawkHmacId, function(err, msisdn) {
-            if (err) throw err;
-            expect(
-              encrypt.decrypt(hawkCredentials.id, msisdn)
-            ).to.eql("+33623456789");
-            done();
-          });
+        it("should always return a 200 even with no msisdn.", function(done) {
+           jsonReq.query({})
+             .expect(200).end(function(err) {
+               if (err) throw err;
+               sinon.assert.notCalled(smsGateway.sendSMS);
+               done();
+             });
         });
+
+        it("should always return a 200 even if the smsBody is not found.",
+           function(done) {
+             jsonReq.query(paramsMapper({
+               msisdn: "33623456789",
+               text: "wrong-smsBody"
+             }))
+               .expect(200).end(function(err) {
+                 if (err) throw err;
+                 sinon.assert.notCalled(smsGateway.sendSMS);
+                 done();
+               });
+           });
+
+        it("should not send a sms if another number try to register to session.",
+           function(done) {
+             jsonReq.query(paramsMapper({
+               msisdn: "33623456789",
+               "network-code": "21407",
+               text: "/sms/momt/verify " + hawkCredentials.id
+             })).expect(200).end(function(err) {
+               if (err) throw err;
+               sinon.assert.called(smsGateway.sendSMS);
+               smsGateway.sendSMS.reset();
+
+               buildJsonReq().query(paramsMapper({
+                 msisdn: "33214365879",
+                 text: "/sms/momt/verify " + hawkCredentials.id
+               })).expect(200).end(function(err) {
+                 if (err) throw err;
+                 sinon.assert.notCalled(smsGateway.sendSMS);
+                 done();
+               });
+             });
+           });
+
+        it("should send a SMS with the code using the network-code.",
+          function(done) {
+            jsonReq.query(paramsMapper({
+              msisdn: "33623456789",
+              "network-code": "21407",
+              text: "/sms/momt/verify " + hawkCredentials.id
+            })).expect(200).end(function(err) {
+              if (err) throw err;
+              sinon.assert.called(smsGateway.sendSMS);
+              storage.getMSISDN(hawkHmacId, function(err, msisdn) {
+                if (err) throw err;
+                expect(
+                  encrypt.decrypt(hawkCredentials.id, msisdn)
+                ).to.eql("+33623456789");
+                done();
+              });
+            });
+        });
+
+        it("should send a SMS with the code.", function(done) {
+             jsonReq.query(paramsMapper({
+               msisdn: "33623456789",
+               text: "/sms/momt/verify " + hawkCredentials.id
+             })).expect(200).end(function(err) {
+               if (err) throw err;
+               sinon.assert.called(smsGateway.sendSMS);
+               storage.getMSISDN(hawkHmacId, function(err, msisdn) {
+                 if (err) throw err;
+                 expect(
+                   encrypt.decrypt(hawkCredentials.id, msisdn)
+                 ).to.eql("+33623456789");
+                 done();
+               });
+             });
+        });
+      });
+    }
+
+    buildMoMtDescribe("GET /sms/momt/?provider=nexmo", function buildJsonReq() {
+      return supertest(app)
+        .get('/sms/momt/')
+        .query({provider: 'nexmo'})
+        .expect('Content-Type', /json/);
     });
 
-    it("should send a SMS with the code.", function(done) {
-         jsonReq.query({
-           msisdn: "33623456789",
-           text: "/sms/momt/verify " + hawkCredentials.id
-         }).expect(200).end(function(err) {
-           if (err) throw err;
-           sinon.assert.called(smsGateway.sendSMS);
-           storage.getMSISDN(hawkHmacId, function(err, msisdn) {
-             if (err) throw err;
-             expect(
-               encrypt.decrypt(hawkCredentials.id, msisdn)
-             ).to.eql("+33623456789");
-             done();
-           });
-         });
+    buildMoMtDescribe("POST /sms/momt/?provider=nexmo", function buildJsonReq() {
+      var req = supertest(app)
+        .post('/sms/momt/')
+        .query({provider: 'nexmo'})
+        .expect('Content-Type', /json/);
+      req.query = req.send;
+      return req;
+    });
+
+    buildMoMtDescribe("GET /sms/momt/?provider=beepsend", function buildJsonReq() {
+      var req = supertest(app)
+        .post('/sms/momt/')
+        .query({provider: 'beepsend'});
+        //.expect('Content-Type', /json/);
+      req.query = req.send;
+      return req;
+    }, function (params) {
+      var newParams = {};
+      newParams.from = params.msisdn;
+      newParams.message = params.text;
+      if (params.hasOwnProperty("network-code")) {
+        newParams.mcc = params["network-code"].slice(0, 3);
+        newParams.mnc = params["network-code"].slice(3, 6);
+      }
+      return newParams;
+    });
+
+    buildMoMtDescribe("POST /sms/momt/?provider=beepsend", function buildJsonReq() {
+      var req = supertest(app)
+        .post('/sms/momt/')
+        .query({provider: 'beepsend'})
+        .expect('Content-Type', /json/);
+      req.query = req.send;
+      return req;
+    }, function (params) {
+      var newParams = {};
+      newParams.from = params.msisdn;
+      newParams.message = params.text;
+      if (params.hasOwnProperty("network-code")) {
+        newParams.mccmnc = {};
+        newParams.mccmnc.mcc = params["network-code"].slice(0, 3);
+        newParams.mccmnc.mnc = params["network-code"].slice(3, 6);
+      }
+      return newParams;
     });
   });
 

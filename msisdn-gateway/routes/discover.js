@@ -7,7 +7,7 @@
 var errors = require("../errno");
 var phone = require("phone");
 var sendError = require("../middleware").sendError;
-var smsGateway = require("../sms-gateway");
+var smsGateway = require("../sms");
 var requireParams = require("./utils").requireParams;
 
 

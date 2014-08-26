@@ -29,7 +29,9 @@ var storage = getStorage(conf.get("storage"), {
 });
 
 function logError(err) {
-  console.error(err);
+  if (conf.get("env") !== "test") {
+    console.error(err);
+  }
   ravenClient.captureError(err);
 }
 

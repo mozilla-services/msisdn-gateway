@@ -3,11 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-var conf = require("./config").conf;
+var conf = require("../config").conf;
 var smsGatewaysConf = conf.get("smsGateways");
 
 var smsMapping = conf.get("smsMapping");
-var MappingEngine = require("./sms/infos/" + smsMapping.engine);
+var MappingEngine = require("./infos/" + smsMapping.engine);
 
 var providers;
 
@@ -27,7 +27,7 @@ function buildSmsGateway() {
       return 0;
     })
     .forEach(function (d) {
-      var Gateway = require("./sms/" + d[0]);
+      var Gateway = require("./outbound/" + d[0]);
       try {
         providers.push(new Gateway(smsGatewaysConf[d[0]]));
       } catch (err) {}

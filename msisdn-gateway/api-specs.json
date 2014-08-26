@@ -30,11 +30,11 @@
           "max_body_size": "10k"
         }
       },
-      "/sms/momt/nexmo_callback": {
-        "GET": {}
-      },
-      "/sms/momt/beepsend_callback": {
-        "GET": {}
+      "/sms/momt/": {
+        "GET": {},
+        "POST": {
+          "max_body_size": "10k"
+        }
       },
       "/sms/verify_code": {
         "POST": {

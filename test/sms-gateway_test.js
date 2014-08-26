@@ -8,7 +8,7 @@ var request = require("request");
 var proxyquire = require('proxyquire');
 var conf = require("../msisdn-gateway").conf;
 
-var smsGateway = require("../msisdn-gateway/sms-gateway");
+var smsGateway = require("../msisdn-gateway/sms");
 var FileMap = require("../msisdn-gateway/sms/infos/file");
 
 describe("SMS Gateway", function() {
@@ -52,7 +52,7 @@ describe("SMS Gateway", function() {
           cb(new Error("Service Unavailable."), {statusCode: 503});
         });
 
-      var sendSMS = proxyquire("../msisdn-gateway/sms-gateway", {
+      var sendSMS = proxyquire("../msisdn-gateway/sms", {
         request: {
           get: requestGetStub,
           post: requestPostStub
@@ -93,7 +93,7 @@ describe("SMS Gateway", function() {
           });
         });
 
-      var sendSMS = proxyquire("../msisdn-gateway/sms-gateway", {
+      var sendSMS = proxyquire("../msisdn-gateway/sms", {
         request: {
           get: requestGetStub,
           post: requestPostStub
@@ -219,7 +219,7 @@ describe("SMS Gateway", function() {
 
   describe("Nexmo", function() {
     beforeEach(function() {
-      Gateway = proxyquire("../msisdn-gateway/sms/nexmo", {
+      Gateway = proxyquire("../msisdn-gateway/sms/outbound/nexmo", {
         request: {
           get: requestGetStub,
           post: requestPostStub
@@ -250,7 +250,7 @@ describe("SMS Gateway", function() {
 
   describe("BeepSend", function() {
     beforeEach(function() {
-      Gateway = proxyquire("../msisdn-gateway/sms/beepsend", {
+      Gateway = proxyquire("../msisdn-gateway/sms/outbound/beepsend", {
         request: {
           get: requestGetStub,
           post: requestPostStub
@@ -283,7 +283,7 @@ describe("SMS Gateway", function() {
 
   describe("Leonix", function() {
     beforeEach(function() {
-      Gateway = proxyquire("../msisdn-gateway/sms/leonix", {
+      Gateway = proxyquire("../msisdn-gateway/sms/outbound/leonix", {
         request: {
           get: requestGetStub,
           post: requestPostStub
