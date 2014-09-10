@@ -19,15 +19,26 @@ BeepSend.prototype = {
     request.post({
       url: this._conf.endpoint + "/" + this._conf.connectionId,
       headers: {
+        "Content-Type": "application/json",
         "Authorization": "Token " + this._conf.apiToken
       },
-      form: {
-        to: to,
+      body: JSON.stringify({
+        to: to.replace("+", ""),
         message: message,
         from: from.replace(/@$/g, "")
-      }
+      })
     }, function(err, resp) {
-      callback(err, resp.body);
+      if (err) {
+        callback(err);
+        return;
+      }
+      if (resp.body.errors !== null) {
+        callback(new Error(resp.body.errors));
+        return;
+      } else {
+        callback(null, resp.body);
+        return;
+      }
     });
   }
 };

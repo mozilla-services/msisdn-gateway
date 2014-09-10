@@ -23,7 +23,7 @@ describe("SMS Gateway", function() {
       function(options, cb) {
         requests.push(options);
         cb(null, {
-          body: '{"messages": [{"status":"0"}]}',
+          body: JSON.parse('{"messages": [{"status":"0"}], "errors": null}'),
           statusCode: 200
         });
       });
@@ -31,7 +31,7 @@ describe("SMS Gateway", function() {
       function(options, cb) {
         requests.push(options);
         cb(null, {
-          body: '{"messages": [{"status":"0"}]}',
+          body: JSON.parse('{"messages": [{"status":"0"}]}'),
           statusCode: 200
         });
       });
@@ -79,7 +79,7 @@ describe("SMS Gateway", function() {
         function(options, cb) {
           numberOfTries++;
           cb(new Error("Service Unavailable."), {
-            body: '{"messages": [{"status":"0"}]}',
+            body: JSON.parse('{"messages": [{"status":"0"}]}'),
             statusCode: 503
           });
         });
@@ -88,7 +88,7 @@ describe("SMS Gateway", function() {
         function(options, cb) {
           numberOfTries++;
           cb(new Error("Service Unavailable."), {
-            body: '{"messages": [{"status":"0"}]}',
+            body: JSON.parse('{"messages": [{"status":"0"}]}'),
             statusCode: 503
           });
         });
@@ -265,14 +265,16 @@ describe("SMS Gateway", function() {
         apiToken: "456",
         priority: 10
       });
-      gateway.sendSms("Mozilla@", "0623456789", "Body", function(err /*, res */) {
+      gateway.sendSms("Mozilla@", "+33623456789", "Body", function(err) {
+        console.log(requests, err);
         if (err) throw err;
         expect(requests).to.length(1);
         expect(requests[0].url).to.match(/^http:\/\/beepsend/);
         expect(requests[0].url).to.match(/123$/);
+        expect(requests[0].headers["Content-Type"]).to.match(/application\/json/);
         expect(requests[0].headers.Authorization).to.match(/Token 456/);
-        expect(requests[0].form).to.eql({
-          to: "0623456789",
+        expect(JSON.parse(requests[0].body)).to.eql({
+          to: "33623456789",
           message: "Body",
           from: "Mozilla"
         });
