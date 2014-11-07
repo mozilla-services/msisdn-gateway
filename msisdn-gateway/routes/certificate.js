@@ -74,8 +74,8 @@ module.exports = function(app, conf, logError, storage, hawkMiddleware) {
         );
 
         // Generate a certificate
-        generateCertificate(msisdn, req.get("host"), publicKey, _privKey,
-          duration, function (err, cert, now) {
+        generateCertificate(msisdn, req.get("host"), certificateData.createAt,
+          publicKey, _privKey, duration, function (err, cert, now) {
             if (err) {
               logError(err);
               sendError(res, 503, errors.BACKEND, "Service Unavailable");
