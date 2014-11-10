@@ -6,6 +6,7 @@ CHANGELOG
 
  - [refactoring] SMS /sms/momt/ url update changed.
                  This version needs a SMS Provider configuration.
+ - [feature]     1096102 — Upgrade jwcrypto to browserid-crypto
 
 
 0.4.5 (2014-08-20)
