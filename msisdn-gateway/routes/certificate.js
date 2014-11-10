@@ -10,14 +10,14 @@ var requireParams = require("./utils").requireParams;
 var validateJWCryptoKey = require("../utils").validateJWCryptoKey;
 var generateCertificate = require("../utils").generateCertificate;
 
-var jwcrypto = require('jwcrypto');
+var bidcrypto = require('browserid-crypto');
 
 // Make sure to load supported algorithms.
-require('jwcrypto/lib/algs/rs');
-require('jwcrypto/lib/algs/ds');
+require('browserid-crypto/lib/algs/rs');
+require('browserid-crypto/lib/algs/ds');
 
 module.exports = function(app, conf, logError, storage, hawkMiddleware) {
-  var _privKey = jwcrypto.loadSecretKeyFromObject(conf.get('BIDSecretKey'));
+  var _privKey = bidcrypto.loadSecretKeyFromObject(conf.get('BIDSecretKey'));
 
   var encrypt;
   if (conf.get("fakeEncrypt")) {

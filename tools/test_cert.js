@@ -7,18 +7,18 @@
 
 var gen = require("../msisdn-gateway/utils").generateCertificate;
 
-var jwcrypto = require('jwcrypto');
+var bidcrypto = require('browserid-crypto');
 
 // Make sure to load supported algorithms.
-require('jwcrypto/lib/algs/rs');
-require('jwcrypto/lib/algs/ds');
+require('browserid-crypto/lib/algs/rs');
+require('browserid-crypto/lib/algs/ds');
 
 var request = require('request');
 var conf = require('./test_cert_conf.json');
 
-var serverPrivateKey = jwcrypto.loadSecretKeyFromObject(conf.BIDSecretKey);
+var serverPrivateKey = bidcrypto.loadSecretKeyFromObject(conf.BIDSecretKey);
 var clientPublicKey = conf.clientPublicKey;
-var clientPrivateKey = jwcrypto.loadSecretKeyFromObject(conf.clientSecretKey);
+var clientPrivateKey = bidcrypto.loadSecretKeyFromObject(conf.clientSecretKey);
 var msisdn = conf.msisdn || "xxx";
 var duration = parseInt(conf.duration, 10) || 3600;
 var audience = conf.audience || "http://loop.dev.mozaws.net";
@@ -32,12 +32,12 @@ function createAssertion(cert, cb) {
   var issuedAt = Date.now();
   var expiresAt = (issuedAt + (2 * 60 * 1000));
 
-  jwcrypto.assertion.sign(
+  bidcrypto.assertion.sign(
     {}, {audience: audience, expiresAt: expiresAt, issuedAt: issuedAt},
     clientPrivateKey,
     function(err, signedContents) {
       if (err) return cb(err);
-      var assertion = jwcrypto.cert.bundle([cert], signedContents);
+      var assertion = bidcrypto.cert.bundle([cert], signedContents);
       cb(null, assertion);
     });
 }
