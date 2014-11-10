@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "aws-sdk": "2.0.11",
+    "browserid-crypto": "0.7.0",
     "convict": "0.4.2",
     "cors": "2.2.0",
     "express": "3.x",
@@ -25,7 +26,6 @@
     "hkdf": "0.0.2",
     "i18n-abide": "0.0.22",
     "jsxgettext-recursive": "0.0.5",
-    "jwcrypto": "0.5.0",
     "node-uuid": "1.4.1",
     "phone": "git://github.com/Natim/node-phone.git#83a4f48",
     "raven": "0.7.0",

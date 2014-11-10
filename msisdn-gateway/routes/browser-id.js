@@ -4,18 +4,18 @@
 
 "use strict";
 
-var jwcrypto = require('jwcrypto');
+var bidcrypto = require('browserid-crypto');
 
 // Make sure to load supported algorithms.
-require('jwcrypto/lib/algs/rs');
-require('jwcrypto/lib/algs/ds');
+require('browserid-crypto/lib/algs/rs');
+require('browserid-crypto/lib/algs/ds');
 
 
 module.exports = function(app, conf) {
   /***********************
    * BrowserId IdP views *
    ***********************/
-  var _publicKey = jwcrypto.loadPublicKeyFromObject(conf.get('BIDPublicKey'));
+  var _publicKey = bidcrypto.loadPublicKeyFromObject(conf.get('BIDPublicKey'));
 
   /**
    * Well known BrowserId

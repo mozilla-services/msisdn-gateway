@@ -6,7 +6,7 @@
 
 var crypto = require("crypto");
 var uuid = require('node-uuid');
-var jwcrypto = require('jwcrypto');
+var bidcrypto = require('browserid-crypto');
 
 
 /**
@@ -62,8 +62,8 @@ function generateCertificate(msisdn, host, publicKey, privateKey, duration,
   md5sum.update(msisdn);
   var msisdn_uuid = uuid.unparse(md5sum.digest());
 
-  jwcrypto.cert.sign({
-    publicKey: jwcrypto.loadPublicKeyFromObject(publicKey),
+  bidcrypto.cert.sign({
+    publicKey: bidcrypto.loadPublicKeyFromObject(publicKey),
     principal: { email: msisdn_uuid + "@" + host}
   }, {
     issuer: host,
