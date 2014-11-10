@@ -8,6 +8,18 @@ CHANGELOG
                  This version needs a SMS Provider configuration.
 
 
+0.4.5 (2014-08-20)
+------------------
+
+- [bug] duration is in seconds and was used as being in milliseconds.
+
+
+0.4.4 (2014-08-19)
+------------------
+
+- [bug] MCC set to null is considered as missing.
+
+
 0.4.3 (2014-08-13)
 ------------------
 

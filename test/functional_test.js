@@ -330,11 +330,12 @@ describe("HTTP API exposed by the server", function() {
       });
     });
 
-    it("should works with the MNC parameter set to null", function(done) {
-      jsonReq.send({"mcc": "302", "mnc": null}).expect(200).end(function(err, res) {
-        if (err) throw err;
-        done();
-      });
+    it("should not works with the MNC parameter set to null", function(done) {
+      jsonReq.send({"mcc": "302", "mnc": null}).expect(200).end(
+        function(err, res) {
+          if (err) throw err;
+          done();
+        });
     });
 
     it("should take only a valid MSISDN number", function(done) {
