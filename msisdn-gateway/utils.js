@@ -55,8 +55,8 @@ function validateJWCryptoKey(keyObj) {
 /**
  * Generate a BID certificate
  */
-function generateCertificate(msisdn, host, publicKey, privateKey, duration,
-                             callback) {
+function generateCertificate(msisdn, host, creationTime, publicKey,
+                             privateKey, duration, callback) {
   var now = Date.now();
   var md5sum = crypto.createHash("md5");
   md5sum.update(msisdn);
@@ -72,6 +72,7 @@ function generateCertificate(msisdn, host, publicKey, privateKey, duration,
     expiresAt: new Date(now + duration * 1000)
   }, {
     "lastAuthAt": now,
+    "lastVerifiedAt": creationTime,
     "verifiedMSISDN": msisdn
   }, privateKey, function(err, cert) {
     if (err) {

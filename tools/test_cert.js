@@ -68,7 +68,7 @@ function verifyAssertion(assertion, callback) {
 }
 
 /* generate the cert */
-gen(msisdn, host, clientPublicKey, serverPrivateKey, duration,
+gen(msisdn, host, Date.now(), clientPublicKey, serverPrivateKey, duration,
   function (err, cert) {
     if (err) {
       console.log(err);
