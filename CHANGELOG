@@ -1,12 +1,13 @@
 CHANGELOG
 =========
 
-0.5.0 (unreleased)
+0.5.0 (2014-11-17)
 ------------------
 
  - [refactoring] SMS /sms/momt/ url update changed.
                  This version needs a SMS Provider configuration.
  - [feature]     1096102 — Upgrade jwcrypto to browserid-crypto
+ - [feature]     1088105 — Add the lastVerifiedAt certificate parameter.
 
 
 0.4.5 (2014-08-20)
