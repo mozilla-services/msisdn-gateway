@@ -74,7 +74,7 @@ module.exports = function(app, conf, logError, storage, hawkMiddleware) {
         );
 
         // Generate a certificate
-        generateCertificate(msisdn, req.get("host"), certificateData.createAt,
+        generateCertificate(msisdn, req.get("host"), certificateData.createdAt,
           publicKey, _privKey, duration, function (err, cert, now) {
             if (err) {
               logError(err);
