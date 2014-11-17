@@ -144,8 +144,9 @@ class TestMSISDN(TestCase):
 
         # You don't need to be authenticated to revoke a token.
         return self.session.get(
-            self.server_url + '/sms/momt/nexmo_callback',
-            params={"msisdn": self.msisdn.lstrip("+"),
+            self.server_url + '/sms/momt/',
+            params={"provider": "nexmo",
+                    "msisdn": self.msisdn.lstrip("+"),
                     "text": "/sms/momt/verify %s" % self.hawk_auth.hawk_id})
 
     def read_message(self):
