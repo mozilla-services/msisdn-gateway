@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var expect = require("chai").expect;
+var sinon = require("sinon");
 var getStorage = require("../msisdn-gateway/storage");
 var conf = require("../msisdn-gateway").conf;
 var hmac = require("../msisdn-gateway/hmac");
@@ -384,5 +385,31 @@ describe("Storage", function() {
       secretAccessKey: 'xxx',
       tableName: "certificateData"
     }}, options);
+  });
+
+  describe("Redis specifics", function() {
+    var sandbox, storage;
+
+    beforeEach(function() {
+      sandbox = sinon.sandbox.create();
+      storage = getStorage({engine: "redis", settings: {"db": 5}}, {
+        hawkSessionDuration: conf.get("hawkSessionDuration")
+      });
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it("#ping should fails when redis is in read-only mode", function(done) {
+      sandbox.stub(storage._client, "setex",
+        function(key, ttl, value, callback){
+          callback("Error: Redis is read-only");
+        });
+      storage.ping(function(connected) {
+        expect(connected).to.eql("Error: Redis is read-only");
+        done();
+      });
+    });
   });
 });
