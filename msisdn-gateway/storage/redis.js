@@ -257,7 +257,7 @@ RedisStorage.prototype = {
   },
 
   ping: function(callback) {
-    this._client.setex('heartbeat', 3600, parseInt(Date.now() / 1000, 10),
+    this._client.setex('heartbeat', 3600, Date.now(),
       function(err) {
         if (err) return callback(err);
         callback(true);
