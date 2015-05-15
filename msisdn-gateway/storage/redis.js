@@ -257,9 +257,11 @@ RedisStorage.prototype = {
   },
 
   ping: function(callback) {
-    this._client.ping(function(err, value) {
-      callback((err === null && value === "PONG"));
-    });
+    this._client.setex('heartbeat', 3600, Date.now(),
+      function(err) {
+        if (err) return callback(err);
+        callback(true);
+      });
   }
 };
 
